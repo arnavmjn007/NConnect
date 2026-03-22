@@ -27,7 +27,7 @@ export default function RightBar() {
                     ].map((ngo) => (
                         <div key={ngo.name} className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-3">
-                                <div className="h-10 w-10 bg-gray-50 rounded flex items-center justify-center flex-shrink-0">
+                                <div className="h-10 w-10 bg-gray-50 rounded flex items-center justify-center shrink-0">
                                     <ngo.Icon className={ngo.color} size={20} />
                                 </div>
                                 <div>
