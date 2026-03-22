@@ -2,16 +2,17 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
     Home,
-    Briefcase,
-    LayoutGrid,
     MessageSquare,
     UserCircle,
     Search,
     Bell,
-    LucideIcon
+    LucideIcon,
+    Package,
+    FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,13 +61,18 @@ const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
 export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
-            <div className="max-w-6xl mx-auto flex items-center justify-between h-13 px-4">
+            <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-4">
 
                 <div className="flex items-center flex-1 gap-2">
-                    <Link href="/" className="shrink-0">
-                        <div className="bg-[#0A66C2] text-white rounded-sm font-bold text-xl w-8 h-8 flex items-center justify-center">
-                            N
-                        </div>
+                    <Link href="/" className="shrink-0 flex items-center">
+                        <Image
+                            src="/logo.png"
+                            alt="NConnect Logo"
+                            width={80}
+                            height={80}
+                            className="rounded-sm object-contain"
+                            priority
+                        />
                     </Link>
 
                     <div className="relative max-w-70 w-full hidden sm:block">
@@ -84,9 +90,9 @@ export default function Navbar() {
 
                 <div className="flex items-center h-full">
                     <NavItem href="/" icon={Home} label="Home" />
-                    <NavItem href="/project" icon={Briefcase} label="Projects" />
-                    <NavItem href="/resources" icon={LayoutGrid} label="Resources" />
-                    <NavItem href="/messages" icon={MessageSquare} label="Messaging" badge={3} />
+                    <NavItem href="/project" icon={FolderOpen} label="Projects" />
+                    <NavItem href="/resources" icon={Package} label="Resources" />
+                    <NavItem href="/messages" icon={MessageSquare} label="Messaging" />
                     <NavItem href="/notifications" icon={Bell} label="Notifications" badge={1} />
 
                     <div className="hidden md:block h-full w-px bg-gray-200 mx-2" />

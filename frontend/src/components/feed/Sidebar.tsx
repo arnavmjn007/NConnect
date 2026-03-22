@@ -26,8 +26,8 @@ export default function Sidebar() {
     const isNGO = user.role === "ngo";
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col gap-2 sticky top-20 h-fit">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="h-16 bg-linear-to-r from-blue-600 to-blue-400" />
 
                 <div className="px-4 pb-4">

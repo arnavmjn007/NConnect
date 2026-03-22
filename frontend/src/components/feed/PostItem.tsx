@@ -3,13 +3,13 @@ import { MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send } from "lucid
 export default function PostItem() {
     return (
         <div className="relative">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+            {/* <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
                 <button className="bg-[#0A66C2] text-white text-xs font-bold py-1.5 px-4 rounded-full flex items-center gap-1 shadow-lg hover:bg-[#004182]">
                     <span className="rotate-180">↓</span> New posts
                 </button>
-            </div>
+            </div> */}
 
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div className="p-4 flex justify-between items-start">
                     <div className="flex gap-2">
                         <div className="h-12 w-12 bg-gray-300 rounded-full" />
