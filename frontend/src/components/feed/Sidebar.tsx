@@ -28,7 +28,7 @@ export default function Sidebar() {
     return (
         <div className="flex flex-col gap-2">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                <div className="h-16 bg-gradient-to-r from-blue-600 to-blue-400" />
+                <div className="h-16 bg-linear-to-r from-blue-600 to-blue-400" />
 
                 <div className="px-4 pb-4">
                     <div className="relative -mt-10 mb-3 flex justify-center md:justify-start">
