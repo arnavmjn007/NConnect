@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f2ef; 
+  --background: #EEF3F8; 
   --foreground: #1d1d1d; 
+  --brand: #0A66C2;
 }
 
 @theme inline {
@@ -18,3 +19,25 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.btn-brand {
+  color: #0A66C2;
+  border-color: #0A66C2;
+}
+.btn-brand:hover {
+  background-color: #0A66C2;
+  color: white;
+}
+.text-brand { color: #0A66C2; }
+.bg-brand { background-color: #0A66C2; }
+.border-brand { border-color: #0A66C2; }
+.ring-brand:focus { ring-color: #0A66C2; }

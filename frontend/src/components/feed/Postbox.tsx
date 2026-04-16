@@ -1,27 +1,45 @@
-import { Youtube, Image as ImageIcon, Newspaper } from "lucide-react";
+"use client";
+import React, { useState } from 'react';
+import { Youtube, Image as ImageIcon, Newspaper, Smile } from "lucide-react";
+
+const actions = [
+    { Icon: Youtube, label: "Video", color: "text-emerald-600", hoverBg: "hover:bg-emerald-50" },
+    { Icon: ImageIcon, label: "Photo", color: "text-blue-500", hoverBg: "hover:bg-blue-50" },
+    { Icon: Newspaper, label: "Article", color: "text-orange-600", hoverBg: "hover:bg-orange-50" },
+    { Icon: Smile, label: "Feeling", color: "text-amber-500", hoverBg: "hover:bg-amber-50" },
+];
 
 export default function Postbox() {
+    const [focused, setFocused] = useState(false);
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-4">
-            <div className="flex gap-2 items-center mb-3">
-                <div className="h-12 w-12 bg-gray-200 rounded-full shrink-0" />
-                <button className="flex-1 text-left px-4 py-3 border border-gray-300 rounded-full text-gray-500 font-semibold hover:bg-gray-100 transition-all text-sm">
-                    Start a post
-                </button>
+        <div className={`bg-white rounded-2xl border shadow-sm transition-all duration-300 ${focused ? "border-[#0A66C2] shadow-[#0A66C2]" : "border-slate-200"}`}>
+            <div className="p-4">
+                <div className="flex gap-3 items-center">
+                    <div className="h-11 w-11 bg-linear-to-br from-[#0A66C2] to-[#004182] rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
+                        A
+                    </div>
+                    <button
+                        onFocus={() => setFocused(true)}
+                        onBlur={() => setFocused(false)}
+                        className="flex-1 text-left px-4 py-2.5 border border-slate-200 rounded-xl text-slate-400 font-medium hover:border-[#0A66C2] hover:bg-slate-50 transition-all text-sm focus:outline-none focus:ring-2 focus:ring-[#0A66C2]/20 focus:border-[#0A66C2]"
+                    >
+                        Share an update, story, or opportunity...
+                    </button>
+                </div>
             </div>
-            <div className="flex justify-around pt-1">
-                <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md transition-colors">
-                    <Youtube size={20} className="text-green-600" />
-                    <span className="text-sm font-semibold text-gray-500">Video</span>
-                </button>
-                <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md transition-colors">
-                    <ImageIcon size={20} className="text-blue-500" />
-                    <span className="text-sm font-semibold text-gray-500">Photo</span>
-                </button>
-                <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md transition-colors">
-                    <Newspaper size={20} className="text-orange-700" />
-                    <span className="text-sm font-semibold text-gray-500">Write article</span>
-                </button>
+            <div className="border-t border-slate-100 mx-4" />
+            <div className="px-3 py-2 flex items-center justify-between">
+                {actions.map(({ Icon, label, color, hoverBg }) => (
+                    <button
+                        key={label}
+                        className={`flex items-center gap-1.5 px-3 py-2 ${hoverBg} rounded-xl transition-all group`}
+                    >
+                        <Icon size={18} className={`${color} transition-transform group-hover:scale-110`} />
+                        <span className="text-[12px] font-semibold text-slate-500 group-hover:text-slate-800 transition-colors hidden sm:inline">
+                            {label}
+                        </span>
+                    </button>
+                ))}
             </div>
         </div>
     );
