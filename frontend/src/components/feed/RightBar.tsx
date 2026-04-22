@@ -1,5 +1,6 @@
 import React from 'react';
 import { Droplets, Utensils, GraduationCap, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 
 const ProgressBar = ({ raised, goal }: { raised: number; goal: number }) => {
     const pct = Math.min((raised / goal) * 100, 100);
@@ -24,6 +25,13 @@ const projects = [
     { title: "Clean Water Initiative", raised: 45000, goal: 50000 },
     { title: "School Supplies Drive", raised: 12000, goal: 20000 },
     { title: "Emergency Relief Fund", raised: 78000, goal: 100000 },
+];
+
+const footerLinks = [
+    { name: 'About', href: '/about' },
+    { name: 'Accessibility', href: '/accessibility' },
+    { name: 'Help Center', href: '/help' },
+    { name: 'Privacy & Terms', href: '/privacy' },
 ];
 
 export default function RightBar() {
@@ -87,18 +95,22 @@ export default function RightBar() {
                 </div>
             </div>
 
-            <div className="px-2 pb-4">
-                <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                    {['About', 'Accessibility', 'Help Center', 'Privacy & Terms'].map(link => (
-                        <span key={link} className="text-[10px] text-slate-400 hover:text-[#0A66C2] cursor-pointer transition-colors">
-                            {link}
-                        </span>
-                    ))}
-                </div>
-                <div className="flex items-center justify-center gap-1.5 mt-3">
-                    <span className="bg-linear-to-br from-[#0A66C2] to-[#0073b1] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">N</span>
-                    <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
-                </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
+                {footerLinks.map(link => (
+                    <Link
+                        key={link.name}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
+                    >
+                        {link.name}
+                    </Link>
+                ))}
+            </div>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+                <span className="bg-linear-to-br from-[#0A66C2] to-[#0073b1] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">N</span>
+                <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
             </div>
         </div>
     );

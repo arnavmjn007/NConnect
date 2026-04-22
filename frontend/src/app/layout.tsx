@@ -1,3 +1,5 @@
+"use client";
+import { usePathname } from "next/navigation";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,22 +15,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "NConnect | Networking for Good",
-  description: "Connecting NGOs and Volunteers",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const pathname = usePathname();
+
+
+  const infoPages = ["/about", "/help", "/privacy", "/accessibility"];
+  const isInfoPage = infoPages.includes(pathname);
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
-        <Navbar />
+        {!isInfoPage && <Navbar />}
         <main>
           {children}
         </main>
