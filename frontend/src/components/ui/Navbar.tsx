@@ -30,7 +30,7 @@ const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
         <Link
             href={href}
             className={cn(
-                "relative flex flex-col items-center justify-center min-w-[4rem] md:min-w-[5rem] py-1 transition-all group",
+                "relative flex flex-col items-center justify-center min-w-16 md:min-w-20 py-1 transition-all group",
                 isActive ? "text-indigo-600 bg-indigo-50/50 rounded-xl" : "text-slate-500"
             )}
         >
