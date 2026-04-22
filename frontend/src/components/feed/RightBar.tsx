@@ -1,6 +1,7 @@
 import React from 'react';
 import { Droplets, Utensils, GraduationCap, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const ProgressBar = ({ raised, goal }: { raised: number; goal: number }) => {
     const pct = Math.min((raised / goal) * 100, 100);
@@ -109,7 +110,7 @@ export default function RightBar() {
                 ))}
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-3">
-                <span className="bg-linear-to-br from-[#0A66C2] to-[#0073b1] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">N</span>
+                <Image src="/logo.png" alt="NConnect" width={60} height={60} />
                 <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
             </div>
         </div>
