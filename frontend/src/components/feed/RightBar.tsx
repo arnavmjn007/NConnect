@@ -32,7 +32,7 @@ export default function RightBar() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="font-bold text-sm text-slate-900 tracking-tight">Suggested NGOs</h2>
-                    <span className="text-[10px] text-[#0A66C2] font-semibold cursor-pointer hover:underline">See all</span>
+                    <span className="text-[10px] text-black font-semibold cursor-pointer hover:underline">See all</span>
                 </div>
 
                 <div className="space-y-3">
@@ -43,13 +43,13 @@ export default function RightBar() {
                                     <ngo.Icon className={ngo.color} size={18} />
                                 </div>
                                 <div>
-                                    <h3 className="text-[13px] font-bold text-slate-800 leading-tight group-hover:text-[#0A66C2] cursor-pointer transition-colors">
+                                    <h3 className="text-[13px] font-bold text-slate-800 leading-tight cursor-pointer transition-colors">
                                         {ngo.name}
                                     </h3>
                                     <p className="text-[11px] text-slate-400 mt-0.5">{ngo.followers} followers</p>
                                 </div>
                             </div>
-                            <button className="shrink-0 text-[11px] font-bold text-[#0A66C2] border-[#0A66C2] bg-[#EEF3F8] hover:bg-[#0A66C2] hover:text-white px-3 py-1 rounded-full transition-all">
+                            <button className="shrink-0 border border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-xs font-bold transition-all">
                                 + Follow
                             </button>
                         </div>
@@ -59,7 +59,7 @@ export default function RightBar() {
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                 <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp size={14} className="text-[#0A66C2]" />
+                    <TrendingUp size={14} className="text-indigo-600" />
                     <h2 className="font-bold text-sm text-slate-900">Trending Projects</h2>
                 </div>
 
@@ -69,10 +69,10 @@ export default function RightBar() {
                         return (
                             <div key={p.title} className="group cursor-pointer">
                                 <div className="flex items-start justify-between gap-2">
-                                    <h3 className="text-[13px] font-bold text-slate-800 group-hover:text-[#0A66C2] transition-colors leading-tight">
+                                    <h3 className="text-[13px] font-bold text-slate-800 transition-colors leading-tight">
                                         {p.title}
                                     </h3>
-                                    <span className="text-[10px] font-bold text-[#0A66C2] bg-[#EEF3F8] px-1.5 py-0.5 rounded-md shrink-0">
+                                    <span className="text-[10px] font-bold text-indigo-600 bg-[#EEF3F8] px-1.5 py-0.5 rounded-md shrink-0">
                                         {pct}%
                                     </span>
                                 </div>

@@ -12,7 +12,7 @@ const actions = [
 export default function Postbox() {
     const [focused, setFocused] = useState(false);
     return (
-        <div className={`bg-white rounded-2xl border shadow-sm transition-all duration-300 ${focused ? "border-[#0A66C2] shadow-[#0A66C2]" : "border-slate-200"}`}>
+        <div className={`bg-white rounded-2xl border shadow-sm transition-all duration-300 ${focused ? "border-indigo-500 ring-4 ring-indigo-500/10 shadow-lg" : "border-slate-200 shadow-sm"}`}>
             <div className="p-4">
                 <div className="flex gap-3 items-center">
                     <div className="h-11 w-11 bg-linear-to-br from-[#0A66C2] to-[#004182] rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">

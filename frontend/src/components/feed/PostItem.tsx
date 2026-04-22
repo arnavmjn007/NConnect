@@ -27,7 +27,7 @@ export default function PostItem() {
                     </div>
                     <div>
                         <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors flex items-center gap-1.5">
-                            Sureson Maharjan
+                            Suraj Maharjan
                             <span className="text-slate-300 font-normal text-[10px] bg-slate-100 px-1.5 py-0.5 rounded-md">1st</span>
                         </h4>
                         <p className="text-[11px] text-slate-500 leading-tight mt-0.5">CEH Certified · Senior Auditor</p>
@@ -52,10 +52,10 @@ export default function PostItem() {
             </div>
 
             <div className="mx-4 mb-3 rounded-xl overflow-hidden">
-                <div className="bg-linear-to-br from-orange-500 to-rose-600 h-44 flex items-end p-5">
+                <div className="bg-linear-to-br from-slate-900 to-indigo-900 h-48 flex items-end p-5">
                     <div>
-                        <p className="text-orange-200 text-[11px] font-semibold uppercase tracking-widest mb-1">Featured</p>
-                        <h3 className="text-white font-black text-xl leading-tight">Audit of Stockbrokers</h3>
+                        <p className="text-indigo-300 text-[11px] font-semibold uppercase tracking-widest mb-1">Featured</p>
+                        <h3 className="text-white font-bold text-2xl leading-tight">Audit of Stockbrokers</h3>
                     </div>
                 </div>
             </div>
@@ -77,7 +77,7 @@ export default function PostItem() {
                         <button
                             key={label}
                             onClick={label === "Like" ? handleLike : undefined}
-                            className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-[12px] font-semibold
+                            className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-xs font-semibold
                                 ${isActive ? activeColor : `text-slate-500 ${color}`}
                                 hover:bg-slate-50`}
                         >

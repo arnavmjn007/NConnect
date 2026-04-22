@@ -74,7 +74,7 @@ export default function Sidebar() {
                     </div>
 
                     <div className="space-y-2">
-                        <h2 className="font-bold text-base text-slate-900 leading-tight hover:text-[#0A66C2] cursor-pointer transition-colors">
+                        <h2 className="font-bold text-base text-slate-900 leading-tight cursor-pointer transition-colors">
                             {user.name}
                         </h2>
 
@@ -135,7 +135,7 @@ export default function Sidebar() {
                         key={label}
                         className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group"
                     >
-                        <Icon size={16} className="text-slate-400 group-hover:text-[#0A66C2] transition-colors" />
+                        <Icon size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
                         <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
                     </button>
                 ))}
