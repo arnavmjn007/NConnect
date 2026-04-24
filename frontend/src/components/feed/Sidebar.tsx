@@ -43,7 +43,6 @@ const StatItem = ({
 
 export default function Sidebar() {
     const isNGO = user.role === "ngo";
-
     return (
         <div className="flex flex-col gap-3">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -57,9 +56,7 @@ export default function Sidebar() {
                         }}
                     />
                 </div>
-
                 <div className="px-4 pb-4">
-
                     <div className="relative -mt-8 mb-3 flex justify-start">
                         <div className="h-16 w-16 bg-white p-1 rounded-xl border border-slate-100 shadow-md">
                             <div className="h-full w-full bg-linear-to-br from-[#0A66C2] to-[#004182] rounded-lg flex items-center justify-center text-white font-bold text-xl">
@@ -72,12 +69,10 @@ export default function Sidebar() {
                             </span>
                         )}
                     </div>
-
                     <div className="space-y-2">
                         <h2 className="font-bold text-base text-slate-900 leading-tight cursor-pointer transition-colors">
                             {user.name}
                         </h2>
-
                         <div className="space-y-1">
                             {[
                                 { Icon: MapPin, text: user.location },
@@ -91,8 +86,6 @@ export default function Sidebar() {
                             ))}
                         </div>
                     </div>
-
-
                     <div className="mt-4 pt-3 border-t border-slate-100 flex">
                         <StatItem value={user.stats.following} label="Following" color="text-[#0A66C2]" />
                         <StatItem value={user.stats.applications} label="Apps" color="text-emerald-600" border />
@@ -100,7 +93,6 @@ export default function Sidebar() {
                     </div>
                 </div>
             </div>
-
             {isNGO && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Management</p>
@@ -117,14 +109,13 @@ export default function Sidebar() {
                                 <span className="text-sm font-semibold text-slate-700">{label}</span>
                             </div>
                             {badge
-                                ? <span className="bg-[#0A66C2] text-[#0A66C2] text-[10px] font-bold px-2 py-0.5 rounded-full">{badge}</span>
+                                ? <span className="bg-[#0A66C2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{badge}</span>
                                 : <ArrowUpRight size={13} className="text-slate-300 group-hover:text-slate-500 transition-colors" />
                             }
                         </button>
                     ))}
                 </div>
             )}
-
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Quick Access</p>
                 {[

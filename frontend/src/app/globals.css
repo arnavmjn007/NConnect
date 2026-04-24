@@ -25,6 +25,12 @@ body {
 }
 
 .btn-brand {
-  @apply text-indigo-600 border-indigo-600 hover:bg-indigo-600 hover:text-white transition-all;
+  color: #4F46E5; 
+  border-color: #4F46E5; 
+  transition: all 0.2s;
+}
+.btn-brand:hover {
+  background-color: #4F46E5; 
+  color: #fff; 
 }
 
