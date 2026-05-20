@@ -4,6 +4,7 @@ import PostItem from "@/components/feed/PostItem";
 import RightBar from "@/components/feed/RightBar";
 import Postbox from "@/components/feed/Postbox"; // Fixed casing
 
+const MOCK_POST_COUNT = 12;
 
 export default function Home() {
   return (
@@ -17,18 +18,9 @@ export default function Home() {
           <main className="col-span-1 md:col-span-6 space-y-4 pb-10">
             <Postbox />
             <div className="space-y-4">
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
-              <PostItem />
+              {Array.from({ length: MOCK_POST_COUNT }).map((_, index) => (
+                <PostItem key={index} />
+              ))}
             </div>
           </main>
 

@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Search, Plus, Package, MapPin } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import SiteFooter from '@/components/ui/SiteFooter';
 
 type Status = "Available" | "Requested" | "Shared";
 
@@ -44,13 +43,6 @@ export default function ResourcesPage() {
         const matchStatus = statusFilter === "All Status" || r.status === statusFilter;
         return matchSearch && matchType && matchStatus;
     });
-
-    const footerLinks = [
-        { name: 'About', href: '/about' },
-        { name: 'Accessibility', href: '/accessibility' },
-        { name: 'Help Center', href: '/help' },
-        { name: 'Privacy & Terms', href: '/privacy' },
-    ];
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
@@ -167,21 +159,7 @@ export default function ResourcesPage() {
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                            {footerLinks.map(link => (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
-                        </div>
-                        <div className="flex items-center justify-center gap-1.5 mt-3">
-                            <Image src="/logo.png" alt="NConnect" width={60} height={60} />
-                            <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
+                            <SiteFooter />
                         </div>
                     </aside>
                 </div>

@@ -7,15 +7,20 @@ const reactions = [
     { Icon: MessageSquare, label: "Comment", color: "hover:text-emerald-600", activeColor: "text-emerald-600" },
     { Icon: Repeat2, label: "Repost", color: "hover:text-orange-500", activeColor: "text-orange-500" },
     { Icon: Send, label: "Send", color: "hover:text-blue-500", activeColor: "text-blue-500" },
-];
+] as const;
+
+const INITIAL_LIKE_COUNT = 24;
 
 export default function PostItem() {
     const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(24);
+    const [likeCount, setLikeCount] = useState(INITIAL_LIKE_COUNT);
 
     const handleLike = () => {
-        setLiked((prev) => !prev);
-        setLikeCount((prev) => liked ? prev - 1 : prev + 1);
+        setLiked((prev) => {
+            const next = !prev;
+            setLikeCount((count) => (next ? count + 1 : count - 1));
+            return next;
+        });
     };
 
     return (

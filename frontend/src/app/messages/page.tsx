@@ -5,8 +5,7 @@ import {
     Smile, Paperclip, ImageIcon, MoreHorizontal,
     Star, Edit2
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import SiteFooter from '@/components/ui/SiteFooter';
 
 const conversations = [
     {
@@ -34,11 +33,11 @@ const conversations = [
         color: "from-emerald-600 to-emerald-800",
         lastMsg: "Join our reforestation drive", time: "2d", unread: 0, online: false,
     },
-    {
-        id: 6, name: "Hope for Children", initials: "H",
-        color: "from-rose-600 to-rose-800",
-        lastMsg: "Thank you for volunteering!", time: "3d", unread: 0, online: false,
-    },
+    // {
+    //     id: 6, name: "Hope for Children", initials: "H",
+    //     color: "from-rose-600 to-rose-800",
+    //     lastMsg: "Thank you for volunteering!", time: "3d", unread: 0, online: false,
+    // },
 ];
 
 const messagesByConv: Record<number, { id: number; from: string; text: string; time: string }[]> = {
@@ -47,8 +46,8 @@ const messagesByConv: Record<number, { id: number; from: string; text: string; t
         { id: 2, from: "me", text: "Of course! It's such an important cause. How is the project progressing?", time: "10:35 AM" },
         { id: 3, from: "other", text: "We've reached 90% of our goal! We're hoping to break ground on the first well next month.", time: "10:36 AM" },
         { id: 4, from: "other", text: "We'd also love to have you as a volunteer if you're available.", time: "10:36 AM" },
-        { id: 5, from: "me", text: "That's amazing! I'd definitely be interested. What does that involve?", time: "10:40 AM" },
-        { id: 6, from: "other", text: "Mostly logistics and coordination. We're organising a team for June.", time: "10:42 AM" },
+        // { id: 5, from: "me", text: "That's amazing! I'd definitely be interested. What does that involve?", time: "10:40 AM" },
+        // { id: 6, from: "other", text: "Mostly logistics and coordination. We're organising a team for June.", time: "10:42 AM" },
     ],
     2: [
         { id: 1, from: "other", text: "Hello! We noticed your profile and think you'd be a great fit for our upcoming school drive.", time: "9:00 AM" },
@@ -66,10 +65,14 @@ const messagesByConv: Record<number, { id: number; from: string; text: string; t
     5: [
         { id: 1, from: "other", text: "Join our Amazon reforestation drive this April!", time: "Apr 20" },
     ],
-    6: [
-        { id: 1, from: "other", text: "Thank you for signing up to volunteer with us!", time: "Apr 18" },
-    ],
+    // 6: [
+    //     { id: 1, from: "other", text: "Thank you for signing up to volunteer with us!", time: "Apr 18" },
+    // ],
 };
+
+const filters = ["Focused", "Unread", "Starred"] as const;
+const headerActions = [Phone, Video, Star, Info] as React.ElementType[];
+const inputActions = [ImageIcon, Paperclip, Smile] as React.ElementType[];
 
 
 function ConvItem({
@@ -82,9 +85,9 @@ function ConvItem({
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-slate-50
+            className={`w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-slate-100
         ${active
-                    ? "bg-indigo-50/60 border-l-[3px] border-l-indigo-600"
+                    ? "bg-slate-100/80 border-l-[3px] border-l-stone-700"
                     : "hover:bg-slate-50 border-l-[3px] border-l-transparent"}`}
         >
             <div className="relative shrink-0">
@@ -108,7 +111,7 @@ function ConvItem({
             </div>
             {conv.unread > 0 && (
                 <span className="h-5 w-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                    {conv.unread}
+                    {conv.unread > 9 ? "9+" : conv.unread}
                 </span>
             )}
         </button>
@@ -119,9 +122,8 @@ export default function MessagesPage() {
     const [allMessages, setAllMessages] = useState(messagesByConv);
     const [input, setInput] = useState("");
     const [convSearch, setConvSearch] = useState("");
-    const [activeFilter, setActiveFilter] = useState("Focused");
+    const [activeFilter, setActiveFilter] = useState<typeof filters[number]>("Focused");
     const bottomRef = useRef<HTMLDivElement>(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const messages = allMessages[activeConv.id] ?? [];
 
     useEffect(() => {
@@ -141,20 +143,13 @@ export default function MessagesPage() {
     const filteredConvs = conversations.filter(c =>
         c.name.toLowerCase().includes(convSearch.toLowerCase())
     );
-    const filters = ["Focused", "Unread", "Starred"];
-    const footerLinks = [
-    { name: 'About', href: '/about' },
-    { name: 'Accessibility', href: '/accessibility' },
-    { name: 'Help Center', href: '/help' },
-    { name: 'Privacy & Terms', href: '/privacy' },
-];
     return (
-        <div className="bg-[#EEF3F8] min-h-screen">
-            <div className="max-w-7xl mx-auto px-2 md:px-6 py-6">
-                <div className="flex gap-5 items-start">
-                    <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex h-[calc(100vh-8rem)]">
-                        <div className="w-72 border-r border-slate-100 flex flex-col shrink-0">
-                            <div className="px-4 pt-4 pb-3 border-b border-slate-100 shrink-0">
+        <div className="bg-[#F4F2EE] h-screen w-full overflow-hidden flex flex-col select-none">
+            <div className="max-w-300 w-full mx-auto px-4 flex flex-col min-h-0 pt-4 pb-0">
+                <div className="flex-1 flex gap-6 min-h-0 items-stretch">
+                    <div className="flex-1 bg-white rounded-t-xl rounded-b-none border-t border-x border-stone-200 shadow-xs flex min-h-0 h-full overflow-hidden">
+                        <div className="w-[320px] border-r border-stone-200 flex flex-col shrink-0 h-full bg-white">
+                            <div className="px-4 pt-3 pb-3 border-b border-stone-200 shrink-0">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="font-bold text-slate-900 text-base">Messaging</h2>
                                     <div className="flex items-center gap-1">
@@ -182,7 +177,7 @@ export default function MessagesPage() {
                                             key={f}
                                             onClick={() => setActiveFilter(f)}
                                             className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all border ${activeFilter === f
-                                                ? "bg-indigo-600 text-white border-indigo-600"
+                                                ? "bg-emerald-700 text-white border-emerald-700"
                                                 : "border-slate-200 text-slate-500 hover:border-slate-300 bg-white"
                                                 }`}
                                         >
@@ -191,7 +186,7 @@ export default function MessagesPage() {
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto scrollbar-hide">
+                            <div className="flex-1 overflow-y-auto bg-white">
                                 {filteredConvs.map(conv => (
                                     <ConvItem
                                         key={conv.id}
@@ -205,8 +200,8 @@ export default function MessagesPage() {
                                 )}
                             </div>
                         </div>
-                        <div className="flex-1 flex flex-col min-w-0">
-                            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                        <div className="flex-1 flex flex-col min-w-0 h-full bg-white">
+                            <div className="px-4 py-3 border-b border-stone-200 flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <div className={`h-10 w-10 bg-linear-to-br ${activeConv.color} rounded-xl flex items-center justify-center text-white font-bold text-sm`}>
@@ -224,14 +219,14 @@ export default function MessagesPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    {([Phone, Video, Star, Info] as React.ElementType[]).map((Icon, i) => (
+                                    {headerActions.map((Icon, i) => (
                                         <button key={i} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
                                             <Icon size={17} />
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-5 space-y-3 scrollbar-hide bg-slate-50/30">
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
                                 {messages.map(msg => (
                                     <div key={msg.id} className={`flex ${msg.from === "me" ? "justify-end" : "justify-start"}`}>
                                         <div className={`max-w-xs lg:max-w-md flex flex-col gap-1 ${msg.from === "me" ? "items-end" : "items-start"}`}>
@@ -247,9 +242,9 @@ export default function MessagesPage() {
                                 ))}
                                 <div ref={bottomRef} />
                             </div>
-                            <div className="px-4 py-3 border-t border-slate-100 bg-white shrink-0">
-                                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
-                                    {([ImageIcon, Paperclip, Smile] as React.ElementType[]).map((Icon, i) => (
+                            <div className="px-4 py-3 border-t border-stone-200 bg-white shrink-0">
+                                <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 focus-within:border-stone-400 focus-within:ring-1 focus-within:ring-stone-400 transition-all">
+                                    {inputActions.map((Icon, i) => (
                                         <button key={i} className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
                                             <Icon size={17} />
                                         </button>
@@ -273,24 +268,8 @@ export default function MessagesPage() {
                             </div>
                         </div>
                     </div>
-                    <aside className="lg:flex flex-col w-50 sticky top-20 self-start pt-2 shrink-0">
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                            {footerLinks.map(link => (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
-                        </div>
-                        <div className="flex items-center justify-center gap-1.5 mt-3">
-                            <Image src="/logo.png" alt="NConnect" width={60} height={60} />
-                            <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
-                        </div>
+                    <aside className="hidden lg:flex flex-col w-[300px] shrink-0 h-full max-h-full overflow-y-auto">
+                        <SiteFooter />
                     </aside>
                 </div>
             </div>

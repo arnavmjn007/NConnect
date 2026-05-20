@@ -10,22 +10,24 @@ interface InfoLayoutProps {
     showSearch?: boolean;
 }
 
+const FOOTER_TEXT = "© 2026 NConnect Corporation • User Agreement • Privacy Policy • Cookie Policy";
+
 export default function InfoLayout({ title, subtitle, children, showSearch = false }: InfoLayoutProps) {
     return (
         <div className="min-h-screen bg-[#F3F2EF] font-sans text-slate-900">
             <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                    <Link href="/" className="shrink-0">
-                        <Image
-                            src="/logo.png"
-                            alt="NConnect"
-                            width={80}
-                            height={80}
-                            className="rounded-sm object-contain"
-                            priority
-                        />
-                    </Link>
+                        <Link href="/" className="shrink-0">
+                            <Image
+                                src="/logo.png"
+                                alt="NConnect"
+                                width={80}
+                                height={80}
+                                className="rounded-sm object-contain"
+                                priority
+                            />
+                        </Link>
                         <div className="h-6 w-px bg-slate-200 hidden md:block" />
                         <span className="text-slate-500 text-sm font-medium hidden md:block">{title}</span>
                     </div>
@@ -60,7 +62,7 @@ export default function InfoLayout({ title, subtitle, children, showSearch = fal
                 </div>
 
                 <footer className="mt-12 text-center text-slate-400 text-xs pb-12">
-                    © 2026 NConnect Corporation • User Agreement • Privacy Policy • Cookie Policy
+                    {FOOTER_TEXT}
                 </footer>
             </main>
         </div>

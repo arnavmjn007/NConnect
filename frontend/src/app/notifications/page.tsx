@@ -5,8 +5,7 @@ import {
     DollarSign, Bell, Settings, Check,
     Filter, Image as ImageIcon
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import SiteFooter from '@/components/ui/SiteFooter';
 
 type NType = "like" | "comment" | "follow" | "donation" | "project";
 type Tab = "All" | "Mentions" | "Donations" | "Follows";
@@ -38,13 +37,6 @@ const suggested = [
     { name: "Hope for Children", followers: "6.1K", color: "from-rose-600 to-rose-800", initials: "H" },
     { name: "Climate Action Nepal", followers: "3.4K", color: "from-emerald-600 to-emerald-800", initials: "C" },
     { name: "Rural Tech Initiative", followers: "2.8K", color: "from-indigo-600 to-indigo-800", initials: "R" },
-];
-
-const footerLinks = [
-    { name: 'About', href: '/about' },
-    { name: 'Accessibility', href: '/accessibility' },
-    { name: 'Help Center', href: '/help' },
-    { name: 'Privacy & Terms', href: '/privacy' },
 ];
 
 export default function NotificationsPage() {
@@ -103,8 +95,8 @@ export default function NotificationsPage() {
                                             key={tab}
                                             onClick={() => setActiveTab(tab)}
                                             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab === tab
-                                                    ? "border-indigo-600 text-indigo-600"
-                                                    : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
+                                                ? "border-indigo-600 text-indigo-600"
+                                                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
                                                 }`}
                                         >
                                             {tab}
@@ -169,7 +161,7 @@ export default function NotificationsPage() {
                                 {suggested.map(ngo => (
                                     <div key={ngo.name} className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-3">
-                                            <div className={`h-9 w-9 bg-gradient-to-br ${ngo.color} rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                                            <div className={`h-9 w-9 bg-linear-to-br ${ngo.color} rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0`}>
                                                 {ngo.initials}
                                             </div>
                                             <div>
@@ -180,8 +172,8 @@ export default function NotificationsPage() {
                                         <button
                                             onClick={() => toggleFollow(ngo.name)}
                                             className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-all border ${followed[ngo.name]
-                                                    ? "bg-indigo-600 text-white border-indigo-600"
-                                                    : "border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
+                                                ? "bg-indigo-600 text-white border-indigo-600"
+                                                : "border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
                                                 }`}
                                         >
                                             {followed[ngo.name] ? "Following" : "+ Follow"}
@@ -190,23 +182,9 @@ export default function NotificationsPage() {
                                 ))}
                             </div>
                         </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                {footerLinks.map(link => (
-                    <Link
-                        key={link.name}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-                    >
-                        {link.name}
-                    </Link>
-                ))}
-            </div>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-                <Image src="/logo.png" alt="NConnect" width={60} height={60} />
-                <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
-            </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
+                            <SiteFooter />
+                        </div>
                     </aside>
                 </div>
             </div>

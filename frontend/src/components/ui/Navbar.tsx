@@ -42,7 +42,7 @@ const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
                 />
                 {badge && badge > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
-                        {badge}
+                        {badge > 9 ? "9+" : badge}
                     </span>
                 )}
             </div>

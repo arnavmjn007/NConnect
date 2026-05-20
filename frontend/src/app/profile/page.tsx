@@ -1,8 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { MapPin, Mail, Calendar, Edit3, Briefcase, Check, DollarSign, Users, Activity } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { MapPin, Mail, Calendar, Edit3, Briefcase, Check, Activity } from 'lucide-react';
+import SiteFooter from '@/components/ui/SiteFooter';
 
 const user = {
     name: "John Doe",
@@ -44,13 +43,6 @@ const tabs = [
     { key: "applications", label: "Applications", count: 3 },
     { key: "donations", label: "Donations", count: 3 },
     { key: "activity", label: "Activity", count: 2 },
-];
-
-const footerLinks = [
-    { name: 'About', href: '/about' },
-    { name: 'Accessibility', href: '/accessibility' },
-    { name: 'Help Center', href: '/help' },
-    { name: 'Privacy & Terms', href: '/privacy' },
 ];
 
 export default function ProfilePage() {
@@ -122,8 +114,8 @@ export default function ProfilePage() {
                                 key={key}
                                 onClick={() => setActiveTab(key)}
                                 className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab === key
-                                        ? "border-indigo-600 text-indigo-600"
-                                        : "border-transparent text-slate-500 hover:text-slate-800"
+                                    ? "border-indigo-600 text-indigo-600"
+                                    : "border-transparent text-slate-500 hover:text-slate-800"
                                     }`}
                             >
                                 {label}
@@ -152,8 +144,8 @@ export default function ProfilePage() {
                                         <button
                                             onClick={() => toggleFollow(ngo.id)}
                                             className={`w-full text-xs font-bold py-2 rounded-xl transition-all border ${ngo.following
-                                                    ? "border-slate-200 text-slate-600 hover:border-red-300 hover:text-red-500"
-                                                    : "border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
+                                                ? "border-slate-200 text-slate-600 hover:border-red-300 hover:text-red-500"
+                                                : "border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
                                                 }`}
                                         >
                                             {ngo.following ? "Unfollow" : "+ Follow"}
@@ -201,23 +193,9 @@ export default function ProfilePage() {
                         )}
                     </div>
                 </div>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                {footerLinks.map(link => (
-                    <Link
-                        key={link.name}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-                    >
-                        {link.name}
-                    </Link>
-                ))}
-            </div>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-                <Image src="/logo.png" alt="NConnect" width={60} height={60} />
-                <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
-            </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
+                    <SiteFooter />
+                </div>
             </div>
         </div>
     );
