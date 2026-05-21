@@ -10,7 +10,8 @@ import SiteFooter from '@/components/ui/SiteFooter';
 type NType = "like" | "comment" | "follow" | "donation" | "project";
 type Tab = "All" | "Mentions" | "Donations" | "Follows";
 
-const notifConfig: Record<NType, { Icon: React.ElementType; color: string; bg: string }> = {
+
+const NOTIF_CONFIG: Record<NType, { Icon: React.ElementType; color: string; bg: string }> = {
     like: { Icon: ThumbsUp, color: "text-blue-600", bg: "bg-blue-50" },
     comment: { Icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-50" },
     follow: { Icon: UserPlus, color: "text-violet-600", bg: "bg-violet-50" },
@@ -18,7 +19,15 @@ const notifConfig: Record<NType, { Icon: React.ElementType; color: string; bg: s
     project: { Icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
 };
 
-const seed = [
+const TAB_TYPE_MAP: Partial<Record<Tab, NType>> = {
+    Mentions: "like",
+    Donations: "donation",
+    Follows: "follow",
+};
+
+const TABS: Tab[] = ["All", "Mentions", "Donations", "Follows"];
+
+const INITIAL_NOTIFS = [
     { id: 1, type: "donation" as NType, actor: "Water for All", action: "thanked you for your $50 donation to", subject: "Clean Water Initiative", time: "2 minutes ago", unread: true, tab: "Donations" as Tab },
     { id: 2, type: "follow" as NType, actor: "Education Alliance", action: "started following you", subject: "", time: "1 hour ago", unread: true, tab: "Follows" as Tab },
     { id: 3, type: "like" as NType, actor: "Suraj Maharjan", action: "liked your post about", subject: "Nepal's digital trust initiative", time: "3 hours ago", unread: false, tab: "Mentions" as Tab },
@@ -30,10 +39,7 @@ const seed = [
     { id: 9, type: "like" as NType, actor: "Arnav Maharjan", action: "liked your comment on", subject: "Clean Water Initiative", time: "4 days ago", unread: false, tab: "Mentions" as Tab },
 ];
 
-const tabs: Tab[] = ["All", "Mentions", "Donations", "Follows"];
-
-
-const suggested = [
+const SUGGESTED_NGOS = [
     { name: "Hope for Children", followers: "6.1K", color: "from-rose-600 to-rose-800", initials: "H" },
     { name: "Climate Action Nepal", followers: "3.4K", color: "from-emerald-600 to-emerald-800", initials: "C" },
     { name: "Rural Tech Initiative", followers: "2.8K", color: "from-indigo-600 to-indigo-800", initials: "R" },
@@ -41,17 +47,23 @@ const suggested = [
 
 export default function NotificationsPage() {
     const [activeTab, setActiveTab] = useState<Tab>("All");
-    const [notifs, setNotifs] = useState(seed);
+    const [notifs, setNotifs] = useState(INITIAL_NOTIFS);
     const [followed, setFollowed] = useState<Record<string, boolean>>({});
 
-    const markAllRead = () => setNotifs(prev => prev.map(n => ({ ...n, unread: false })));
-    const markRead = (id: number) => setNotifs(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    const markAllRead = () =>
+        setNotifs(prev => prev.map(n => ({ ...n, unread: false })));
 
-    const displayed = activeTab === "All" ? notifs : notifs.filter(n => n.tab === activeTab || n.type === activeTab.toLowerCase().slice(0, -1));
-    const unreadCount = notifs.filter(n => n.unread).length;
+    const markRead = (id: number) =>
+        setNotifs(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
 
     const toggleFollow = (name: string) =>
         setFollowed(prev => ({ ...prev, [name]: !prev[name] }));
+
+    const displayed = activeTab === "All"
+        ? notifs
+        : notifs.filter(n => n.tab === activeTab);
+
+    const unreadCount = notifs.filter(n => n.unread).length;
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
@@ -84,12 +96,14 @@ export default function NotificationsPage() {
                                 </button>
                             </div>
                         </div>
+
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="flex border-b border-slate-100 px-2 pt-2">
-                                {tabs.map(tab => {
+                                {TABS.map(tab => {
                                     const count = tab === "All"
                                         ? notifs.length
                                         : notifs.filter(n => n.tab === tab).length;
+
                                     return (
                                         <button
                                             key={tab}
@@ -100,7 +114,9 @@ export default function NotificationsPage() {
                                                 }`}
                                         >
                                             {tab}
-                                            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${activeTab === tab ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-500"
+                                            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${activeTab === tab
+                                                ? "bg-indigo-100 text-indigo-600"
+                                                : "bg-slate-100 text-slate-500"
                                                 }`}>
                                                 {count}
                                             </span>
@@ -116,7 +132,7 @@ export default function NotificationsPage() {
                                     </div>
                                 )}
                                 {displayed.map(notif => {
-                                    const { Icon, color, bg } = notifConfig[notif.type];
+                                    const { Icon, color, bg } = NOTIF_CONFIG[notif.type];
                                     return (
                                         <div
                                             key={notif.id}
@@ -155,10 +171,12 @@ export default function NotificationsPage() {
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="font-bold text-sm text-slate-900">Suggested NGOs</h2>
-                                <span className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer">See all</span>
+                                <span className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer">
+                                    See all
+                                </span>
                             </div>
                             <div className="space-y-3">
-                                {suggested.map(ngo => (
+                                {SUGGESTED_NGOS.map(ngo => (
                                     <div key={ngo.name} className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-3">
                                             <div className={`h-9 w-9 bg-linear-to-br ${ngo.color} rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0`}>
@@ -182,9 +200,7 @@ export default function NotificationsPage() {
                                 ))}
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                            <SiteFooter />
-                        </div>
+                        <SiteFooter />
                     </aside>
                 </div>
             </div>
