@@ -19,11 +19,6 @@ const NOTIF_CONFIG: Record<NType, { Icon: React.ElementType; color: string; bg: 
     project: { Icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
 };
 
-const TAB_TYPE_MAP: Partial<Record<Tab, NType>> = {
-    Mentions: "like",
-    Donations: "donation",
-    Follows: "follow",
-};
 
 const TABS: Tab[] = ["All", "Mentions", "Donations", "Follows"];
 
