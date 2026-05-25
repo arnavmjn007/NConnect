@@ -1,7 +1,6 @@
 import React from 'react';
 import { Droplets, Utensils, GraduationCap, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
+import SiteFooter from '../ui/SiteFooter';
 
 const ProgressBar = ({ raised, goal }: { raised: number; goal: number }) => {
     const pct = Math.min((raised / goal) * 100, 100);
@@ -26,13 +25,6 @@ const projects = [
     { title: "Clean Water Initiative", raised: 45000, goal: 50000 },
     { title: "School Supplies Drive", raised: 12000, goal: 20000 },
     { title: "Emergency Relief Fund", raised: 78000, goal: 100000 },
-];
-
-const footerLinks = [
-    { name: 'About', href: '/about' },
-    { name: 'Accessibility', href: '/accessibility' },
-    { name: 'Help Center', href: '/help' },
-    { name: 'Privacy & Terms', href: '/privacy' },
 ];
 
 export default function RightBar() {
@@ -97,21 +89,7 @@ export default function RightBar() {
             </div>
 
             <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                {footerLinks.map(link => (
-                    <Link
-                        key={link.name}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-                    >
-                        {link.name}
-                    </Link>
-                ))}
-            </div>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-                <Image src="/logo.png" alt="NConnect" width={60} height={60} />
-                <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
+                <SiteFooter />
             </div>
         </div>
     );
