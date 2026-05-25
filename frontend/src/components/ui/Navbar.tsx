@@ -117,21 +117,21 @@ export default function Navbar() {
                                 <span className="hidden md:block text-[11px] mt-1 font-semibold text-slate-500">Me</span>
                             </Link>
 
-                            <a
+                            <Link
                                 href="/api/auth/logout"
                                 className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
                                 title="Sign Out"
                             >
                                 <LogOut size={18} />
-                            </a>
+                            </Link>
                         </div>
                     ) : (
-                        <a
+                        <Link
                             href="/api/auth/login"
                             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition-all whitespace-nowrap ml-2"
                         >
                             Sign In
-                        </a>
+                        </Link>
                     )}
                 </div>
             </div>
