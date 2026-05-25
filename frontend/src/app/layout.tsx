@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
+import { Auth0Provider } from "@auth0/nextjs-auth0";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
-        {!isInfoPage && <Navbar />}
-        <main>
-          {children}
-        </main>
+        <Auth0Provider>
+          {!isInfoPage && <Navbar />}
+          <main>
+            {children}
+          </main>
+        </Auth0Provider>
       </body>
     </html>
   );
