@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import {
     Home,
     MessageSquare,
@@ -11,9 +12,11 @@ import {
     Bell,
     Package,
     FolderOpen,
-    LucideIcon
+    LucideIcon,
+    LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
 
 interface NavItemProps {
     href: string;
@@ -57,6 +60,7 @@ const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
 };
 
 export default function Navbar() {
+    const { user, isLoading } = useAuth();
     return (
         <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
             <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 md:px-6">
@@ -64,10 +68,10 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 flex-1">
                     <Link href="/" className="shrink-0">
                         <Image
-                            src="/logo.png"
+                            src="/Logo.png"
                             alt="NConnect"
-                            width={80}
-                            height={80}
+                            width={90}
+                            height={90}
                             className="rounded-sm object-contain"
                             priority
                         />
@@ -96,7 +100,39 @@ export default function Navbar() {
 
                     <div className="hidden md:block h-8 w-px bg-slate-200 mx-2" />
 
-                    <NavItem href="/profile" icon={UserCircle} label="Me" />
+                    {isLoading ? (
+                        <div className="h-8 w-8 bg-slate-200 rounded-full animate-pulse mx-2" />
+                    ) : user ? (
+                        <div className="flex items-center gap-3 pl-2">
+                            <Link href="/profile" className="flex flex-col items-center group">
+                                {user.picture ? (
+                                    <Image
+                                        src={user.picture}
+                                        alt={user.name || "Profile"}
+                                        className="h-8 w-8 rounded-full border border-slate-200 object-cover group-hover:scale-105 transition-transform"
+                                    />
+                                ) : (
+                                    <UserCircle size={24} className="text-slate-500" />
+                                )}
+                                <span className="hidden md:block text-[11px] mt-1 font-semibold text-slate-500">Me</span>
+                            </Link>
+
+                            <a
+                                href="/api/auth/logout"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                                title="Sign Out"
+                            >
+                                <LogOut size={18} />
+                            </a>
+                        </div>
+                    ) : (
+                        <a
+                            href="/api/auth/login"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition-all whitespace-nowrap ml-2"
+                        >
+                            Sign In
+                        </a>
+                    )}
                 </div>
             </div>
         </nav>
