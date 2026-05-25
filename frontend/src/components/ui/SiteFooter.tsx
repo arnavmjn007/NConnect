@@ -26,7 +26,7 @@ export default function SiteFooter() {
                 ))}
             </div>
             <div className="flex items-center justify-center gap-1.5">
-                <Image src="/logo.png" alt="NConnect" width={60} height={60} />
+                <Image src="/Logo.png" alt="NConnect" width={70} height={70} />
                 <p className="text-[11px] text-slate-400 font-medium">NConnect Corp © 2026</p>
             </div>
         </div>
