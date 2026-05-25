@@ -1,12 +1,42 @@
+"use client";
 import React from 'react';
 import Sidebar from "@/components/feed/Sidebar";
 import PostItem from "@/components/feed/PostItem";
 import RightBar from "@/components/feed/RightBar";
-import Postbox from "@/components/feed/Postbox"; // Fixed casing
+import Postbox from "@/components/feed/Postbox";
+import { useAuth } from "@/hooks/useAuth";
 
 const MOCK_POST_COUNT = 12;
 
 export default function Home() {
+
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#EEF3F8] min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-[#EEF3F8] min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-sm max-w-sm w-full text-center border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome to NConnect</h2>
+          <p className="text-slate-500 text-sm mb-6">Connect with teammates, share projects, and discover resources.</p>
+          <a
+            href="/api/auth/login"
+            className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm"
+          >
+            Sign In to Continue
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#EEF3F8] min-h-screen">
       <div className="max-w-7xl mx-auto px-2 md:px-6">
