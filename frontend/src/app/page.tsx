@@ -5,6 +5,7 @@ import PostItem from "@/components/feed/PostItem";
 import RightBar from "@/components/feed/RightBar";
 import Postbox from "@/components/feed/Postbox";
 import { useAuth } from "@/hooks/useAuth";
+import Link from "next/link";
 
 const MOCK_POST_COUNT = 12;
 
@@ -25,13 +26,12 @@ export default function Home() {
       <div className="bg-[#EEF3F8] min-h-screen flex flex-col items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-sm max-w-sm w-full text-center border border-slate-200">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome to NConnect</h2>
-          <p className="text-slate-500 text-sm mb-6">Connect with teammates, share projects, and discover resources.</p>
-          <a
+          <Link
             href="/api/auth/login"
             className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm"
           >
             Sign In to Continue
-          </a>
+          </Link>
         </div>
       </div>
     );
