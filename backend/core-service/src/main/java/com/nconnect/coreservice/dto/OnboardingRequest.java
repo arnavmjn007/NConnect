@@ -12,6 +12,7 @@ public class OnboardingRequest {
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 30, message = "Username must be 3-30 characters")
     private String username;
+    private String role;
 
     private String bio;
     private String location;

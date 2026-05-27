@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -16,11 +17,12 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+
     @Transactional
     public UserProfileResponse syncUser(Jwt jwt) {
         String auth0Id = jwt.getSubject();  // "auth0|abc123"
-        String email   = jwt.getClaimAsString("email");
-        String name    = jwt.getClaimAsString("name");
+        String email = jwt.getClaimAsString("email");
+        String name = jwt.getClaimAsString("name");
         String picture = jwt.getClaimAsString("picture");
 
         AppUser user = userRepository.findByAuth0Id(auth0Id)
@@ -51,11 +53,36 @@ public class UserService {
             throw new RuntimeException("Username already taken");
         }
 
+        if (req.getRole() != null) {
+            try {
+                user.setRole(Role.valueOf(req.getRole().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                user.setRole(Role.USER);
+            }
+        }
+
         user.setUsername(req.getUsername());
         user.setBio(req.getBio());
         user.setLocation(req.getLocation());
-        user.setOccupation(req.getOccupation());
-        user.setEducation(req.getEducation());
+
+        if (user.getRole() == Role.NGO) {
+            user.setOccupation(null);
+            user.setEducation(null);
+
+            if (user.getNgoProfile() == null) {
+                NgoProfile profile = NgoProfile.builder()
+                        .user(user)
+                        .organizationName(req.getOccupation())
+                        .build();
+                user.setNgoProfile(profile);
+            } else {
+                user.getNgoProfile().setOrganizationName(req.getOccupation());
+            }
+        } else {
+            user.setOccupation(req.getOccupation());
+            user.setEducation(req.getEducation());
+            user.setNgoProfile(null);
+        }
 
         user.getSkills().clear();
         user.getInterests().clear();
