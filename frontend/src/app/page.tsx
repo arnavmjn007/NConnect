@@ -1,17 +1,25 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from "@/components/feed/Sidebar";
 import PostItem from "@/components/feed/PostItem";
 import RightBar from "@/components/feed/RightBar";
 import Postbox from "@/components/feed/Postbox";
 import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 const MOCK_POST_COUNT = 12;
 
 export default function Home() {
 
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, dbUser, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated && dbUser && !dbUser.onboardingComplete) {
+      router.push("/onboarding");
+    }
+  }, [isAuthenticated, dbUser, router]);
 
   if (isLoading) {
     return (
@@ -27,12 +35,20 @@ export default function Home() {
         <div className="bg-white p-8 rounded-2xl shadow-sm max-w-sm w-full text-center border border-slate-200">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome to NConnect</h2>
           <Link
-            href="/api/auth/login"
+            href="/auth/login"
             className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm"
           >
             Sign In to Continue
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (dbUser && !dbUser.onboardingComplete) {
+    return (
+      <div className="bg-[#EEF3F8] min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
