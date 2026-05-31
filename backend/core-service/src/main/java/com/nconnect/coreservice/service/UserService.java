@@ -10,8 +10,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -20,25 +18,38 @@ public class UserService {
 
     @Transactional
     public UserProfileResponse syncUser(Jwt jwt) {
-        String auth0Id = jwt.getSubject();  // "auth0|abc123"
-        String email = jwt.getClaimAsString("email");
-        String name = jwt.getClaimAsString("name");
-        String picture = jwt.getClaimAsString("picture");
+        String auth0Id = jwt.getSubject();
 
-        AppUser user = userRepository.findByAuth0Id(auth0Id)
+        return userRepository.findByAuth0Id(auth0Id)
+                .map(UserProfileResponse::from)
                 .orElseGet(() -> {
-                    AppUser newUser = AppUser.builder()
-                            .auth0Id(auth0Id)
-                            .email(email)
-                            .fullName(name)
-                            .profileImageUrl(picture)
-                            .role(Role.USER)
-                            .onboardingComplete(false)
-                            .build();
-                    return userRepository.save(newUser);
-                });
+                    String email = jwt.getClaimAsString("email");
+                    if (email == null) {
+                        email = jwt.getClaimAsString("https://uni-auth-project.jp.auth0.com/email");
+                    }
+                    if (email == null) {
+                        email = auth0Id.replace("|", "_") + "@placeholder.nconnect.local";
+                    }
+                    final String finalEmail = email;
+                    final String name = jwt.getClaimAsString("name");
+                    final String picture = jwt.getClaimAsString("picture");
 
-        return UserProfileResponse.from(user);
+                    try {
+                        AppUser newUser = AppUser.builder()
+                                .auth0Id(auth0Id)
+                                .email(finalEmail)
+                                .fullName(name)
+                                .profileImageUrl(picture)
+                                .role(Role.USER)
+                                .onboardingComplete(false)
+                                .build();
+                        return UserProfileResponse.from(userRepository.save(newUser));
+                    } catch (Exception e) {
+                        return userRepository.findByAuth0Id(auth0Id)
+                                .map(UserProfileResponse::from)
+                                .orElseThrow(() -> new RuntimeException("Failed to sync user"));
+                    }
+                });
     }
 
     @Transactional
