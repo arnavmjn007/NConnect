@@ -4,7 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
     try {
         const { token } = await auth0.getAccessToken();
-        const body = await request.json();
+        let body = await request.json();
+
+        if (body.role === "NGO") {
+            body = {
+                ...body,
+                organizationName: body.occupation,
+                missionStatement: body.bio,
+                operatingLocations: body.location,
+                ngoCategories: body.interests && body.interests.length > 0
+                    ? body.interests.join(", ")
+                    : null
+            };
+        }
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/onboarding`, {
             method: "POST",
