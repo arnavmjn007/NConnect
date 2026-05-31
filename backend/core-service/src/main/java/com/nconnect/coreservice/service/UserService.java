@@ -80,14 +80,28 @@ public class UserService {
             user.setOccupation(null);
             user.setEducation(null);
 
+            String categoriesStr = req.getInterests() != null ? String.join(", ", req.getInterests()) : null;
+
             if (user.getNgoProfile() == null) {
                 NgoProfile profile = NgoProfile.builder()
                         .user(user)
                         .organizationName(req.getOccupation())
+                        .missionStatement(req.getBio())
+                        .operatingLocations(req.getLocation())
+                        .ngoCategories(categoriesStr)
+                        .organizationLogoUrl(user.getProfileImageUrl())
+                        .verificationStatus("PENDING")
                         .build();
                 user.setNgoProfile(profile);
             } else {
                 user.getNgoProfile().setOrganizationName(req.getOccupation());
+                user.getNgoProfile().setMissionStatement(req.getBio());
+                user.getNgoProfile().setOperatingLocations(req.getLocation());
+                user.getNgoProfile().setNgoCategories(categoriesStr);
+
+                if (user.getNgoProfile().getOrganizationLogoUrl() == null) {
+                    user.getNgoProfile().setOrganizationLogoUrl(user.getProfileImageUrl());
+                }
             }
         } else {
             user.setOccupation(req.getOccupation());
