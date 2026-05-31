@@ -26,6 +26,7 @@ export default function OnboardingPage() {
         bio: "",
         location: "",
         occupation: "",
+        education: "",
         skills: [] as string[],
         interests: [] as string[],
         causes: [] as string[],
@@ -54,8 +55,12 @@ export default function OnboardingPage() {
         try {
             await submitOnboarding(form);
             router.push('/');
-        } catch {
-            setError("Something went wrong saving your profile. Please try again.");
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Something went wrong. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -161,6 +166,18 @@ export default function OnboardingPage() {
                                             placeholder={form.role === "NGO" ? "e.g., Red Cross Foundation" : "Student / Engineer"}
                                             value={form.occupation}
                                             onChange={e => setForm(p => ({ ...p, occupation: e.target.value }))}
+                                            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Education
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. BSc Computer Science, TU"
+                                            value={form.education}
+                                            onChange={e => setForm(p => ({ ...p, education: e.target.value }))}
                                             className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all"
                                         />
                                     </div>
