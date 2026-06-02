@@ -1,26 +1,35 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter, usePathname } from "next/navigation";
-import { getMe, syncUser } from "@/lib/api";
+import { syncUser, getMe } from "@/lib/api";
 
-type DbUser = {
+export type DbUser = {
     id: string;
     email: string;
     fullName: string | null;
     username: string | null;
     bio: string | null;
     role: "USER" | "NGO" | "ADMIN";
+    location: string | null;
+    occupation: string | null;
+    education: string | null;
     profileImageUrl: string | null;
     onboardingComplete: boolean;
     skills: string[];
     interests: string[];
     languages: string[];
     causes: string[];
+
+    organizationName: string | null;
+    missionStatement: string | null;
+    ngoCategories: string | null;
+    operatingLocations: string | null;
+    verificationStatus: "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | null;
+    verified: boolean;
 };
 
 const SYNC_KEY = "nconnect_synced";
-
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 800): Promise<T> {
     for (let i = 0; i < retries; i++) {
@@ -29,15 +38,12 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 800): P
         } catch (err) {
             const isLast = i === retries - 1;
             const message = (err instanceof Error ? err.message : "").toLowerCase();
-
-            const isAuthError = 
+            const isAuthError =
                 message.includes("not authenticated") ||
                 message.includes("unauthorized") ||
                 message.includes("401") ||
                 message.includes("session");
-
             if (isLast || !isAuthError) throw err;
-            console.warn(`Sync attempt ${i + 1} failed, retrying in ${delayMs * (i + 1)}ms...`);
             await new Promise(res => setTimeout(res, delayMs * (i + 1)));
         }
     }
@@ -48,39 +54,37 @@ export function useAuth() {
     const { user, error, isLoading: isAuth0Loading } = useUser();
     const router = useRouter();
     const pathname = usePathname();
-
     const [dbUser, setDbUser] = useState<DbUser | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
-
     const syncingRef = useRef(false);
+
+    const refreshUser = useCallback(async () => {
+        const profile = await getMe();
+        setDbUser(profile);
+        return profile;
+    }, []);
 
     useEffect(() => {
         if (isAuth0Loading) return;
-
         if (!user) {
             sessionStorage.removeItem(SYNC_KEY);
             setDbUser(null);
             return;
         }
-
         if (syncingRef.current) return;
         syncingRef.current = true;
 
         const doSync = async () => {
             try {
                 setIsSyncing(true);
-
                 let profile: DbUser;
-
                 if (sessionStorage.getItem(SYNC_KEY)) {
                     profile = await withRetry(() => getMe());
                 } else {
                     profile = await withRetry(() => syncUser());
                     sessionStorage.setItem(SYNC_KEY, "1");
                 }
-
                 setDbUser(profile);
-
                 if (!profile.onboardingComplete && pathname !== "/onboarding") {
                     router.push("/onboarding");
                 }
@@ -96,12 +100,5 @@ export function useAuth() {
         doSync();
     }, [user, isAuth0Loading, pathname, router]);
 
-
-    return {
-        user,
-        dbUser,
-        error,
-        isAuthenticated: !!user,
-        isLoading: isAuth0Loading || isSyncing,
-    };
+    return { user, dbUser, error, isAuthenticated: !!user, isLoading: isAuth0Loading || isSyncing, refreshUser };
 }

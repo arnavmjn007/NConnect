@@ -66,7 +66,7 @@ export default function ProjectsPage() {
                                 >
                                     {Icon
                                         ? <Icon size={15} className={activeCategory === value ? "text-indigo-600" : "text-slate-400"} />
-                                        : <div className="w-[15px]" />
+                                        : <div className="w-3.75" />
                                     }
                                     {label}
                                 </button>
