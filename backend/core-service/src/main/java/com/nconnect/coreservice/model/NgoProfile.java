@@ -1,12 +1,18 @@
 package com.nconnect.coreservice.model;
 
+import com.nconnect.coreservice.model.enums.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.UUID;
 
 @Entity
 @Table(name = "ngo_profiles")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class NgoProfile {
 
     @Id
@@ -23,25 +29,27 @@ public class NgoProfile {
     @Column(name = "mission_statement", columnDefinition = "TEXT")
     private String missionStatement;
 
+    @Column(name = "ngo_categories")
+    private String ngoCategories;
+
+    @Column(name = "operating_locations")
+    private String operatingLocations;
+
+    // Filled during verification step, not onboarding
     @Column(name = "registration_number")
     private String registrationNumber;
-
-    @Column(name = "founded_year")
-    private Integer foundedYear;
 
     @Column(name = "website_url")
     private String websiteUrl;
 
-    @Column(name = "organization_logo_url")
-    private String organizationLogoUrl;
+    @Column(name = "founded_year")
+    private Integer foundedYear;
 
-    @Column(name = "verification_status")
+    @Column(name = "document_url")
+    private String documentUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false)
     @Builder.Default
-    private String verificationStatus = "PENDING";
-
-    @Column(name = "ngo_categories", columnDefinition = "TEXT")
-    private String ngoCategories;
-
-    @Column(name = "operating_locations", columnDefinition = "TEXT")
-    private String operatingLocations;
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
 }

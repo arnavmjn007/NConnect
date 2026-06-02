@@ -1,4 +1,8 @@
 package com.nconnect.coreservice.model.enums;
 
-public class VerificationStatus {
+public enum VerificationStatus {
+    PENDING,
+    UNDER_REVIEW,
+    VERIFIED,
+    REJECTED
 }

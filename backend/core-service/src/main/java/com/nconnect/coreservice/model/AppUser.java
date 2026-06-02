@@ -15,6 +15,7 @@ import java.util.UUID;
 @Table(name = "app_users")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class AppUser {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(updatable = false, nullable = false)
@@ -41,9 +42,7 @@ public class AppUser {
     private Role role = Role.USER;
 
     private String location;
-
     private String occupation;
-
     private String education;
 
     @Column(name = "profile_image_url")

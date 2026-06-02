@@ -268,7 +268,7 @@ export default function MessagesPage() {
                             </div>
                         </div>
                     </div>
-                    <aside className="hidden lg:flex flex-col w-[300px] shrink-0 h-full max-h-full overflow-y-auto">
+                    <aside className="hidden lg:flex flex-col w-75 shrink-0 h-full max-h-full overflow-y-auto">
                         <SiteFooter />
                     </aside>
                 </div>
