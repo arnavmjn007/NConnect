@@ -6,16 +6,19 @@ import { CreditCard, Lock } from 'lucide-react';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+const NPR_TO_USD_RATE = 133;
+
 interface CheckoutFormProps {
     onSuccess: (paymentIntentId: string) => void;
     onError: (msg: string) => void;
-    amount: number;
+    amountNpr: number;
 }
 
-function CheckoutForm({ onSuccess, onError, amount }: CheckoutFormProps) {
+function CheckoutForm({ onSuccess, onError, amountNpr }: CheckoutFormProps) {
     const stripe = useStripe();
     const elements = useElements();
     const [loading, setLoading] = useState(false);
+    const usdAmount = (amountNpr / NPR_TO_USD_RATE).toFixed(2);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,7 +28,9 @@ function CheckoutForm({ onSuccess, onError, amount }: CheckoutFormProps) {
         try {
             const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
-                confirmParams: { return_url: `${window.location.origin}/verification?payment=success` },
+                confirmParams: {
+                    return_url: `${window.location.origin}/verification?payment=success`,
+                },
                 redirect: "if_required",
             });
 
@@ -50,10 +55,20 @@ function CheckoutForm({ onSuccess, onError, amount }: CheckoutFormProps) {
                 <span>Secured by Stripe — your card details are never stored</span>
             </div>
 
-            <button type="submit" disabled={!stripe || loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                <p>
+                    Charged as <span className="font-bold">${usdAmount} USD</span> (≈ NPR {amountNpr.toLocaleString()} at sandbox rate).
+                    eSewa is recommended for local NPR payments.
+                </p>
+            </div>
+
+            <button
+                type="submit"
+                disabled={!stripe || loading}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+            >
                 <CreditCard size={15} />
-                {loading ? "Processing..." : `Pay NPR ${amount.toLocaleString()}`}
+                {loading ? "Processing..." : `Pay $${usdAmount} USD via Stripe`}
             </button>
 
             <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-1">
@@ -73,7 +88,6 @@ interface StripePaymentFormProps {
 
 export default function StripePaymentForm({ amount, onSuccess, onError }: StripePaymentFormProps) {
     const [clientSecret, setClientSecret] = useState("");
-    const [paymentIntentId, setPaymentIntentId] = useState("");
     const [loadingIntent, setLoadingIntent] = useState(true);
 
     useEffect(() => {
@@ -85,8 +99,8 @@ export default function StripePaymentForm({ amount, onSuccess, onError }: Stripe
                     body: JSON.stringify({ amount, purpose: "ngo_verification" }),
                 });
                 const data = await res.json();
+                if (!data.clientSecret) throw new Error("No client secret returned");
                 setClientSecret(data.clientSecret);
-                setPaymentIntentId(data.id);
             } catch {
                 onError("Failed to initialize payment");
             } finally {
@@ -108,7 +122,7 @@ export default function StripePaymentForm({ amount, onSuccess, onError }: Stripe
 
     return (
         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe" } }}>
-            <CheckoutForm onSuccess={onSuccess} onError={onError} amount={amount} />
+            <CheckoutForm onSuccess={onSuccess} onError={onError} amountNpr={amount} />
         </Elements>
     );
 }
