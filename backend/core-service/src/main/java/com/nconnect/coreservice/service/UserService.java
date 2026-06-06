@@ -4,6 +4,7 @@ import com.nconnect.coreservice.dto.*;
 import com.nconnect.coreservice.model.*;
 import com.nconnect.coreservice.model.enums.Role;
 import com.nconnect.coreservice.model.enums.VerificationStatus;
+import com.nconnect.coreservice.repository.PaymentRecordRepository;
 import com.nconnect.coreservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PaymentRecordRepository paymentRecordRepository;
 
     @Transactional
     public UserProfileResponse syncUser(Jwt jwt) {
@@ -22,9 +24,8 @@ public class UserService {
         String name = jwt.getClaimAsString("name");
         String picture = jwt.getClaimAsString("picture");
 
-        return userRepository.findByAuth0Id(auth0Id)
+        return userRepository.findByAuth0IdWithCollections(auth0Id)
                 .map(user -> {
-                    // Always update fullName and profileImageUrl from Auth0 on every sync
                     boolean changed = false;
                     if (name != null && !name.equals(user.getFullName())) {
                         user.setFullName(name);
@@ -46,21 +47,23 @@ public class UserService {
                         email = auth0Id.replace("|", "_") + "@placeholder.nconnect.local";
                     }
                     final String finalEmail = email;
-                    final String finalName = name;
-                    final String finalPicture = picture;
 
                     try {
                         AppUser newUser = AppUser.builder()
                                 .auth0Id(auth0Id)
                                 .email(finalEmail)
-                                .fullName(finalName)
-                                .profileImageUrl(finalPicture)
+                                .fullName(name)
+                                .profileImageUrl(picture)
                                 .role(Role.USER)
                                 .onboardingComplete(false)
                                 .build();
-                        return UserProfileResponse.from(userRepository.save(newUser));
+                        userRepository.save(newUser);
+                        return UserProfileResponse.from(
+                                userRepository.findByAuth0IdWithCollections(auth0Id)
+                                        .orElse(newUser)
+                        );
                     } catch (Exception e) {
-                        return userRepository.findByAuth0Id(auth0Id)
+                        return userRepository.findByAuth0IdWithCollections(auth0Id)
                                 .map(UserProfileResponse::from)
                                 .orElseThrow(() -> new RuntimeException("Failed to sync user"));
                     }
@@ -70,7 +73,7 @@ public class UserService {
     @Transactional
     public UserProfileResponse completeUserOnboarding(Jwt jwt, UserOnboardingRequest req) {
         String auth0Id = jwt.getSubject();
-        AppUser user = userRepository.findByAuth0Id(auth0Id)
+        AppUser user = userRepository.findByAuth0IdWithCollections(auth0Id)
                 .orElseThrow(() -> new RuntimeException("User not found — call /sync first"));
 
         validateUsername(req.getUsername(), user.getUsername());
@@ -86,13 +89,16 @@ public class UserService {
         replaceCollections(user, req.getSkills(), req.getInterests(), req.getLanguages(), req.getCauses());
 
         user.setOnboardingComplete(true);
-        return UserProfileResponse.from(userRepository.save(user));
+        userRepository.save(user);
+        return UserProfileResponse.from(
+                userRepository.findByAuth0IdWithCollections(auth0Id).orElseThrow()
+        );
     }
 
     @Transactional
     public UserProfileResponse completeNgoOnboarding(Jwt jwt, NgoOnboardingRequest req) {
         String auth0Id = jwt.getSubject();
-        AppUser user = userRepository.findByAuth0Id(auth0Id)
+        AppUser user = userRepository.findByAuth0IdWithCollections(auth0Id)
                 .orElseThrow(() -> new RuntimeException("User not found — call /sync first"));
 
         validateUsername(req.getUsername(), user.getUsername());
@@ -125,13 +131,16 @@ public class UserService {
         replaceCollections(user, null, null, req.getLanguages(), req.getCauses());
 
         user.setOnboardingComplete(true);
-        return UserProfileResponse.from(userRepository.save(user));
+        userRepository.save(user);
+        return UserProfileResponse.from(
+                userRepository.findByAuth0IdWithCollections(auth0Id).orElseThrow()
+        );
     }
 
     @Transactional
     public UserProfileResponse submitNgoVerification(Jwt jwt, NgoVerificationRequest req) {
         String auth0Id = jwt.getSubject();
-        AppUser user = userRepository.findByAuth0Id(auth0Id)
+        AppUser user = userRepository.findByAuth0IdWithCollections(auth0Id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getRole() != Role.NGO) {
@@ -149,13 +158,28 @@ public class UserService {
         profile.setDocumentUrl(req.getDocumentUrl());
         profile.setVerificationStatus(VerificationStatus.UNDER_REVIEW);
 
-        return UserProfileResponse.from(userRepository.save(user));
+        if (req.getPaymentMethod() != null && req.getPaymentIntentId() != null) {
+            PaymentRecord payment = PaymentRecord.builder()
+                    .user(user)
+                    .paymentMethod(req.getPaymentMethod())
+                    .paymentRef(req.getPaymentIntentId())
+                    .amount(5000)
+                    .purpose("ngo_verification")
+                    .status("COMPLETED")
+                    .build();
+            paymentRecordRepository.save(payment);
+        }
+
+        userRepository.save(user);
+        return UserProfileResponse.from(
+                userRepository.findByAuth0IdWithCollections(auth0Id).orElseThrow()
+        );
     }
 
     @Transactional
     public UserProfileResponse updateProfile(Jwt jwt, UpdateProfileRequest req) {
         String auth0Id = jwt.getSubject();
-        AppUser user = userRepository.findByAuth0Id(auth0Id)
+        AppUser user = userRepository.findByAuth0IdWithCollections(auth0Id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (req.getUsername() != null) {
@@ -166,6 +190,14 @@ public class UserService {
         if (req.getLocation() != null) user.setLocation(req.getLocation());
         if (req.getOccupation() != null) user.setOccupation(req.getOccupation());
         if (req.getEducation() != null) user.setEducation(req.getEducation());
+
+        if (user.getRole() == Role.NGO && user.getNgoProfile() != null) {
+            NgoProfile ngo = user.getNgoProfile();
+            if (req.getOrganizationName() != null) ngo.setOrganizationName(req.getOrganizationName());
+            if (req.getMissionStatement() != null) ngo.setMissionStatement(req.getMissionStatement());
+            if (req.getNgoCategories() != null) ngo.setNgoCategories(req.getNgoCategories());
+            if (req.getOperatingLocations() != null) ngo.setOperatingLocations(req.getOperatingLocations());
+        }
 
         if (req.getSkills() != null) {
             user.getSkills().clear();
@@ -188,7 +220,10 @@ public class UserService {
                     UserCause.builder().user(user).causeName(c).build()));
         }
 
-        return UserProfileResponse.from(userRepository.save(user));
+        userRepository.save(user);
+        return UserProfileResponse.from(
+                userRepository.findByAuth0IdWithCollections(auth0Id).orElseThrow()
+        );
     }
 
     @Transactional
@@ -198,8 +233,9 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    @Transactional(readOnly = true)
     public UserProfileResponse getProfile(Jwt jwt) {
-        AppUser user = userRepository.findByAuth0Id(jwt.getSubject())
+        AppUser user = userRepository.findByAuth0IdWithCollections(jwt.getSubject())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return UserProfileResponse.from(user);
     }
