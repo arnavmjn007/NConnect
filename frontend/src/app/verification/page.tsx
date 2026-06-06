@@ -36,10 +36,12 @@ function VerificationContent() {
 
     useEffect(() => {
         const payment = searchParams.get("payment");
-        const pid = searchParams.get("pid");
+        const oid = searchParams.get("oid");
+        const refId = searchParams.get("refId");
 
-        if (payment === "success" && pid) {
+        if (payment === "success" && oid) {
             const storedAmt = sessionStorage.getItem("esewa_amt") || "5000";
+            const storedPid = sessionStorage.getItem("esewa_pid") || oid;
 
             const verify = async () => {
                 try {
@@ -48,14 +50,14 @@ function VerificationContent() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             amt: storedAmt,
-                            rid: pid,
-                            pid,
+                            rid: refId || oid,
+                            pid: storedPid,
                             scd: process.env.NEXT_PUBLIC_ESEWA_MERCHANT_CODE || "EPAYTEST",
                         }),
                     });
                     const data = await res.json();
                     if (data.verified) {
-                        setPaymentRef(pid);
+                        setPaymentRef(refId || oid);
                         setPaymentDone(true);
                         setPaymentMethod("ESEWA");
                         setStep(3);
@@ -156,7 +158,7 @@ function VerificationContent() {
                 foundedYear: form.foundedYear ? parseInt(form.foundedYear) : null,
                 documentUrl: form.documentUrl,
                 paymentMethod,
-                paymentIntentId: paymentRef,
+                paymentIntentId: paymentRef,   // matches NgoVerificationRequest.paymentIntentId
             });
             await refreshUser();
             router.push("/profile");
@@ -367,11 +369,11 @@ function VerificationContent() {
                                         { label: "Founded Year", value: form.foundedYear || "Not provided" },
                                         { label: "Document", value: form.documentName },
                                         { label: "Payment", value: `NPR ${AMOUNT.toLocaleString()} via ${paymentMethod === "STRIPE" ? "Stripe" : "eSewa"}` },
-                                        { label: "Payment Ref", value: paymentRef.slice(0, 24) + "..." },
+                                        { label: "Payment Ref", value: paymentRef.length > 24 ? paymentRef.slice(0, 24) + "..." : paymentRef },
                                     ].map(({ label, value }) => (
                                         <div key={label} className="flex items-center justify-between px-4 py-3">
                                             <span className="text-xs font-semibold text-slate-500">{label}</span>
-                                            <span className="text-xs font-bold text-slate-900 max-w-[200px] truncate text-right">{value}</span>
+                                            <span className="text-xs font-bold text-slate-900 max-w-50 truncate text-right">{value}</span>
                                         </div>
                                     ))}
                                 </div>
