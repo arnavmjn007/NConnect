@@ -124,6 +124,7 @@ export default function MessagesPage() {
     const [convSearch, setConvSearch] = useState("");
     const [activeFilter, setActiveFilter] = useState<typeof filters[number]>("Focused");
     const bottomRef = useRef<HTMLDivElement>(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const messages = allMessages[activeConv.id] ?? [];
 
     useEffect(() => {
