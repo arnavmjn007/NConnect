@@ -1,0 +1,34 @@
+package com.nconnect.coreservice.repository;
+
+import com.nconnect.coreservice.model.Project;
+import com.nconnect.coreservice.model.enums.ProjectStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface ProjectRepository extends JpaRepository<Project, UUID> {
+
+    List<Project> findByStatusOrderByCreatedAtDesc(ProjectStatus status);
+
+    List<Project> findByNgoIdOrderByCreatedAtDesc(UUID ngoId);
+
+    List<Project> findByCategoryAndStatusOrderByCreatedAtDesc(String category, ProjectStatus status);
+
+    @Query("""
+        SELECT p FROM Project p
+        WHERE p.status = 'ACTIVE'
+        AND (:category IS NULL OR p.category = :category)
+        AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%'))
+             OR LOWER(p.requiredSkills) LIKE LOWER(CONCAT('%', :search, '%')))
+        ORDER BY
+            CASE p.priorityLevel WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
+            p.createdAt DESC
+    """)
+    List<Project> searchProjects(@Param("category") String category,
+                                 @Param("search") String search);
+}
