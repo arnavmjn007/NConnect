@@ -19,4 +19,10 @@ public class UpdateProfileRequest {
     private List<String> interests;
     private List<String> languages;
     private List<String> causes;
+
+
+    private String organizationName;
+    private String missionStatement;
+    private String ngoCategories;
+    private String operatingLocations;
 }
