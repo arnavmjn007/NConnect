@@ -13,14 +13,10 @@ import java.util.UUID;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    List<Project> findByStatusOrderByCreatedAtDesc(ProjectStatus status);
-
-    List<Project> findByNgoIdOrderByCreatedAtDesc(UUID ngoId);
-
-    List<Project> findByCategoryAndStatusOrderByCreatedAtDesc(String category, ProjectStatus status);
-
     @Query("""
         SELECT p FROM Project p
+        LEFT JOIN FETCH p.ngo n
+        LEFT JOIN FETCH n.ngoProfile
         WHERE p.status = 'ACTIVE'
         AND (:category IS NULL OR p.category = :category)
         AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%'))
@@ -31,4 +27,23 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     """)
     List<Project> searchProjects(@Param("category") String category,
                                  @Param("search") String search);
+
+    @Query("""
+        SELECT p FROM Project p
+        LEFT JOIN FETCH p.ngo n
+        LEFT JOIN FETCH n.ngoProfile
+        WHERE p.ngo.id = :ngoId
+        ORDER BY p.createdAt DESC
+    """)
+    List<Project> findByNgoIdOrderByCreatedAtDesc(@Param("ngoId") UUID ngoId);
+
+    @Query("""
+        SELECT p FROM Project p
+        LEFT JOIN FETCH p.ngo n
+        LEFT JOIN FETCH n.ngoProfile
+        ORDER BY p.createdAt DESC
+    """)
+    List<Project> findAllWithNgo();
+
+    List<Project> findByStatusOrderByCreatedAtDesc(ProjectStatus status);
 }
