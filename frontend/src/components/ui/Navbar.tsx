@@ -7,8 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import {
     Home, MessageSquare, Search, Bell, Package,
     FolderOpen, LucideIcon, ChevronDown, User,
-    Settings, LogOut, 
-    Shield
+    Settings, LogOut, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +17,10 @@ const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
     const pathname = usePathname();
     const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
     return (
-        <Link href={href} className={cn("relative flex flex-col items-center justify-center min-w-16 md:min-w-20 py-1 transition-all group", isActive ? "text-indigo-600 bg-indigo-50/50 rounded-xl" : "text-slate-500")}>
+        <Link href={href} className={cn(
+            "relative flex flex-col items-center justify-center min-w-16 md:min-w-20 py-1 transition-all group",
+            isActive ? "text-indigo-600 bg-indigo-50/50 rounded-xl" : "text-slate-500"
+        )}>
             <div className="relative">
                 <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} className="transition-transform duration-150 group-hover:scale-110" />
                 {badge && badge > 0 && (
@@ -39,7 +41,6 @@ export default function Navbar() {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const displayName = dbUser?.fullName || user?.name || "User";
-    // const displayEmail = dbUser?.email || user?.email || "";
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
     const occupation = dbUser?.occupation || (dbUser?.role === "NGO" ? "NGO Organization" : null);
     const initial = displayName.charAt(0).toUpperCase();
@@ -118,7 +119,6 @@ export default function Navbar() {
                                             <div className="min-w-0">
                                                 <p className="font-bold text-sm text-slate-900 truncate">{displayName}</p>
                                                 {occupation && <p className="text-xs text-slate-500 truncate">{occupation}</p>}
-                                                {/* <p className="text-[11px] text-slate-400 truncate">{displayEmail}</p> */}
                                             </div>
                                         </div>
                                         <Link
@@ -151,14 +151,6 @@ export default function Navbar() {
                                                 <span className="text-sm font-medium text-slate-700">{label}</span>
                                             </Link>
                                         ))}
-                                        {/* <Link
-                                            href="/settings"
-                                            onClick={() => setDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
-                                        >
-                                            <Settings size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
-                                            <span className="text-sm font-medium text-slate-700">Settings & Privacy</span>
-                                        </Link> */}
                                     </div>
 
                                     <div className="p-2 border-t border-slate-100">

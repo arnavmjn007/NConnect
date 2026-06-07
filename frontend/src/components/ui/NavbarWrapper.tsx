@@ -9,6 +9,7 @@ const HIDDEN_ON = [
     "/accessibility",
     "/login",
     "/onboarding",
+    "/admin",
 ];
 
 export default function NavbarWrapper() {
