@@ -249,10 +249,10 @@ public class UserService {
     }
 
     private void replaceCollections(AppUser user,
-                                    java.util.List<String> skills,
-                                    java.util.List<String> interests,
-                                    java.util.List<String> languages,
-                                    java.util.List<String> causes) {
+                                    java.util.Collection<String> skills,
+                                    java.util.Collection<String> interests,
+                                    java.util.Collection<String> languages,
+                                    java.util.Collection<String> causes) {
         user.getSkills().clear();
         user.getInterests().clear();
         user.getLanguages().clear();
