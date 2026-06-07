@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const NPR_TO_USD_RATE = 133;
 
 export async function POST(request: NextRequest) {
@@ -13,10 +17,7 @@ export async function POST(request: NextRequest) {
             amount: usdCents,
             currency: "usd",
             automatic_payment_methods: { enabled: true },
-            metadata: {
-                purpose,
-                original_amount_npr: amount,
-            },
+            metadata: { purpose, original_amount_npr: amount },
         });
 
         return NextResponse.json({
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest) {
         });
     } catch (err) {
         console.error("Stripe error:", err);
-        return NextResponse.json({ error: "Failed to create payment intent" }, { status: 500 });
+        return NextResponse.json(
+            { error: err instanceof Error ? err.message : "Failed to create payment intent" },
+            { status: 500 }
+        );
     }
 }
