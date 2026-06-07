@@ -117,7 +117,6 @@ public class ResourceService {
         if (resourceRequestRepository.existsByResourceIdAndRequesterId(resourceId, requester.getId())) {
             throw new RuntimeException("You have already requested this resource");
         }
-
         ResourceRequest req = ResourceRequest.builder()
                 .resource(resource)
                 .requester(requester)
