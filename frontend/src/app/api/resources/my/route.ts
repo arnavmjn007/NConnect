@@ -7,8 +7,13 @@ export async function GET() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/my`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        return NextResponse.json(await res.json(), { status: res.status });
-    } catch {
+        if (!res.ok) {
+            const text = await res.text();
+            return NextResponse.json({ error: text }, { status: res.status });
+        }
+        return NextResponse.json(await res.json());
+    } catch (err) {
+        console.error("My resources error:", err);
         return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 }
