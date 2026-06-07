@@ -31,6 +31,7 @@ public class GlobalExceptionHandler {
         if (message.contains("Only NGO")) status = HttpStatus.FORBIDDEN;
         if (message.contains("complete onboarding")) status = HttpStatus.FORBIDDEN;
         if (message.contains("Failed to sync")) status = HttpStatus.BAD_GATEWAY;
+        if (message.contains("Admin access required")) status = HttpStatus.FORBIDDEN;
 
         return ResponseEntity.status(status).body(Map.of("error", message));
     }
