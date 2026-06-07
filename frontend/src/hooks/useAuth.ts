@@ -85,6 +85,14 @@ export function useAuth() {
                     sessionStorage.setItem(SYNC_KEY, "1");
                 }
                 setDbUser(profile);
+
+                if (profile.role === "ADMIN") {
+                    if (!pathname.startsWith("/admin")) {
+                        router.push("/admin");
+                    }
+                    return;
+                }
+
                 if (!profile.onboardingComplete && pathname !== "/onboarding") {
                     router.push("/onboarding");
                 }
