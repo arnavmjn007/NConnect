@@ -71,11 +71,17 @@ function CheckoutForm({ onSuccess, onError, amountNpr }: CheckoutFormProps) {
                 {loading ? "Processing..." : `Pay $${usdAmount} USD via Stripe`}
             </button>
 
-            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-1">
-                <p className="font-semibold text-slate-700">Sandbox Test Card:</p>
-                <p>Card: <span className="font-mono">4242 4242 4242 4242</span></p>
-                <p>Expiry: Any future date &nbsp; CVC: Any 3 digits</p>
-            </div>
+            {process.env.NODE_ENV === "development" && (
+                <details className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
+                    <summary className="font-semibold text-slate-700 cursor-pointer">
+                        Sandbox Test Card
+                    </summary>
+                    <div className="mt-2 space-y-1">
+                        <p>Card: <span className="font-mono">4242 4242 4242 4242</span></p>
+                        <p>Expiry: Any future date · CVC: Any 3 digits</p>
+                    </div>
+                </details>
+            )}
         </form>
     );
 }
