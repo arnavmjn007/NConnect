@@ -1,97 +1,155 @@
 "use client";
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart } from "lucide-react";
+import { likePost, unlikePost, deletePost } from '@/lib/feedApi';
 
-const reactions = [
-    { Icon: ThumbsUp, label: "Like", color: "hover:text-[#0A66C2]", activeColor: "text-[#0A66C2]" },
-    { Icon: MessageSquare, label: "Comment", color: "hover:text-emerald-600", activeColor: "text-emerald-600" },
-    { Icon: Repeat2, label: "Repost", color: "hover:text-orange-500", activeColor: "text-orange-500" },
-    { Icon: Send, label: "Send", color: "hover:text-blue-500", activeColor: "text-blue-500" },
-] as const;
+export interface Post {
+    id: string;
+    author_id: string;
+    content: string | null;
+    media_urls: string[];
+    like_count: number;
+    comment_count: number;
+    liked_by_me: boolean;
+    created_at: string;
+    is_edited: boolean;
+    post_type: string;
+    original_content?: string;
+    original_author_id?: string;
+    repost_comment?: string;
+}
 
-const INITIAL_LIKE_COUNT = 24;
+interface Props {
+    post: Post;
+    currentUserId?: string;
+    onDelete?: (id: string) => void;
+}
 
-export default function PostItem() {
-    const [liked, setLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(INITIAL_LIKE_COUNT);
+export default function PostItem({ post, currentUserId, onDelete }: Props) {
+    const [liked, setLiked] = useState(post.liked_by_me);
+    const [likeCount, setLikeCount] = useState(post.like_count);
+    const [busy, setBusy] = useState(false);
 
-    const handleLike = () => {
-        setLiked((prev) => {
-            const next = !prev;
-            setLikeCount((count) => (next ? count + 1 : count - 1));
-            return next;
-        });
+    const handleLike = async () => {
+        if (busy) return;
+        setBusy(true);
+        try {
+            const data = liked ? await unlikePost(post.id) : await likePost(post.id);
+            setLiked(data.liked);
+            setLikeCount(data.count);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setBusy(false);
+        }
     };
 
+    const handleDelete = async () => {
+        if (!confirm('Delete this post?')) return;
+        try {
+            await deletePost(post.id);
+            onDelete?.(post.id);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const isOwner = currentUserId && post.author_id === currentUserId;
+    const timeAgo = new Date(post.created_at).toLocaleDateString();
+
+    const actions = [
+        { icon: ThumbsUp, label: 'Like', active: liked, color: 'hover:text-[#0A66C2]', activeColor: 'text-[#0A66C2]', onClick: handleLike },
+        { icon: MessageSquare, label: 'Comment', active: false, color: 'hover:text-emerald-600', activeColor: 'text-emerald-600', onClick: undefined },
+        { icon: Repeat2, label: 'Repost', active: false, color: 'hover:text-orange-500', activeColor: 'text-orange-500', onClick: undefined },
+        { icon: Send, label: 'Send', active: false, color: 'hover:text-blue-500', activeColor: 'text-blue-500', onClick: undefined },
+    ] as const;
+
     return (
-        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md group">
+        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
             <div className="p-4 flex justify-between items-start">
                 <div className="flex gap-3">
                     <div className="h-11 w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
-                        S
+                        {post.author_id.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors flex items-center gap-1.5">
-                            Suraj Maharjan
-                            <span className="text-slate-300 font-normal text-[10px] bg-slate-100 px-1.5 py-0.5 rounded-md">1st</span>
+                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors">
+                            {post.author_id}
                         </h4>
-                        <p className="text-[11px] text-slate-500 leading-tight mt-0.5">CEH Certified · Senior Auditor</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">1w · Edited · 🌐</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                            {timeAgo}{post.is_edited && ' · Edited'} · 🌐
+                        </p>
                     </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
-                        <MoreHorizontal size={16} />
-                    </button>
-                    <button className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all">
-                        <X size={16} />
-                    </button>
-                </div>
-            </div>
-
-            <div className="px-4 pb-3">
-                <p className="text-sm text-slate-700 leading-relaxed">
-                    A very timely and important initiative for strengthening the digital trust of Nepal&apos;s capital market.{" "}
-                    <span className="text-[#0A66C2] cursor-pointer hover:underline font-medium">Read more</span>
-                </p>
-            </div>
-
-            <div className="mx-4 mb-3 rounded-xl overflow-hidden">
-                <div className="bg-linear-to-br from-slate-900 to-indigo-900 h-48 flex items-end p-5">
-                    <div>
-                        <p className="text-indigo-300 text-[11px] font-semibold uppercase tracking-widest mb-1">Featured</p>
-                        <h3 className="text-white font-bold text-2xl leading-tight">Audit of Stockbrokers</h3>
+                {isOwner && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
+                            <MoreHorizontal size={16} />
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all"
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
-                </div>
+                )}
             </div>
+
+            {post.post_type === 'repost' && post.original_content && (
+                <div className="mx-4 mb-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    {post.repost_comment && (
+                        <p className="text-sm text-slate-800 mb-2">{post.repost_comment}</p>
+                    )}
+                    <p className="text-xs text-slate-400 mb-1">↩ {post.original_author_id}</p>
+                    <p className="text-sm text-slate-600 italic">{post.original_content}</p>
+                </div>
+            )}
+
+            {post.content && (
+                <div className="px-4 pb-3">
+                    <p className="text-sm text-slate-700 leading-relaxed">{post.content}</p>
+                </div>
+            )}
+
+            {post.media_urls?.length > 0 && (
+                <div className="mx-4 mb-3 rounded-xl overflow-hidden relative w-auto h-80">
+                    <Image
+                        src={post.media_urls[0]}
+                        alt="Post media"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                    />
+                </div>
+            )}
 
             <div className="px-4 pb-2 flex items-center justify-between text-[11px] text-slate-400">
                 <div className="flex items-center gap-1">
                     <span className="h-4 w-4 bg-[#0A66C2] rounded-full flex items-center justify-center">
-                        <Heart size={9} className="text-[#0A66C2] fill-[#0A66C2]" />
+                        <Heart size={9} className="text-white fill-white" />
                     </span>
                     <span>{likeCount} reactions</span>
                 </div>
-                <span className="cursor-pointer hover:underline hover:text-slate-700 transition-colors">8 comments</span>
+                <span className="cursor-pointer hover:underline hover:text-slate-700 transition-colors">
+                    {post.comment_count} comments
+                </span>
             </div>
 
-            <div className="border-t border-slate-100 mx-0 px-2 py-1 flex">
-                {reactions.map(({ Icon, label, color, activeColor }) => {
-                    const isActive = label === "Like" && liked;
-                    return (
-                        <button
-                            key={label}
-                            onClick={label === "Like" ? handleLike : undefined}
-                            className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-xs font-semibold
-                                ${isActive ? activeColor : `text-slate-500 ${color}`}
-                                hover:bg-slate-50`}
-                        >
-                            <Icon size={16} className={isActive ? "fill-current" : ""} />
-                            <span className="hidden sm:inline">{label}</span>
-                        </button>
-                    );
-                })}
+            <div className="border-t border-slate-100 px-2 py-1 flex">
+                {actions.map(({ icon: Icon, label, active, color, activeColor, onClick }) => (
+                    <button
+                        key={label}
+                        onClick={onClick}
+                        className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-xs font-semibold hover:bg-slate-50
+              ${active ? activeColor : `text-slate-500 ${color}`}`}
+                    >
+                        <Icon size={16} className={active ? 'fill-current' : ''} />
+                        <span className="hidden sm:inline">{label}</span>
+                    </button>
+                ))}
             </div>
+
         </article>
     );
 }
