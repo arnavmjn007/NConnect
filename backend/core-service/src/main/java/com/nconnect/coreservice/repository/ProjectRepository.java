@@ -19,8 +19,11 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
         LEFT JOIN FETCH n.ngoProfile
         WHERE p.status = 'ACTIVE'
         AND (:category IS NULL OR p.category = :category)
-        AND (:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%'))
-             OR LOWER(p.requiredSkills) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (
+            :search IS NULL
+            OR LOWER(CAST(p.title AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+            OR LOWER(CAST(p.requiredSkills AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+        )
         ORDER BY
             CASE p.priorityLevel WHEN 'URGENT' THEN 1 WHEN 'HIGH' THEN 2 WHEN 'NORMAL' THEN 3 ELSE 4 END,
             p.createdAt DESC

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -22,6 +23,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final NotificationWebhookService notificationWebhookService;
 
     @Transactional
     public ProjectResponse createProject(Jwt jwt, ProjectRequest req) {
@@ -52,7 +54,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectResponse> searchProjects(String category, String search) {
         String cat = (category == null || category.isBlank() || category.equals("all")) ? null : category;
-        String q = (search == null || search.isBlank()) ? null : search;
+        String q   = (search == null || search.isBlank()) ? null : search;
         return projectRepository.searchProjects(cat, q)
                 .stream().map(ProjectResponse::from).toList();
     }
@@ -115,8 +117,24 @@ public class ProjectService {
         if (!project.getNgo().getId().equals(user.getId())) {
             throw new RuntimeException("You do not own this project");
         }
-        project.setStatus(ProjectStatus.valueOf(status));
-        return ProjectResponse.from(projectRepository.save(project));
+
+        ProjectStatus newStatus = ProjectStatus.valueOf(status);
+        project.setStatus(newStatus);
+        Project saved = projectRepository.save(project);
+
+        if (newStatus == ProjectStatus.COMPLETED) {
+            Map<String, Object> meta = Map.of("projectName", project.getTitle());
+            notificationWebhookService.sendEvent(
+                    "PROJECT_CLOSED",
+                    null,
+                    user.getAuth0Id(),
+                    "PROJECT",
+                    id.toString(),
+                    meta
+            );
+        }
+
+        return ProjectResponse.from(saved);
     }
 
     private AppUser getUser(Jwt jwt) {
