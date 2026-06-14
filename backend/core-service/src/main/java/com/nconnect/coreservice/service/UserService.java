@@ -11,12 +11,15 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final PaymentRecordRepository paymentRecordRepository;
+    private final NotificationWebhookService notificationWebhookService;
 
     @Transactional
     public UserProfileResponse syncUser(Jwt jwt) {
@@ -171,6 +174,15 @@ public class UserService {
         }
 
         userRepository.save(user);
+        notificationWebhookService.sendEvent(
+                "NGO_UNDER_REVIEW",
+                null,
+                auth0Id,
+                "NGO",
+                user.getId().toString(),
+                Map.of("orgName", profile.getOrganizationName() != null
+                        ? profile.getOrganizationName() : "Your NGO")
+        );
         return UserProfileResponse.from(
                 userRepository.findByAuth0IdWithCollections(auth0Id).orElseThrow()
         );
