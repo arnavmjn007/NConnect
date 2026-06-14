@@ -1,59 +1,66 @@
 import { Router } from "express";
 import { pool } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.js";
+import { createNotification, getActorInfo } from "../lib/notify.js";
 
-const router = Router();
+export default function makeFollowsRouter(io) {
+  const router = Router();
+  router.post("/:userId", requireAuth, async (req, res) => {
+    const followerId = req.auth.sub;
+    const followingId = req.params.userId;
 
-router.post("/:userId", requireAuth, async (req, res) => {
-  if (req.params.userId === req.auth.sub)
-    return res.status(400).json({ error: "You can't follow yourself" });
-  try {
-    await pool.query(
-      `INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-      [req.auth.sub, req.params.userId]
-    );
-    res.json({ following: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    if (followerId === followingId) {
+      return res.status(400).json({ error: "Cannot follow yourself" });
+    }
+    try {
+      await pool.query(
+        `INSERT INTO follows (follower_id, following_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [followerId, followingId]
+      );
 
-router.delete("/:userId", requireAuth, async (req, res) => {
-  try {
-    await pool.query(
-      `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`,
-      [req.auth.sub, req.params.userId]
-    );
-    res.json({ following: false });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+      const actor = await getActorInfo(followerId);
+      await createNotification(io, {
+        recipient_id: followingId,
+        actor_id: followerId,
+        type: "FOLLOW",
+        title: "New Follower",
+        message: `${actor.name} started following you.`,
+        entity_type: "USER",
+        entity_id: followerId,
+      });
 
-router.get("/followers/:userId", async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT follower_id, created_at FROM follows
-       WHERE following_id = $1 ORDER BY created_at DESC`,
-      [req.params.userId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+      res.json({ success: true, following: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
-router.get("/following/:userId", async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT following_id, created_at FROM follows
-       WHERE follower_id = $1 ORDER BY created_at DESC`,
-      [req.params.userId]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  router.delete("/:userId", requireAuth, async (req, res) => {
+    const followerId = req.auth.sub;
+    const followingId = req.params.userId;
+    try {
+      await pool.query(
+        `DELETE FROM follows WHERE follower_id = $1 AND following_id = $2`,
+        [followerId, followingId]
+      );
+      res.json({ success: true, following: false });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 
-export default router;
+  router.get("/:userId", optionalAuth, async (req, res) => {
+    try {
+      const { rows } = await pool.query(
+        `SELECT follower_id, created_at FROM follows WHERE following_id = $1 ORDER BY created_at DESC`,
+        [req.params.userId]
+      );
+      res.json(rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  return router;
+}
