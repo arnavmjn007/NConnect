@@ -1,64 +1,77 @@
 "use client";
 import React, { useState } from 'react';
 import {
-    ThumbsUp, MessageSquare, UserPlus,
-    DollarSign, Bell, Settings, Check,
-    Filter, Image as ImageIcon
+    ThumbsUp, MessageSquare, UserPlus, DollarSign,
+    Bell, Settings, Check, Filter, Repeat2,
+    ShieldCheck, Package, FolderOpen, Megaphone,
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { deleteNotification } from '@/lib/feedApi';
 
-type NType = "like" | "comment" | "follow" | "donation" | "project";
-type Tab = "All" | "Mentions" | "Donations" | "Follows";
+type Tab = 'All' | 'Social' | 'Donations' | 'Projects' | 'System';
 
-
-const NOTIF_CONFIG: Record<NType, { Icon: React.ElementType; color: string; bg: string }> = {
-    like: { Icon: ThumbsUp, color: "text-blue-600", bg: "bg-blue-50" },
-    comment: { Icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-50" },
-    follow: { Icon: UserPlus, color: "text-violet-600", bg: "bg-violet-50" },
-    donation: { Icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50" },
-    project: { Icon: Bell, color: "text-indigo-600", bg: "bg-indigo-50" },
+const TYPE_CONFIG: Record<string, { Icon: React.ElementType; color: string; bg: string }> = {
+    LIKE: { Icon: ThumbsUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+    COMMENT: { Icon: MessageSquare, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    REPOST: { Icon: Repeat2, color: 'text-orange-500', bg: 'bg-orange-50' },
+    FOLLOW: { Icon: UserPlus, color: 'text-violet-600', bg: 'bg-violet-50' },
+    MENTION: { Icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    DONATION_RECEIVED: { Icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
+    DONATION_CONFIRMED: { Icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
+    DONATION_GOAL_REACHED: { Icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-50' },
+    PROJECT_APPLICATION: { Icon: FolderOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    PROJECT_ACCEPTED: { Icon: FolderOpen, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    PROJECT_REJECTED: { Icon: FolderOpen, color: 'text-red-500', bg: 'bg-red-50' },
+    PROJECT_CLOSED: { Icon: FolderOpen, color: 'text-slate-600', bg: 'bg-slate-50' },
+    RESOURCE_REQUEST: { Icon: Package, color: 'text-orange-600', bg: 'bg-orange-50' },
+    RESOURCE_APPROVED: { Icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    RESOURCE_RETURNED: { Icon: Package, color: 'text-slate-600', bg: 'bg-slate-50' },
+    NGO_VERIFIED: { Icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    NGO_REJECTED: { Icon: ShieldCheck, color: 'text-red-500', bg: 'bg-red-50' },
+    NGO_UNDER_REVIEW: { Icon: ShieldCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
+    ADMIN_ANNOUNCEMENT: { Icon: Megaphone, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    MAINTENANCE: { Icon: Bell, color: 'text-slate-600', bg: 'bg-slate-50' },
+    POLICY_UPDATE: { Icon: Bell, color: 'text-slate-600', bg: 'bg-slate-50' },
+    DEFAULT: { Icon: Bell, color: 'text-slate-500', bg: 'bg-slate-50' },
 };
 
+const TAB_TYPES: Record<Tab, string[]> = {
+    All: [],
+    Social: ['LIKE', 'COMMENT', 'REPOST', 'FOLLOW', 'MENTION'],
+    Donations: ['DONATION_RECEIVED', 'DONATION_CONFIRMED', 'DONATION_GOAL_REACHED'],
+    Projects: ['PROJECT_APPLICATION', 'PROJECT_ACCEPTED', 'PROJECT_REJECTED', 'PROJECT_CLOSED',
+        'RESOURCE_REQUEST', 'RESOURCE_APPROVED', 'RESOURCE_RETURNED'],
+    System: ['NGO_VERIFIED', 'NGO_REJECTED', 'NGO_UNDER_REVIEW',
+        'ADMIN_ANNOUNCEMENT', 'MAINTENANCE', 'POLICY_UPDATE'],
+};
 
-const TABS: Tab[] = ["All", "Mentions", "Donations", "Follows"];
+function timeAgo(iso: string) {
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
 
-const INITIAL_NOTIFS = [
-    { id: 1, type: "donation" as NType, actor: "Water for All", action: "thanked you for your $50 donation to", subject: "Clean Water Initiative", time: "2 minutes ago", unread: true, tab: "Donations" as Tab },
-    { id: 2, type: "follow" as NType, actor: "Education Alliance", action: "started following you", subject: "", time: "1 hour ago", unread: true, tab: "Follows" as Tab },
-    { id: 3, type: "like" as NType, actor: "Suraj Maharjan", action: "liked your post about", subject: "Nepal's digital trust initiative", time: "3 hours ago", unread: false, tab: "Mentions" as Tab },
-    { id: 4, type: "comment" as NType, actor: "Food Relief Network", action: "commented: ", subject: '"Great initiative!"', time: "5 hours ago", unread: false, tab: "Mentions" as Tab },
-    { id: 5, type: "project" as NType, actor: "School Supplies Drive", action: "is 60% funded — your support matters!", subject: "", time: "1 day ago", unread: false, tab: "All" as Tab },
-    { id: 6, type: "follow" as NType, actor: "Green Earth Foundation", action: "started following you", subject: "", time: "2 days ago", unread: false, tab: "Follows" as Tab },
-    { id: 7, type: "project" as NType, actor: "Emergency Relief Fund", action: "reached 78% of its goal.", subject: "Help push it to 100%!", time: "2 days ago", unread: false, tab: "All" as Tab },
-    { id: 8, type: "donation" as NType, actor: "Health Access Initiative", action: "received your donation for", subject: "Mobile Health Clinic", time: "3 days ago", unread: false, tab: "Donations" as Tab },
-    { id: 9, type: "like" as NType, actor: "Arnav Maharjan", action: "liked your comment on", subject: "Clean Water Initiative", time: "4 days ago", unread: false, tab: "Mentions" as Tab },
-];
-
-const SUGGESTED_NGOS = [
-    { name: "Hope for Children", followers: "6.1K", color: "from-rose-600 to-rose-800", initials: "H" },
-    { name: "Climate Action Nepal", followers: "3.4K", color: "from-emerald-600 to-emerald-800", initials: "C" },
-    { name: "Rural Tech Initiative", followers: "2.8K", color: "from-indigo-600 to-indigo-800", initials: "R" },
-];
+const TABS: Tab[] = ['All', 'Social', 'Donations', 'Projects', 'System'];
 
 export default function NotificationsPage() {
-    const [activeTab, setActiveTab] = useState<Tab>("All");
-    const [notifs, setNotifs] = useState(INITIAL_NOTIFS);
-    const [followed, setFollowed] = useState<Record<string, boolean>>({});
+    const { notifications, unreadCount, loading, handleMarkAll, handleMarkOne } = useNotifications();
+    const [activeTab, setActiveTab] = useState<Tab>('All');
 
-    const markAllRead = () =>
-        setNotifs(prev => prev.map(n => ({ ...n, unread: false })));
+    const displayed = activeTab === 'All'
+        ? notifications
+        : notifications.filter(n => TAB_TYPES[activeTab].includes(n.type));
 
-    const markRead = (id: number) =>
-        setNotifs(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    const tabCount = (tab: Tab) => tab === 'All'
+        ? notifications.length
+        : notifications.filter(n => TAB_TYPES[tab].includes(n.type)).length;
 
-    const toggleFollow = (name: string) =>
-        setFollowed(prev => ({ ...prev, [name]: !prev[name] }));
-
-    const displayed = activeTab === "All"
-        ? notifs
-        : notifs.filter(n => n.tab === activeTab);
-
-    const unreadCount = notifs.filter(n => n.unread).length;
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        await deleteNotification(id);
+    };
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
@@ -70,14 +83,14 @@ export default function NotificationsPage() {
                                 <h1 className="text-xl font-bold text-slate-900">Notifications</h1>
                                 {unreadCount > 0 && (
                                     <p className="text-sm text-slate-500 mt-0.5">
-                                        {unreadCount} new notification{unreadCount > 1 ? "s" : ""}
+                                        {unreadCount} new notification{unreadCount > 1 ? 's' : ''}
                                     </p>
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
                                 {unreadCount > 0 && (
                                     <button
-                                        onClick={markAllRead}
+                                        onClick={handleMarkAll}
                                         className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-all"
                                     >
                                         <Check size={13} /> Mark all read
@@ -93,46 +106,48 @@ export default function NotificationsPage() {
                         </div>
 
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="flex border-b border-slate-100 px-2 pt-2">
-                                {TABS.map(tab => {
-                                    const count = tab === "All"
-                                        ? notifs.length
-                                        : notifs.filter(n => n.tab === tab).length;
-
-                                    return (
-                                        <button
-                                            key={tab}
-                                            onClick={() => setActiveTab(tab)}
-                                            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab === tab
-                                                ? "border-indigo-600 text-indigo-600"
-                                                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl"
-                                                }`}
-                                        >
-                                            {tab}
-                                            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${activeTab === tab
-                                                ? "bg-indigo-100 text-indigo-600"
-                                                : "bg-slate-100 text-slate-500"
-                                                }`}>
-                                                {count}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                            <div className="flex border-b border-slate-100 px-2 pt-2 overflow-x-auto scrollbar-hide">
+                                {TABS.map(tab => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab === tab
+                                            ? 'border-indigo-600 text-indigo-600'
+                                            : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl'
+                                            }`}
+                                    >
+                                        {tab}
+                                        <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${activeTab === tab ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                            {tabCount(tab)}
+                                        </span>
+                                    </button>
+                                ))}
                             </div>
+
                             <div className="divide-y divide-slate-50">
-                                {displayed.length === 0 && (
+                                {loading && (
+                                    <div className="flex justify-center py-12">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500" />
+                                    </div>
+                                )}
+
+                                {!loading && displayed.length === 0 && (
                                     <div className="text-center py-14">
                                         <Bell size={32} className="mx-auto mb-3 text-slate-200" />
                                         <p className="text-sm font-semibold text-slate-400">No notifications here</p>
                                     </div>
                                 )}
-                                {displayed.map(notif => {
-                                    const { Icon, color, bg } = NOTIF_CONFIG[notif.type];
+
+                                {!loading && displayed.map((notif: Notification) => {
+                                    const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.DEFAULT;
+                                    const { Icon, color, bg } = cfg;
+
                                     return (
                                         <div
                                             key={notif.id}
-                                            onClick={() => markRead(notif.id)}
-                                            className={`flex items-start gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-slate-50 ${notif.unread ? "bg-indigo-50/40" : "bg-white"
+                                            onClick={() => !notif.is_read && handleMarkOne(notif.id)}
+                                            className={`flex items-start gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-slate-50 group ${notif.is_read ? 'bg-white' : 'bg-indigo-50/40'
                                                 }`}
                                         >
                                             <div className={`h-10 w-10 ${bg} rounded-xl flex items-center justify-center shrink-0`}>
@@ -140,21 +155,24 @@ export default function NotificationsPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm text-slate-700 leading-relaxed">
-                                                    <span className="font-bold text-slate-900">{notif.actor}</span>
-                                                    {" "}{notif.action}{" "}
-                                                    {notif.subject && (
-                                                        <span className="font-semibold text-indigo-600">{notif.subject}</span>
-                                                    )}
+                                                    <span className="font-bold text-slate-900">{notif.title}</span>
                                                 </p>
-                                                <p className="text-[11px] text-slate-400 mt-1 font-medium">{notif.time}</p>
+                                                <p className="text-sm text-slate-600 mt-0.5">{notif.message}</p>
+                                                <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                                                    {timeAgo(notif.created_at)}
+                                                </p>
                                             </div>
+
                                             <div className="flex flex-col items-end gap-2 shrink-0">
-                                                {notif.unread && (
+                                                {!notif.is_read && (
                                                     <div className="h-2.5 w-2.5 bg-indigo-600 rounded-full" />
                                                 )}
-                                                <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                                                    <ImageIcon size={14} className="text-slate-300" />
-                                                </div>
+                                                <button
+                                                    onClick={(e) => handleDelete(e, notif.id)}
+                                                    className="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-red-500 transition-all font-semibold"
+                                                >
+                                                    Remove
+                                                </button>
                                             </div>
                                         </div>
                                     );
@@ -162,39 +180,8 @@ export default function NotificationsPage() {
                             </div>
                         </div>
                     </main>
+
                     <aside className="lg:col-span-4 space-y-4 sticky top-20 self-start">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="font-bold text-sm text-slate-900">Suggested NGOs</h2>
-                                <span className="text-[11px] font-semibold text-indigo-600 hover:underline cursor-pointer">
-                                    See all
-                                </span>
-                            </div>
-                            <div className="space-y-3">
-                                {SUGGESTED_NGOS.map(ngo => (
-                                    <div key={ngo.name} className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`h-9 w-9 bg-linear-to-br ${ngo.color} rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-                                                {ngo.initials}
-                                            </div>
-                                            <div>
-                                                <p className="text-[13px] font-bold text-slate-800 leading-tight">{ngo.name}</p>
-                                                <p className="text-[11px] text-slate-400">{ngo.followers} followers</p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => toggleFollow(ngo.name)}
-                                            className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full transition-all border ${followed[ngo.name]
-                                                ? "bg-indigo-600 text-white border-indigo-600"
-                                                : "border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white"
-                                                }`}
-                                        >
-                                            {followed[ngo.name] ? "Following" : "+ Follow"}
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                         <SiteFooter />
                     </aside>
                 </div>
