@@ -25,6 +25,7 @@ public class ResourceService {
     private final ResourceRepository resourceRepository;
     private final ResourceRequestRepository resourceRequestRepository;
     private final UserRepository userRepository;
+    private final NotificationWebhookService notificationWebhookService;
 
     @Transactional
     public ResourceResponse createResource(Jwt jwt, ResourceCreateRequest req) {
@@ -117,6 +118,7 @@ public class ResourceService {
         if (resourceRequestRepository.existsByResourceIdAndRequesterId(resourceId, requester.getId())) {
             throw new RuntimeException("You have already requested this resource");
         }
+
         ResourceRequest req = ResourceRequest.builder()
                 .resource(resource)
                 .requester(requester)
@@ -126,6 +128,13 @@ public class ResourceService {
 
         resource.setStatus(ResourceStatus.REQUESTED);
         resourceRepository.save(resource);
+
+        notificationWebhookService.resourceRequested(
+                requester.getAuth0Id(),
+                resource.getOwner().getAuth0Id(),
+                resourceId.toString(),
+                resource.getName()
+        );
 
         return Map.of("message", "Resource request submitted successfully");
     }
@@ -146,6 +155,12 @@ public class ResourceService {
         if (approve) {
             req.getResource().setStatus(ResourceStatus.SHARED);
             resourceRepository.save(req.getResource());
+
+            notificationWebhookService.resourceApproved(
+                    req.getRequester().getAuth0Id(),
+                    req.getResource().getId().toString(),
+                    req.getResource().getName()
+            );
         } else {
             req.getResource().setStatus(ResourceStatus.AVAILABLE);
             resourceRepository.save(req.getResource());
