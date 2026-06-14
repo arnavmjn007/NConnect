@@ -1,8 +1,8 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Calendar, BarChart2, Users2, ArrowUpRight, Bookmark, Sparkles } from "lucide-react";
+import { MapPin, Calendar, BarChart2, Users2, ArrowUpRight, Bookmark, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const StatItem = ({ value, label, color, border = false }: {
@@ -16,13 +16,26 @@ const StatItem = ({ value, label, color, border = false }: {
 
 export default function Sidebar() {
     const { dbUser, user } = useAuth();
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
 
     const displayName = dbUser?.fullName || user?.name || "User";
-    // const displayEmail = dbUser?.email || user?.email || "";
     const displayLocation = dbUser?.location || "Location not set";
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
     const isNGO = dbUser?.role === "NGO";
     const initial = displayName.charAt(0).toUpperCase();
+
+    useEffect(() => {
+        if (!user?.sub) return;
+        const encodedId = encodeURIComponent(user.sub);
+        Promise.all([
+            fetch(`/api/feed/followers/${encodedId}`).then(r => r.ok ? r.json() : []),
+            fetch(`/api/feed/following/${encodedId}`).then(r => r.ok ? r.json() : []),
+        ]).then(([followers, following]) => {
+            setFollowerCount(Array.isArray(followers) ? followers.length : 0);
+            setFollowingCount(Array.isArray(following) ? following.length : 0);
+        }).catch(() => { });
+    }, [user?.sub]);
 
     return (
         <div className="flex flex-col gap-3">
@@ -77,7 +90,6 @@ export default function Sidebar() {
                         <div className="space-y-1">
                             {[
                                 { Icon: MapPin, text: displayLocation },
-                                // { Icon: Mail, text: displayEmail },
                                 { Icon: Calendar, text: `Joined ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` },
                             ].map(({ Icon, text }) => (
                                 <div key={text} className="flex items-center gap-2 text-[11px] text-slate-500">
@@ -89,8 +101,8 @@ export default function Sidebar() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-100 flex">
-                        <StatItem value={0} label="Following" color="text-[#0A66C2]" />
-                        <StatItem value={0} label="Apps" color="text-emerald-600" border />
+                        <StatItem value={followingCount} label="Following" color="text-[#0A66C2]" />
+                        <StatItem value={followerCount} label="Followers" color="text-emerald-600" border />
                         <StatItem value={0} label="Donated" color="text-violet-600" />
                     </div>
                 </div>
@@ -121,7 +133,7 @@ export default function Sidebar() {
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Quick Access</p>
                 {[
                     { Icon: Bookmark, label: "Saved Posts", href: "/saved" },
-                    { Icon: Sparkles, label: "Discover NGOs", href: "/ngos" },
+                    { Icon: Sparkles, label: "Discover NGOs", href: "/search?q=ngo" },
                 ].map(({ Icon, label, href }) => (
                     <Link key={label} href={href} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
                         <Icon size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
