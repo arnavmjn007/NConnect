@@ -76,3 +76,49 @@ export function getFollowers(userId: string) {
 export function getFollowing(userId: string) {
     return feedFetch(`following/${userId}`);
 }
+
+export function getConversations() {
+    return feedFetch('chat/conversations');
+}
+export function getMessages(conversationId: string, before?: string) {
+    const q = before ? `?before=${before}` : '';
+    return feedFetch(`chat/messages/${conversationId}${q}`);
+}
+export function startConversation(otherUserId: string) {
+    return feedFetch('chat/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ otherUserId }),
+    });
+}
+
+
+export function getNotifications(page = 1) {
+    return feedFetch(`notifications?page=${page}`);
+}
+export function getUnreadCount() {
+    return feedFetch('notifications/unread-count');
+}
+export function markAllRead() {
+    return feedFetch('notifications/read-all', { method: 'PATCH' });
+}
+export function markOneRead(id: string) {
+    return feedFetch(`notifications/${id}/read`, { method: 'PATCH' });
+}
+export function deleteNotification(id: string) {
+    return feedFetch(`notifications/${id}`, { method: 'DELETE' });
+}
+export function getAnnouncements() {
+    return feedFetch('notifications/announcements');
+}
+export function sendAnnouncement(data: {
+    title: string;
+    message: string;
+    type: string;
+    audience: string;
+    scheduled_at?: string;
+}) {
+    return feedFetch('notifications/announcements', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
