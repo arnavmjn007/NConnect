@@ -1,17 +1,24 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io";
 dotenv.config();
-
 import feedRouter from "./routes/feed.js";
 import postsRouter from "./routes/posts.js";
-import reactionsRouter from "./routes/reactions.js";
 import commentsRouter from "./routes/comments.js";
-import followsRouter from "./routes/follows.js";
+import chatRouter from "./routes/chat.js";
 import { requireAuth, authErrorHandler } from "./middleware/auth.js";
 import { pool } from "./db.js";
+import makeReactionsRouter from "./routes/reactions.js";
+import makeFollowsRouter from "./routes/follows.js";
+import makeNotificationsRouter from "./routes/notifications.js";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] },
+});
 
 app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
@@ -27,8 +34,36 @@ app.get("/", async (_, res) => {
 
 app.use("/feed", feedRouter);
 app.use("/posts", postsRouter);
-app.use("/posts/:id/like", reactionsRouter);
 app.use("/posts/:id/comments", commentsRouter);
+app.use("/chat", chatRouter);
+app.use("/posts/:id/like", makeReactionsRouter(io));
+app.use("/notifications", makeNotificationsRouter(io));
+
+const followsRouter = makeFollowsRouter(io);
+
+app.post("/follow/:userId", requireAuth, (req, res, next) => {
+  req.params.userId = req.params.userId;
+  followsRouter.handle(req, res, next);
+});
+app.delete("/follow/:userId", requireAuth, (req, res, next) => {
+  followsRouter.handle(req, res, next);
+});
+
+app.get("/followers/:userId", (req, res, next) => {
+  followsRouter.handle(req, res, next);
+});
+
+app.get("/following/:userId", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT following_id, created_at FROM follows WHERE follower_id = $1 ORDER BY created_at DESC`,
+      [req.params.userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.delete("/comments/:id", requireAuth, async (req, res) => {
   try {
@@ -37,20 +72,73 @@ app.delete("/comments/:id", requireAuth, async (req, res) => {
       [req.params.id, req.auth.sub]
     );
     if (!rowCount)
-      return res.status(404).json({ error: "Comment not found or not yours" });
+      return res.status(404).json({ error: "Not found or not yours" });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.use("/follow", followsRouter);
-app.use("/followers", followsRouter);
-app.use("/following", followsRouter);
-
 app.use(authErrorHandler);
 
+const onlineUsers = new Map();
+io.on("connection", (socket) => {
+  const userId = socket.handshake.auth.userId;
+  if (!userId) {
+    socket.disconnect();
+    return;
+  }
+
+  onlineUsers.set(userId, socket.id);
+  socket.join(`user:${userId}`);
+  io.emit("user_online", { userId });
+
+  socket.on("join_conversations", (ids) => {
+    ids.forEach((id) => socket.join(`conv:${id}`));
+  });
+
+  socket.on("send_message", async ({ conversationId, content }) => {
+    if (!content?.trim()) return;
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO messages (conversation_id, sender_id, content)
+         VALUES ($1, $2, $3) RETURNING *`,
+        [conversationId, userId, content.trim()]
+      );
+      io.to(`conv:${conversationId}`).emit("receive_message", rows[0]);
+    } catch (err) {
+      socket.emit("error", { message: err.message });
+    }
+  });
+
+  socket.on("typing", ({ conversationId, isTyping }) => {
+    socket.to(`conv:${conversationId}`).emit("typing", { userId, isTyping });
+  });
+
+  socket.on("mark_read", async ({ conversationId }) => {
+    try {
+      await pool.query(
+        `UPDATE conversation_participants SET last_read_at = NOW()
+         WHERE conversation_id = $1 AND user_id = $2`,
+        [conversationId, userId]
+      );
+      socket.to(`conv:${conversationId}`).emit("read_receipt", {
+        conversationId,
+        userId,
+        readAt: new Date(),
+      });
+    } catch (err) {
+      console.error("mark_read error:", err.message);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    onlineUsers.delete(userId);
+    io.emit("user_offline", { userId });
+  });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`✅ Feed service on http://localhost:${PORT}`)
+server.listen(PORT, () =>
+  console.log(`✅ Feed+Chat+Notifications on http://localhost:${PORT}`)
 );
