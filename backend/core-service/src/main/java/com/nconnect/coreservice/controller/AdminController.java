@@ -11,6 +11,7 @@ import com.nconnect.coreservice.repository.PaymentRecordRepository;
 import com.nconnect.coreservice.repository.ProjectRepository;
 import com.nconnect.coreservice.repository.ResourceRepository;
 import com.nconnect.coreservice.repository.UserRepository;
+import com.nconnect.coreservice.service.NotificationWebhookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,6 +32,7 @@ public class AdminController {
     private final ProjectRepository projectRepository;
     private final ResourceRepository resourceRepository;
     private final PaymentRecordRepository paymentRecordRepository;
+    private final NotificationWebhookService notificationWebhookService;
 
     private void requireAdmin(Jwt jwt) {
         AppUser user = userRepository.findByAuth0Id(jwt.getSubject())
@@ -39,7 +41,6 @@ public class AdminController {
             throw new RuntimeException("Admin access required");
         }
     }
-
 
     @GetMapping("/ngo-verifications")
     public ResponseEntity<List<Map<String, Object>>> getNgoVerifications(
@@ -52,7 +53,6 @@ public class AdminController {
         List<Map<String, Object>> result = ngos.stream().map(u -> {
             var ngo = u.getNgoProfile();
             Map<String, Object> map = new HashMap<>();
-
             map.put("id", u.getId().toString());
             map.put("organizationName", ngo.getOrganizationName() != null ? ngo.getOrganizationName() : "");
             map.put("username", u.getUsername() != null ? u.getUsername() : "");
@@ -64,7 +64,6 @@ public class AdminController {
             map.put("missionStatement", ngo.getMissionStatement() != null ? ngo.getMissionStatement() : "");
             map.put("ngoCategories", ngo.getNgoCategories() != null ? ngo.getNgoCategories() : "");
             map.put("operatingLocations", ngo.getOperatingLocations() != null ? ngo.getOperatingLocations() : "");
-
             return map;
         }).toList();
 
@@ -77,19 +76,28 @@ public class AdminController {
             @PathVariable UUID userId,
             @RequestBody Map<String, String> body) {
         requireAdmin(jwt);
+
         AppUser user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user.getNgoProfile() == null) throw new RuntimeException("NGO profile not found");
+        if (user.getNgoProfile() == null)
+            throw new RuntimeException("NGO profile not found");
 
         VerificationStatus status = VerificationStatus.valueOf(body.get("status"));
         user.getNgoProfile().setVerificationStatus(status);
         userRepository.save(user);
+
+        if (status == VerificationStatus.VERIFIED) {
+            notificationWebhookService.ngoVerified(user.getAuth0Id());
+        } else if (status == VerificationStatus.REJECTED) {
+            notificationWebhookService.ngoRejected(user.getAuth0Id());
+        }
+
         return ResponseEntity.ok(Map.of("message", "Verification status updated"));
     }
 
-
     @GetMapping("/users")
-    public ResponseEntity<List<Map<String, Object>>> getAllUsers(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<Map<String, Object>>> getAllUsers(
+            @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         List<Map<String, Object>> users = userRepository.findAll().stream().map(u ->
                 Map.<String, Object>of(
@@ -105,12 +113,13 @@ public class AdminController {
         return ResponseEntity.ok(users);
     }
 
-
     @GetMapping("/projects")
-    public ResponseEntity<List<ProjectResponse>> getAllProjects(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<ProjectResponse>> getAllProjects(
+            @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         return ResponseEntity.ok(
-                projectRepository.findAllWithNgo().stream().map(ProjectResponse::from).toList()
+                projectRepository.findAllWithNgo().stream()
+                        .map(ProjectResponse::from).toList()
         );
     }
 
@@ -122,16 +131,20 @@ public class AdminController {
         requireAdmin(jwt);
         var project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-        project.setStatus(com.nconnect.coreservice.model.enums.ProjectStatus.valueOf(body.get("status")));
+        project.setStatus(
+                com.nconnect.coreservice.model.enums.ProjectStatus.valueOf(body.get("status"))
+        );
         projectRepository.save(project);
         return ResponseEntity.ok(Map.of("message", "Project status updated"));
     }
 
     @GetMapping("/resources")
-    public ResponseEntity<List<ResourceResponse>> getAllResources(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<ResourceResponse>> getAllResources(
+            @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         return ResponseEntity.ok(
-                resourceRepository.findAllWithOwner().stream().map(ResourceResponse::from).toList()
+                resourceRepository.findAllWithOwner().stream()
+                        .map(ResourceResponse::from).toList()
         );
     }
 
@@ -150,9 +163,9 @@ public class AdminController {
         return ResponseEntity.ok(List.of());
     }
 
-
     @GetMapping("/donations")
-    public ResponseEntity<List<Map<String, Object>>> getDonations(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<Map<String, Object>>> getDonations(
+            @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         List<Map<String, Object>> records = paymentRecordRepository.findAll().stream().map(p ->
                 Map.<String, Object>of(
@@ -169,25 +182,30 @@ public class AdminController {
         return ResponseEntity.ok(records);
     }
 
-
     @GetMapping("/analytics")
-    public ResponseEntity<Map<String, Object>> getAnalytics(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<Map<String, Object>> getAnalytics(
+            @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         long totalUsers = userRepository.count();
-        long totalNgos = userRepository.findAll().stream().filter(u -> u.getRole() == Role.NGO).count();
+        long totalNgos = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == Role.NGO).count();
         long verifiedNgos = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.NGO && u.getNgoProfile() != null &&
-                        u.getNgoProfile().getVerificationStatus() == VerificationStatus.VERIFIED)
+                .filter(u -> u.getRole() == Role.NGO
+                        && u.getNgoProfile() != null
+                        && u.getNgoProfile().getVerificationStatus() == VerificationStatus.VERIFIED)
                 .count();
-        long onboardedUsers = userRepository.findAll().stream().filter(AppUser::isOnboardingComplete).count();
+        long onboardedUsers = userRepository.findAll().stream()
+                .filter(AppUser::isOnboardingComplete).count();
         long activeProjects = projectRepository.findAll().stream()
-                .filter(p -> p.getStatus() == com.nconnect.coreservice.model.enums.ProjectStatus.ACTIVE)
+                .filter(p -> p.getStatus() ==
+                        com.nconnect.coreservice.model.enums.ProjectStatus.ACTIVE)
                 .count();
         long totalResources = resourceRepository.count();
         long pendingVerifications = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == Role.NGO && u.getNgoProfile() != null &&
-                        (u.getNgoProfile().getVerificationStatus() == VerificationStatus.PENDING ||
-                                u.getNgoProfile().getVerificationStatus() == VerificationStatus.UNDER_REVIEW))
+                .filter(u -> u.getRole() == Role.NGO
+                        && u.getNgoProfile() != null
+                        && (u.getNgoProfile().getVerificationStatus() == VerificationStatus.PENDING
+                        || u.getNgoProfile().getVerificationStatus() == VerificationStatus.UNDER_REVIEW))
                 .count();
         long totalDonationsNpr = paymentRecordRepository.findAll().stream()
                 .mapToLong(p -> p.getAmount() != null ? p.getAmount() : 0)
@@ -203,20 +221,4 @@ public class AdminController {
                 "pendingVerifications", pendingVerifications,
                 "totalDonationsNpr", totalDonationsNpr
         ));
-    }
-
-    @PostMapping("/announcements")
-    public ResponseEntity<Map<String, String>> sendAnnouncement(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestBody Map<String, String> body) {
-        requireAdmin(jwt);
-        return ResponseEntity.ok(Map.of("message", "Announcement queued for delivery"));
-    }
-
-
-    @GetMapping("/audit-logs")
-    public ResponseEntity<List<Object>> getAuditLogs(@AuthenticationPrincipal Jwt jwt) {
-        requireAdmin(jwt);
-        return ResponseEntity.ok(List.of());
-    }
-}
+    }}
