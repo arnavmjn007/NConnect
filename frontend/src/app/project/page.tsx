@@ -7,7 +7,7 @@ import Image from 'next/image';
 import {
     Search, TrendingUp, Droplets, GraduationCap,
     Heart, Leaf, Utensils, AlertTriangle, MapPin, Clock,
-    Users, Target, BadgeCheck, Flame, Plus, X
+    Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle
 } from 'lucide-react';
 import DonationModal from '@/components/payment/DonationModal';
 import SiteFooter from '@/components/ui/SiteFooter';
@@ -64,9 +64,128 @@ interface Project {
     status: string;
 }
 
-function ProjectCard({ project, onDonate }: { project: Project; onDonate: (p: Project) => void }) {
+function VolunteerButton({ projectId }: { projectId: string }) {
+    const { user } = useAuth();
+    const [applied, setApplied] = useState(false);
+    const [status, setStatus] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [message, setMessage] = useState("");
+    const [checkDone, setCheckDone] = useState(false);
+
+    useEffect(() => {
+        if (!user) { setCheckDone(true); return; }
+        fetch(`/api/volunteer/${projectId}`)
+            .then(r => r.ok ? r.json() : { applied: false })
+            .then(d => {
+                setApplied(d.applied);
+                setStatus(d.status || null);
+            })
+            .catch(() => { })
+            .finally(() => setCheckDone(true));
+    }, [projectId, user]);
+
+    const handleApply = async () => {
+        if (!user) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/volunteer/${projectId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setApplied(true);
+                setStatus("PENDING");
+                setShowModal(false);
+            } else {
+                alert(data.error || "Failed to apply");
+            }
+        } catch { alert("Failed to apply"); }
+        finally { setLoading(false); }
+    };
+
+    if (!checkDone) return (
+        <div className="flex-1 h-8 bg-slate-100 rounded-xl animate-pulse" />
+    );
+
+    if (applied && status) {
+        const statusStyle: Record<string, string> = {
+            PENDING: "bg-amber-50 border-amber-200 text-amber-700",
+            ACCEPTED: "bg-emerald-50 border-emerald-200 text-emerald-700",
+            REJECTED: "bg-red-50 border-red-200 text-red-600",
+        };
+        return (
+            <div className={`flex-1 flex items-center justify-center gap-1.5 border font-bold py-2 rounded-xl text-xs ${statusStyle[status] || "bg-slate-50 border-slate-200 text-slate-500"}`}>
+                <CheckCircle size={12} />
+                {status === "PENDING" ? "Applied" : status === "ACCEPTED" ? "Accepted!" : "Not Selected"}
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <button
+                onClick={() => user ? setShowModal(true) : alert("Please sign in to volunteer")}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition-colors"
+            >
+                <Users size={12} /> Volunteer
+            </button>
+
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="font-bold text-slate-900">Apply as Volunteer</h2>
+                            <button onClick={() => setShowModal(false)} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+                                <X size={16} className="text-slate-400" />
+                            </button>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Why do you want to volunteer? <span className="text-slate-400">(optional)</span>
+                            </label>
+                            <textarea
+                                value={message}
+                                onChange={e => setMessage(e.target.value)}
+                                rows={4}
+                                placeholder="Share your motivation and relevant skills..."
+                                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 resize-none"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleApply}
+                                disabled={loading}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm"
+                            >
+                                {loading ? "Submitting..." : "Submit Application"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+function ProjectCard({
+    project,
+    onDonate,
+}: {
+    project: Project;
+    onDonate: (p: Project) => void;
+}) {
     const progress = project.goalAmount
-        ? Math.min((project.raisedAmount / project.goalAmount) * 100, 100)
+        ? Math.min(((project.raisedAmount || 0) / project.goalAmount) * 100, 100)
         : 0;
     const gradient = CATEGORY_GRADIENT[project.category] || CATEGORY_GRADIENT.default;
     const spotsLeft = project.volunteerSlots
@@ -75,7 +194,6 @@ function ProjectCard({ project, onDonate }: { project: Project; onDonate: (p: Pr
 
     return (
         <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
-            {/* Banner */}
             <div className={`h-28 bg-linear-to-br ${gradient} relative overflow-hidden`}>
                 {project.imageUrl && (
                     <Image
@@ -148,29 +266,29 @@ function ProjectCard({ project, onDonate }: { project: Project; onDonate: (p: Pr
                     <div>
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-linear-to-r from-indigo-500 to-indigo-400 rounded-full transition-all"
+                                className="h-full bg-linear-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400 mt-1">
                             <span className="font-semibold text-slate-700">
-                                NPR {project.raisedAmount?.toLocaleString() || 0}
+                                NPR {(project.raisedAmount || 0).toLocaleString()}
                             </span>
-                            <span>of NPR {project.goalAmount?.toLocaleString()}</span>
+                            <span>of NPR {project.goalAmount?.toLocaleString()} · {project.donorCount || 0} donors</span>
                         </div>
                     </div>
                 )}
 
                 <div className="flex gap-2 pt-1">
-                    <button
-                        onClick={() => onDonate(project)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
-                    >
-                        <Heart size={12} /> Donate
-                    </button>
-                    <button className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition-colors">
-                        <Users size={12} /> Volunteer
-                    </button>
+                    {project.goalAmount > 0 && (
+                        <button
+                            onClick={() => { onDonate(project); }}
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
+                        >
+                            <Heart size={12} /> Donate
+                        </button>
+                    )}
+                    <VolunteerButton projectId={project.id} />
                 </div>
             </div>
         </article>
@@ -345,6 +463,7 @@ function ProjectsContent() {
         if (donation === "success" && oid) {
             const storedAmt = sessionStorage.getItem("esewa_amt") || "0";
             const storedPid = sessionStorage.getItem("esewa_pid") || oid;
+            const storedProjectId = sessionStorage.getItem("esewa_project_id");
 
             fetch("/api/payment/esewa/verify", {
                 method: "POST",
@@ -357,9 +476,28 @@ function ProjectsContent() {
                 }),
             })
                 .then(r => r.json())
-                .then(data => {
+                .then(async data => {
                     if (data.verified) {
+                        if (storedProjectId) {
+                            await fetch("/api/donations/confirm", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    projectId: storedProjectId,
+                                    amount: parseInt(storedAmt),
+                                    paymentRef: refId || oid,
+                                    paymentMethod: "ESEWA",
+                                }),
+                            });
+                        }
                         setDonationSuccess(true);
+                        if (storedProjectId) {
+                            setProjects(prev => prev.map(p =>
+                                p.id === storedProjectId
+                                    ? { ...p, raisedAmount: p.raisedAmount + parseInt(storedAmt), donorCount: p.donorCount + 1 }
+                                    : p
+                            ));
+                        }
                         sessionStorage.removeItem("esewa_pid");
                         sessionStorage.removeItem("esewa_amt");
                         sessionStorage.removeItem("esewa_purpose");
@@ -367,15 +505,20 @@ function ProjectsContent() {
                     }
                 })
                 .catch(() => { });
-        } else if (donation === "failed") {
-        }
-    }, [searchParams]);
-
-    useEffect(() => {
-        if (searchParams.get("donation") === "success" && !searchParams.get("oid")) {
+        } else if (donation === "success" && !oid) {
             setDonationSuccess(true);
         }
     }, [searchParams]);
+
+    const handleDonated = useCallback((projectId: string, amount: number) => {
+        setProjects(prev => prev.map(p =>
+            p.id === projectId
+                ? { ...p, raisedAmount: (p.raisedAmount || 0) + amount, donorCount: (p.donorCount || 0) + 1 }
+                : p
+        ));
+        setDonationSuccess(true);
+        setDonateProject(null);
+    }, []);
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
@@ -466,7 +609,11 @@ function ProjectsContent() {
                         ) : projects.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {projects.map(p => (
-                                    <ProjectCard key={p.id} project={p} onDonate={setDonateProject} />
+                                    <ProjectCard
+                                        key={p.id}
+                                        project={p}
+                                        onDonate={setDonateProject}
+                                    />
                                 ))}
                             </div>
                         ) : (
@@ -484,6 +631,7 @@ function ProjectsContent() {
                 <DonationModal
                     project={{ id: donateProject.id, title: donateProject.title, ngoName: donateProject.ngoName }}
                     onClose={() => setDonateProject(null)}
+                    onDonated={(amount) => handleDonated(donateProject.id, amount)}
                 />
             )}
             {showCreate && (
