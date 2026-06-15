@@ -6,12 +6,29 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 const NPR_TO_USD_RATE = 133;
-
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000, 10000];
 
 interface DonationModalProps {
     project: { id: string; title: string; ngoName: string };
     onClose: () => void;
+    onDonated?: (amount: number) => void;
+}
+
+async function confirmDonationInDB(
+    projectId: string,
+    amount: number,
+    paymentRef: string,
+    paymentMethod: string
+) {
+    try {
+        await fetch("/api/donations/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectId, amount, paymentRef, paymentMethod }),
+        });
+    } catch (err) {
+        console.error("Failed to confirm donation in DB:", err);
+    }
 }
 
 function StripeForm({ amount, onSuccess, onError }: {
@@ -31,7 +48,7 @@ function StripeForm({ amount, onSuccess, onError }: {
         try {
             const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
-                confirmParams: { return_url: `${window.location.origin}/projects?donation=success` },
+                confirmParams: { return_url: `${window.location.origin}/project?donation=success` },
                 redirect: "if_required",
             });
             if (error) onError(error.message || "Payment failed");
@@ -95,25 +112,24 @@ function StripeWrapper({ amount, projectId, projectTitle, onSuccess, onError }: 
     );
 }
 
-export default function DonationModal({ project, onClose }: DonationModalProps) {
+export default function DonationModal({ project, onClose, onDonated }: DonationModalProps) {
     const [amount, setAmount] = useState(1000);
     const [customAmount, setCustomAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<"ESEWA" | "STRIPE">("ESEWA");
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [error, setError] = useState("");
     const [paymentRef, setPaymentRef] = useState("");
+    const [confirming, setConfirming] = useState(false);
 
     const finalAmount = customAmount ? parseInt(customAmount) || 0 : amount;
-
     const failureUrl = typeof window !== "undefined"
-        ? `${window.location.origin}/projects?donation=failed`
+        ? `${window.location.origin}/project?donation=failed`
         : "";
 
     const handleEsewaSubmit = () => {
         if (finalAmount < 100) { setError("Minimum donation is NPR 100"); return; }
-
         const dynamicPid = `nconnect_donate_${project.id}_${Date.now()}`;
-        const dynamicSuccessUrl = `${window.location.origin}/projects?donation=success&pid=${dynamicPid}&amt=${finalAmount}`;
+        const dynamicSuccessUrl = `${window.location.origin}/project?donation=success&pid=${dynamicPid}&amt=${finalAmount}&projectId=${project.id}`;
 
         sessionStorage.setItem("esewa_pid", dynamicPid);
         sessionStorage.setItem("esewa_amt", String(finalAmount));
@@ -128,8 +144,13 @@ export default function DonationModal({ project, onClose }: DonationModalProps) 
         }
     };
 
-    const handleStripeSuccess = (intentId: string) => {
+    const handleStripeSuccess = async (intentId: string) => {
         setPaymentRef(intentId);
+        setConfirming(true);
+        // Confirm in DB
+        await confirmDonationInDB(project.id, finalAmount, intentId, "STRIPE");
+        setConfirming(false);
+        onDonated?.(finalAmount);
         setStep(3);
     };
 
@@ -248,13 +269,20 @@ export default function DonationModal({ project, onClose }: DonationModalProps) 
                                     <AlertTriangle size={13} />{error}
                                 </div>
                             )}
-                            <StripeWrapper
-                                amount={finalAmount}
-                                projectId={project.id}
-                                projectTitle={project.title}
-                                onSuccess={handleStripeSuccess}
-                                onError={setError}
-                            />
+                            {confirming ? (
+                                <div className="flex items-center justify-center py-8 gap-2 text-slate-500 text-sm">
+                                    <div className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full" />
+                                    Confirming payment...
+                                </div>
+                            ) : (
+                                <StripeWrapper
+                                    amount={finalAmount}
+                                    projectId={project.id}
+                                    projectTitle={project.title}
+                                    onSuccess={handleStripeSuccess}
+                                    onError={setError}
+                                />
+                            )}
                             <button onClick={() => setStep(1)}
                                 className="w-full text-slate-500 text-sm font-medium py-1.5 hover:text-slate-800 transition-colors">
                                 ← Back
