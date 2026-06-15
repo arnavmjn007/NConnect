@@ -38,6 +38,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/search/suggestions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/donations/confirm").permitAll()
+                        .requestMatchers("/api/volunteer/**").authenticated()
                         .requestMatchers("/api/user/health").permitAll()
                         .anyRequest().authenticated()
                 )
