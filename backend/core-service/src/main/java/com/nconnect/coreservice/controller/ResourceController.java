@@ -2,6 +2,10 @@ package com.nconnect.coreservice.controller;
 
 import com.nconnect.coreservice.dto.ResourceCreateRequest;
 import com.nconnect.coreservice.dto.ResourceResponse;
+import com.nconnect.coreservice.model.AppUser;
+import com.nconnect.coreservice.model.ResourceRequest;
+import com.nconnect.coreservice.repository.ResourceRequestRepository;
+import com.nconnect.coreservice.repository.UserRepository;
 import com.nconnect.coreservice.service.ResourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,6 +25,8 @@ import java.util.UUID;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final ResourceRequestRepository resourceRequestRepository;
+    private final UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<ResourceResponse> create(
@@ -77,5 +84,35 @@ public class ResourceController {
             @PathVariable UUID requestId,
             @RequestBody Map<String, Boolean> body) {
         return ResponseEntity.ok(resourceService.respondToRequest(jwt, requestId, body.get("approve")));
+    }
+
+    @GetMapping("/requests/incoming")
+    public ResponseEntity<List<Map<String, Object>>> incomingRequests(
+            @AuthenticationPrincipal Jwt jwt) {
+        AppUser owner = userRepository.findByAuth0Id(jwt.getSubject())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Map<String, Object>> result = resourceRequestRepository
+                .findByResourceOwnerIdOrderByCreatedAtDesc(owner.getId())
+                .stream()
+                .map(req -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", req.getId().toString());
+                    map.put("resourceId", req.getResource().getId().toString());
+                    map.put("resourceName", req.getResource().getName());
+                    map.put("resourceCategory", req.getResource().getCategory());
+                    map.put("requesterId", req.getRequester().getId().toString());
+                    map.put("requesterName", req.getRequester().getFullName() != null
+                            ? req.getRequester().getFullName()
+                            : req.getRequester().getUsername());
+                    map.put("requesterUsername", req.getRequester().getUsername());
+                    map.put("message", req.getMessage());
+                    map.put("status", req.getStatus());
+                    map.put("createdAt", req.getCreatedAt() != null ? req.getCreatedAt().toString() : "");
+                    return map;
+                })
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 }
