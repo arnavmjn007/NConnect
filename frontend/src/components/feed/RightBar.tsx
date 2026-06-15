@@ -45,13 +45,14 @@ export default function RightBar() {
 
     const fetchNgos = useCallback(async () => {
         try {
-            const res = await fetch('/api/users?role=NGO&limit=4');
+            const res = await fetch('/api/users?role=NGO&limit=8');
             if (res.ok) {
                 const data: NgoItem[] = await res.json();
-                setNgos(data);
+                const filtered = data.filter(ngo => ngo.auth0Id !== user?.sub).slice(0, 4);
+                setNgos(filtered);
             }
         } catch { /* silent */ }
-    }, []);
+    }, [user?.sub]);
 
     const fetchProjects = useCallback(async () => {
         try {

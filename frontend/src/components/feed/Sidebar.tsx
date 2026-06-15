@@ -2,7 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Calendar, BarChart2, Users2, ArrowUpRight, Bookmark, Sparkles } from 'lucide-react';
+import {
+    MapPin, Calendar, BarChart2, Users2,
+    ArrowUpRight, Sparkles, DollarSign,
+    Package, Crown
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const StatItem = ({ value, label, color, border = false }: {
@@ -24,6 +28,7 @@ export default function Sidebar() {
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
     const isNGO = dbUser?.role === "NGO";
     const initial = displayName.charAt(0).toUpperCase();
+    const isPremium = false;
 
     useEffect(() => {
         if (!user?.sub) return;
@@ -47,13 +52,8 @@ export default function Sidebar() {
                     <div className="relative -mt-8 mb-3 flex justify-start">
                         <div className="h-16 w-16 bg-white p-1 rounded-xl border border-slate-100 shadow-md overflow-hidden">
                             {displayImage ? (
-                                <Image
-                                    src={displayImage}
-                                    alt={displayName}
-                                    width={60}
-                                    height={60}
-                                    className="h-full w-full object-cover rounded-lg"
-                                />
+                                <Image src={displayImage} alt={displayName} width={60} height={60}
+                                    className="h-full w-full object-cover rounded-lg" />
                             ) : (
                                 <div className="h-full w-full bg-linear-to-br from-[#0A66C2] to-[#004182] rounded-lg flex items-center justify-center text-white font-bold text-xl">
                                     {initial}
@@ -81,22 +81,17 @@ export default function Sidebar() {
                                 )}
                             </h2>
                         </Link>
-                        {dbUser?.username && (
-                            <p className="text-xs text-slate-400">@{dbUser.username}</p>
-                        )}
-                        {dbUser?.occupation && (
-                            <p className="text-xs text-slate-500 font-medium">{dbUser.occupation}</p>
-                        )}
+                        {dbUser?.username && <p className="text-xs text-slate-400">@{dbUser.username}</p>}
+                        {dbUser?.occupation && <p className="text-xs text-slate-500 font-medium">{dbUser.occupation}</p>}
                         <div className="space-y-1">
-                            {[
-                                { Icon: MapPin, text: displayLocation },
-                                { Icon: Calendar, text: `Joined ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` },
-                            ].map(({ Icon, text }) => (
-                                <div key={text} className="flex items-center gap-2 text-[11px] text-slate-500">
-                                    <Icon size={12} className="shrink-0 text-slate-400" />
-                                    <span className="truncate">{text}</span>
-                                </div>
-                            ))}
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                                <MapPin size={12} className="shrink-0 text-slate-400" />
+                                <span className="truncate">{displayLocation}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                                <Calendar size={12} className="shrink-0 text-slate-400" />
+                                <span>Joined {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -111,36 +106,62 @@ export default function Sidebar() {
             {isNGO && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Management</p>
-                    {[
-                        { Icon: BarChart2, label: "Analytics", badge: null },
-                        { Icon: Users2, label: "Volunteers", badge: "0 new" },
-                    ].map(({ Icon, label, badge }) => (
-                        <button key={label} className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
-                            <div className="flex items-center gap-3">
-                                <Icon size={16} className="text-[#0A66C2]" />
-                                <span className="text-sm font-semibold text-slate-700">{label}</span>
-                            </div>
-                            {badge
-                                ? <span className="bg-[#0A66C2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{badge}</span>
-                                : <ArrowUpRight size={13} className="text-slate-300 group-hover:text-slate-500 transition-colors" />
-                            }
-                        </button>
-                    ))}
+
+                    <Link href="/analytics"
+                        className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+                        <div className="flex items-center gap-3">
+                            <BarChart2 size={16} className="text-[#0A66C2]" />
+                            <span className="text-sm font-semibold text-slate-700">Analytics</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            {isPremium ? (
+                                <span className="flex items-center gap-0.5 text-[9px] font-black bg-amber-400 text-white px-1.5 py-0.5 rounded-full uppercase">
+                                    <Crown size={8} /> Pro
+                                </span>
+                            ) : (
+                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full uppercase">
+                                    Free
+                                </span>
+                            )}
+                            <ArrowUpRight size={13} className="text-slate-300 group-hover:text-slate-500 transition-colors" />
+                        </div>
+                    </Link>
+
+                    <button className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+                        <div className="flex items-center gap-3">
+                            <Users2 size={16} className="text-[#0A66C2]" />
+                            <span className="text-sm font-semibold text-slate-700">Volunteers</span>
+                        </div>
+                        <span className="bg-[#0A66C2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0 new</span>
+                    </button>
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Quick Access</p>
-                {[
-                    { Icon: Bookmark, label: "Saved Posts", href: "/saved" },
-                    { Icon: Sparkles, label: "Discover NGOs", href: "/search?q=ngo" },
-                ].map(({ Icon, label, href }) => (
-                    <Link key={label} href={href} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
-                        <Icon size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
-                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
-                    </Link>
-                ))}
-            </div>
+            {!isNGO && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">My Contributions</p>
+
+                    {[
+                        { Icon: DollarSign, label: "Money Donations", href: "/contributions?tab=donations" },
+                        { Icon: Package, label: "Resource Donations", href: "/contributions?tab=resources" },
+                        { Icon: Users2, label: "Volunteer Activities", href: "/contributions?tab=volunteer" },
+                    ].map(({ Icon, label, href }) => (
+                        <Link key={label} href={href}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+                            <Icon size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
+                        </Link>
+                    ))}
+
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                        <Link href="/search?q=ngo"
+                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+                            <Sparkles size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                            <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">Discover NGOs</span>
+                        </Link>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
