@@ -143,7 +143,7 @@ export default function Postbox({ onPostCreated }: Props) {
                                 className="h-full w-full object-cover"
                             />
                         ) : (
-                            <div className="h-full w-full bg-gradient-to-br from-[#0A66C2] to-[#004182] flex items-center justify-center text-white font-bold text-sm">
+                            <div className="h-full w-full bg-linear-to-br from-[#0A66C2] to-[#004182] flex items-center justify-center text-white font-bold text-sm">
                                 {initial}
                             </div>
                         )}
