@@ -7,6 +7,9 @@ import { likePost, unlikePost, deletePost } from '@/lib/feedApi';
 export interface Post {
     id: string;
     author_id: string;
+    author_username: string;
+    author_name: string;
+    author_avatar: string | null;
     content: string | null;
     media_urls: string[];
     like_count: number;
@@ -17,6 +20,7 @@ export interface Post {
     post_type: string;
     original_content?: string;
     original_author_id?: string;
+    original_author_username?: string;
     repost_comment?: string;
 }
 
@@ -69,15 +73,25 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
             <div className="p-4 flex justify-between items-start">
                 <div className="flex gap-3">
-                    <div className="h-11 w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
-                        {post.author_id.charAt(0).toUpperCase()}
-                    </div>
+                    {post.author_avatar ? (
+                        <Image
+                            src={post.author_avatar}
+                            alt={post.author_name}
+                            width={44}
+                            height={44}
+                            className="rounded-xl object-cover shrink-0"
+                        />
+                    ) : (
+                        <div className="h-11 w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
+                            {post.author_name.charAt(0).toUpperCase()}
+                        </div>
+                    )}
                     <div>
                         <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors">
-                            {post.author_id}
+                            {post.author_name}
                         </h4>
                         <p className="text-[11px] text-slate-400 mt-0.5">
-                            {timeAgo}{post.is_edited && ' · Edited'} · 🌐
+                            @{post.author_username} · {timeAgo}{post.is_edited && ' · Edited'} · 🌐
                         </p>
                     </div>
                 </div>
@@ -101,7 +115,9 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                     {post.repost_comment && (
                         <p className="text-sm text-slate-800 mb-2">{post.repost_comment}</p>
                     )}
-                    <p className="text-xs text-slate-400 mb-1">↩ {post.original_author_id}</p>
+                    <p className="text-xs text-slate-400 mb-1">
+                        ↩ @{post.original_author_username ?? post.original_author_id}
+                    </p>
                     <p className="text-sm text-slate-600 italic">{post.original_content}</p>
                 </div>
             )}
@@ -149,7 +165,6 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                     </button>
                 ))}
             </div>
-
         </article>
     );
 }
