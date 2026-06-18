@@ -7,8 +7,14 @@ const router = Router();
 export async function enrichPosts(posts, currentUserId) {
   if (!posts.length) return [];
   const ids = posts.map((p) => p.id);
+  const authorIds = [
+    ...new Set([
+      ...posts.map((p) => p.author_id),
+      ...posts.map((p) => p.original_author_id).filter(Boolean),
+    ]),
+  ];
 
-  const [likes, comments, myLikes] = await Promise.all([
+  const [likes, comments, myLikes, users] = await Promise.all([
     pool.query(
       `SELECT post_id, COUNT(*)::int AS count
        FROM post_likes WHERE post_id = ANY($1) GROUP BY post_id`,
@@ -26,6 +32,11 @@ export async function enrichPosts(posts, currentUserId) {
           [ids, currentUserId]
         )
       : Promise.resolve({ rows: [] }),
+    pool.query(
+      `SELECT auth0_id, username, full_name, profile_image_url
+       FROM app_users WHERE auth0_id = ANY($1)`,
+      [authorIds]
+    ),
   ]);
 
   const likeMap = Object.fromEntries(
@@ -35,13 +46,25 @@ export async function enrichPosts(posts, currentUserId) {
     comments.rows.map((r) => [r.post_id, r.count])
   );
   const likedSet = new Set(myLikes.rows.map((r) => r.post_id));
+  const userMap = Object.fromEntries(users.rows.map((u) => [u.auth0_id, u]));
 
-  return posts.map((p) => ({
-    ...p,
-    like_count: likeMap[p.id] ?? 0,
-    comment_count: commentMap[p.id] ?? 0,
-    liked_by_me: likedSet.has(p.id),
-  }));
+  return posts.map((p) => {
+    const author = userMap[p.author_id] ?? {};
+    const originalAuthor = p.original_author_id
+      ? userMap[p.original_author_id] ?? {}
+      : null;
+    return {
+      ...p,
+      author_username: author.username ?? p.author_id,
+      author_name: author.full_name ?? author.username ?? p.author_id,
+      author_avatar: author.profile_image_url ?? null,
+      original_author_username:
+        originalAuthor?.username ?? p.original_author_id ?? null,
+      like_count: likeMap[p.id] ?? 0,
+      comment_count: commentMap[p.id] ?? 0,
+      liked_by_me: likedSet.has(p.id),
+    };
+  });
 }
 
 router.get("/:id", optionalAuth, async (req, res) => {
