@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+"use client";
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { TrendingUp, BadgeCheck } from 'lucide-react';
@@ -25,91 +26,75 @@ interface ProjectItem {
     status: string;
 }
 
-const ProgressBar = ({ raised, goal }: { raised: number; goal: number }) => {
+function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
     const pct = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
     return (
         <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
             <div
-                className="bg-linear-to-r from-[#0A66C2] to-[#0073b1] h-full rounded-full transition-all duration-700"
+                className="bg-[#0A66C2] h-full rounded-full transition-all duration-700"
                 style={{ width: `${pct}%` }}
             />
         </div>
     );
-};
+}
+
+async function getFollowStates(ngoList: NgoItem[]): Promise<Record<string, boolean>> {
+    const states: Record<string, boolean> = {};
+    await Promise.all(
+        ngoList.map(async (ngo) => {
+            try {
+                const res = await fetch(`/api/follow/${encodeURIComponent(ngo.auth0Id)}/counts`);
+                if (res.ok) {
+                    const data = await res.json();
+                    states[ngo.auth0Id] = data.isFollowing ?? false;
+                }
+            } catch { /* silent */ }
+        })
+    );
+    return states;
+}
 
 export default function RightBar() {
     const { user } = useAuth();
     const [ngos, setNgos] = useState<NgoItem[]>([]);
     const [projects, setProjects] = useState<ProjectItem[]>([]);
-    const [followStates, setFollowStates] = useState<Record<string, boolean>>({});
+    const [ngoLoading, setNgoLoading] = useState(true);
 
-    const fetchNgos = useCallback(async () => {
-        try {
-            const res = await fetch('/api/users?role=NGO&limit=8');
-            if (res.ok) {
-                const data: NgoItem[] = await res.json();
-                const filtered = data.filter(ngo => ngo.auth0Id !== user?.sub).slice(0, 4);
-                setNgos(filtered);
-            }
-        } catch { /* silent */ }
-    }, [user?.sub]);
+    useEffect(() => {
+        if (!user?.sub) return;
+        let cancelled = false;
+        async function load() {
+            try {
+                const [ngoRes, projRes] = await Promise.all([
+                    fetch('/api/users?role=NGO&limit=20'),
+                    fetch('/api/projects?category=&search='),
+                ]);
+                if (!cancelled && ngoRes.ok) {
+                    const data: NgoItem[] = await ngoRes.json();
+                    const filtered = data.filter(n => n.auth0Id !== user?.sub);
 
-    const fetchProjects = useCallback(async () => {
-        try {
-            const res = await fetch('/api/projects?category=&search=');
-            if (res.ok) {
-                const data: ProjectItem[] = await res.json();
-                const sorted = [...data]
-                    .filter(p => p.goalAmount > 0)
-                    .sort((a, b) => {
-                        const pctA = a.goalAmount ? a.raisedAmount / a.goalAmount : 0;
-                        const pctB = b.goalAmount ? b.raisedAmount / b.goalAmount : 0;
-                        return pctB - pctA;
-                    })
-                    .slice(0, 3);
-                setProjects(sorted);
-            }
-        } catch { /* silent */ }
-    }, []);
-
-    const checkFollowStatus = useCallback(async (ngoList: NgoItem[]) => {
-        if (!user?.sub || !ngoList.length) return;
-        const states: Record<string, boolean> = {};
-        await Promise.all(
-            ngoList.map(async (ngo) => {
-                try {
-                    const res = await fetch(`/api/follow/${encodeURIComponent(ngo.auth0Id)}/counts`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        states[ngo.auth0Id] = data.isFollowing;
+                    const states = await getFollowStates(filtered);
+                    if (!cancelled) {
+                        const unFollowed = filtered
+                            .filter(n => !states[n.auth0Id])
+                            .slice(0, 4);
+                        setNgos(unFollowed);
                     }
-                } catch { /* silent */ }
-            })
-        );
-        setFollowStates(states);
+                }
+                if (!cancelled && projRes.ok) {
+                    const data: ProjectItem[] = await projRes.json();
+                    const sorted = [...data]
+                        .filter(p => p.goalAmount > 0)
+                        .sort((a, b) => (b.raisedAmount / b.goalAmount) - (a.raisedAmount / a.goalAmount))
+                        .slice(0, 3);
+                    setProjects(sorted);
+                }
+            } catch { /* silent */ }
+            finally { if (!cancelled) setNgoLoading(false); }
+        }
+        load();
+        return () => { cancelled = true; };
     }, [user?.sub]);
-
-    useEffect(() => {
-        let cancelled = false;
-        const run = async () => {
-            if (!cancelled) {
-                await fetchNgos();
-                await fetchProjects();
-            }
-        };
-        run();
-        return () => { cancelled = true; };
-    }, [fetchNgos, fetchProjects]);
-
-    useEffect(() => {
-        if (!ngos.length) return;
-        let cancelled = false;
-        const run = async () => {
-            if (!cancelled) await checkFollowStatus(ngos);
-        };
-        run();
-        return () => { cancelled = true; };
-    }, [ngos, checkFollowStatus]);
 
     return (
         <div className="space-y-4">
@@ -121,7 +106,7 @@ export default function RightBar() {
                     </Link>
                 </div>
 
-                {ngos.length === 0 ? (
+                {ngoLoading ? (
                     <div className="space-y-3">
                         {[...Array(4)].map((_, i) => (
                             <div key={i} className="flex items-center justify-between gap-2 animate-pulse">
@@ -136,10 +121,14 @@ export default function RightBar() {
                             </div>
                         ))}
                     </div>
+                ) : ngos.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-4">
+                        You&apos;re following all suggested NGOs!
+                    </p>
                 ) : (
                     <div className="space-y-3">
                         {ngos.map((ngo) => (
-                            <div key={ngo.id} className="flex items-center justify-between gap-2 group">
+                            <div key={ngo.id} className="flex items-center justify-between gap-2">
                                 <Link href={`/profile/${ngo.username}`} className="flex items-center gap-3 min-w-0">
                                     <div className="h-9 w-9 rounded-xl overflow-hidden shrink-0 bg-indigo-100 flex items-center justify-center">
                                         {ngo.profileImageUrl ? (
@@ -168,8 +157,12 @@ export default function RightBar() {
                                 </Link>
                                 <FollowButton
                                     targetAuth0Id={ngo.auth0Id}
-                                    initialFollowing={followStates[ngo.auth0Id] ?? false}
-                                    onFollowChange={(f) => setFollowStates(prev => ({ ...prev, [ngo.auth0Id]: f }))}
+                                    initialFollowing={false}
+                                    onFollowChange={(f) => {
+                                        if (f) {
+                                            setNgos(prev => prev.filter(n => n.auth0Id !== ngo.auth0Id));
+                                        }
+                                    }}
                                     size="sm"
                                     className="shrink-0"
                                 />
@@ -185,7 +178,6 @@ export default function RightBar() {
                         <TrendingUp size={14} className="text-indigo-600" />
                         <h2 className="font-bold text-sm text-slate-900">Trending Projects</h2>
                     </div>
-
                     <div className="space-y-5">
                         {projects.map((p) => {
                             const pct = p.goalAmount > 0
