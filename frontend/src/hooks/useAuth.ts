@@ -16,11 +16,11 @@ export type DbUser = {
     education: string | null;
     profileImageUrl: string | null;
     onboardingComplete: boolean;
+    createdAt: string | null;
     skills: string[];
     interests: string[];
     languages: string[];
     causes: string[];
-
     organizationName: string | null;
     missionStatement: string | null;
     ngoCategories: string | null;
@@ -92,7 +92,6 @@ export function useAuth() {
                     }
                     return;
                 }
-
                 if (!profile.onboardingComplete && pathname !== "/onboarding") {
                     router.push("/onboarding");
                 }
@@ -108,5 +107,12 @@ export function useAuth() {
         doSync();
     }, [user, isAuth0Loading, pathname, router]);
 
-    return { user, dbUser, error, isAuthenticated: !!user, isLoading: isAuth0Loading || isSyncing, refreshUser };
+    return {
+        user,
+        dbUser,
+        error,
+        isAuthenticated: !!user,
+        isLoading: isAuth0Loading || isSyncing,
+        refreshUser,
+    };
 }
