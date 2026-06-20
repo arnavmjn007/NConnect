@@ -37,6 +37,7 @@ export default function FollowButton({
                 const next = !following;
                 setFollowing(next);
                 onFollowChange?.(next);
+                window.dispatchEvent(new CustomEvent('follow-changed'));
             }
         } catch (err) {
             console.error('Follow error:', err);
