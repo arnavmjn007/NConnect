@@ -1,17 +1,18 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getResources, getMyResources, requestResource } from '@/lib/api';
+import { getResources, getMyResources, getMyResourceRequests, requestResource } from '@/lib/api';
 import Image from 'next/image';
 import {
     Search, Plus, Package, MapPin, Calendar, CheckCircle,
     AlertTriangle, X, Layers, Car, Monitor,
-    Sofa, HeartPulse, Building, Wrench, Tag
+    Sofa, HeartPulse, Building, Wrench, Tag,
+    HandHelping, ArrowRight, Flame
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
 
 const CATEGORIES = [
-    { label: "All Types", value: "all", Icon: Layers },
+    { label: "All", value: "all", Icon: Layers },
     { label: "Vehicle", value: "Vehicle", Icon: Car },
     { label: "Electronics", value: "Electronics", Icon: Monitor },
     { label: "Furniture", value: "Furniture", Icon: Sofa },
@@ -20,13 +21,17 @@ const CATEGORIES = [
     { label: "Equipment", value: "Equipment", Icon: Wrench },
 ];
 
-const STATUS_OPTIONS = ["all", "AVAILABLE", "REQUESTED", "SHARED"];
-
 const STATUS_STYLE: Record<string, string> = {
     AVAILABLE: "bg-emerald-100 text-emerald-700 border border-emerald-200",
     REQUESTED: "bg-amber-100 text-amber-700 border border-amber-200",
     SHARED: "bg-violet-100 text-violet-700 border border-violet-200",
     UNAVAILABLE: "bg-slate-100 text-slate-500 border border-slate-200",
+};
+
+const URGENCY_STYLE: Record<string, string> = {
+    HIGH: "bg-red-100 text-red-700 border border-red-200",
+    MEDIUM: "bg-amber-100 text-amber-700 border border-amber-200",
+    LOW: "bg-slate-100 text-slate-500 border border-slate-200",
 };
 
 const SHARING_STYLE: Record<string, string> = {
@@ -39,6 +44,12 @@ const CONDITION_COLOR: Record<string, string> = {
     New: "text-emerald-600",
     Good: "text-blue-600",
     Fair: "text-amber-600",
+};
+
+const MY_REQUEST_STATUS_STYLE: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-700",
+    APPROVED: "bg-emerald-100 text-emerald-700",
+    REJECTED: "bg-red-100 text-red-700",
 };
 
 interface Resource {
@@ -60,6 +71,17 @@ interface Resource {
     ownerVerified: boolean;
     ownerId: string;
     createdAt: string;
+    resourceType: string;
+    urgency: string;
+}
+
+interface MyRequest {
+    id: string;
+    resourceId: string;
+    resourceName: string;
+    resourceCategory: string;
+    status: string;
+    createdAt: string;
 }
 
 function ResourceCard({ resource, currentUserId, onRequest }: {
@@ -68,44 +90,63 @@ function ResourceCard({ resource, currentUserId, onRequest }: {
     onRequest: (r: Resource) => void;
 }) {
     const isOwner = currentUserId === resource.ownerId;
+    const isOffer = resource.resourceType !== 'REQUEST';
+    const isNeed = resource.resourceType === 'REQUEST';
 
     return (
-        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
-            <div className="h-36 bg-linear-to-br from-slate-100 to-slate-200 relative overflow-hidden">
+        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col">
+            <div className="h-36 bg-linear-to-br from-slate-100 to-slate-200 relative overflow-hidden shrink-0">
                 {resource.imageUrl ? (
-                    <Image
-                        src={resource.imageUrl}
-                        alt={resource.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                    />
+                    <Image src={resource.imageUrl} alt={resource.name} fill
+                        className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Package size={32} className="text-slate-300" />
+                    <div className={`w-full h-full flex items-center justify-center ${isNeed ? 'bg-orange-50' : 'bg-slate-50'}`}>
+                        {isNeed
+                            ? <HandHelping size={32} className="text-orange-300" />
+                            : <Package size={32} className="text-slate-300" />}
                     </div>
                 )}
+
                 <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLE[resource.status]}`}>
-                        {resource.status}
-                    </span>
-                    {resource.sharingType && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SHARING_STYLE[resource.sharingType] || "bg-slate-100 text-slate-500"}`}>
-                            {resource.sharingType}
+                    {isOffer && (
+                        <>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLE[resource.status]}`}>
+                                {resource.status}
+                            </span>
+                            {resource.sharingType && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SHARING_STYLE[resource.sharingType] || "bg-slate-100 text-slate-500"}`}>
+                                    {resource.sharingType}
+                                </span>
+                            )}
+                        </>
+                    )}
+                    {isNeed && resource.urgency && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${URGENCY_STYLE[resource.urgency] || URGENCY_STYLE.LOW}`}>
+                            {resource.urgency === 'HIGH' && <Flame size={9} />}
+                            {resource.urgency}
                         </span>
                     )}
                 </div>
-                <div className="absolute bottom-2 left-2">
+
+                <div className="absolute bottom-2 left-2 flex gap-1">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isNeed ? 'bg-orange-500 text-white' : 'bg-white/80 text-slate-700'}`}>
+                        {isNeed ? 'NEEDED' : 'AVAILABLE'}
+                    </span>
                     <span className="text-[10px] font-bold bg-white/80 text-slate-700 px-2 py-0.5 rounded-full">
                         {resource.category}
                     </span>
                 </div>
             </div>
 
-            <div className="p-4 space-y-2.5">
+            <div className="p-4 space-y-2.5 flex flex-col flex-1">
                 <div>
                     <h3 className="font-bold text-slate-900 text-sm leading-tight">{resource.name}</h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{resource.ownerName}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                        {resource.ownerName ?? resource.ownerUsername}
+                        {resource.ownerVerified && (
+                            <span className="ml-1 text-blue-500">✓</span>
+                        )}
+                    </p>
                 </div>
 
                 {resource.description && (
@@ -117,16 +158,18 @@ function ResourceCard({ resource, currentUserId, onRequest }: {
                         <span className="flex items-center gap-1"><MapPin size={10} />{resource.location}</span>
                     )}
                     {resource.quantity && (
-                        <span className="flex items-center gap-1"><Layers size={10} />Qty: {resource.quantity}</span>
+                        <span className="flex items-center gap-1">
+                            <Layers size={10} />{isNeed ? `Need: ${resource.quantity}` : `Qty: ${resource.quantity}`}
+                        </span>
                     )}
-                    {resource.condition && (
+                    {resource.condition && isOffer && (
                         <span className={`font-semibold ${CONDITION_COLOR[resource.condition] || "text-slate-500"}`}>
                             {resource.condition}
                         </span>
                     )}
                 </div>
 
-                {(resource.availableFrom || resource.availableUntil) && (
+                {isOffer && (resource.availableFrom || resource.availableUntil) && (
                     <div className="flex items-center gap-1 text-[11px] text-slate-400">
                         <Calendar size={10} />
                         {resource.availableFrom && new Date(resource.availableFrom).toLocaleDateString()}
@@ -138,33 +181,38 @@ function ResourceCard({ resource, currentUserId, onRequest }: {
                 {resource.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                         {resource.tags.slice(0, 3).map(t => (
-                            <span key={t} className="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full border border-slate-100">
-                                {t}
-                            </span>
+                            <span key={t} className="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-full border border-slate-100">{t}</span>
                         ))}
                     </div>
                 )}
 
-                {!isOwner && resource.status === "AVAILABLE" && (
-                    <button onClick={() => onRequest(resource)}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition-colors mt-1">
-                        Request Resource
-                    </button>
-                )}
-                {isOwner && (
-                    <div className="text-[11px] text-slate-400 text-center pt-1 font-medium">Your resource</div>
-                )}
-                {!isOwner && resource.status !== "AVAILABLE" && (
-                    <div className={`text-[11px] text-center pt-1 font-semibold ${resource.status === "SHARED" ? "text-violet-500" : "text-amber-500"}`}>
-                        {resource.status === "SHARED" ? "Currently shared" : "Request pending"}
-                    </div>
-                )}
+                <div className="mt-auto pt-2">
+                    {isOwner ? (
+                        <div className="text-[11px] text-slate-400 text-center font-medium">Your {isNeed ? 'request' : 'resource'}</div>
+                    ) : isOffer && resource.status === 'AVAILABLE' ? (
+                        <button onClick={() => onRequest(resource)}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+                            Request Resource
+                        </button>
+                    ) : isNeed ? (
+                        <button onClick={() => onRequest(resource)}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+                            Offer Help
+                        </button>
+                    ) : (
+                        <div className={`text-[11px] text-center font-semibold ${resource.status === 'SHARED' ? 'text-violet-500' : 'text-amber-500'}`}>
+                            {resource.status === 'SHARED' ? 'Currently shared' : 'Request pending'}
+                        </div>
+                    )}
+                </div>
             </div>
         </article>
     );
 }
 
-function CreateResourceModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function AddResourceModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+    const [step, setStep] = useState<'pick' | 'form'>('pick');
+    const [resourceType, setResourceType] = useState<'OFFER' | 'REQUEST'>('OFFER');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [form, setForm] = useState({
@@ -172,20 +220,28 @@ function CreateResourceModal({ onClose, onCreated }: { onClose: () => void; onCr
         location: "", quantity: "", condition: "Good",
         sharingType: "BORROW", imageUrl: "",
         availableFrom: "", availableUntil: "",
+        urgency: "MEDIUM",
     });
+
+    const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10";
 
     const handleSubmit = async () => {
         if (!form.name || !form.category) { setError("Name and category are required"); return; }
         setLoading(true);
+        setError("");
         try {
             const res = await fetch("/api/resources", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...form,
+                    resourceType,
                     quantity: form.quantity ? parseInt(form.quantity) : null,
                     availableFrom: form.availableFrom || null,
                     availableUntil: form.availableUntil || null,
+                    urgency: resourceType === 'REQUEST' ? form.urgency : null,
+                    sharingType: resourceType === 'OFFER' ? form.sharingType : null,
+                    condition: resourceType === 'OFFER' ? form.condition : null,
                 }),
             });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed"); }
@@ -196,89 +252,173 @@ function CreateResourceModal({ onClose, onCreated }: { onClose: () => void; onCr
         } finally { setLoading(false); }
     };
 
-    const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10";
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <h2 className="font-bold text-slate-900">Add Resource</h2>
+                    <h2 className="font-bold text-slate-900">
+                        {step === 'pick' ? 'What would you like to create?' : resourceType === 'OFFER' ? 'Resource Offer' : 'Resource Request'}
+                    </h2>
                     <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
-                <div className="p-5 space-y-4">
-                    {error && (
-                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                            <AlertTriangle size={14} />{error}
-                        </div>
-                    )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Resource Name *</label>
-                            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                                className={inputCls} placeholder="e.g. Industrial Projector" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
-                            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className={inputCls}>
-                                <option value="">Select category</option>
-                                {CATEGORIES.filter(c => c.value !== "all").map(c => (
-                                    <option key={c.value} value={c.value}>{c.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Sharing Type</label>
-                            <select value={form.sharingType} onChange={e => setForm(p => ({ ...p, sharingType: e.target.value }))} className={inputCls}>
-                                <option value="BORROW">Borrow</option>
-                                <option value="DONATE">Donate</option>
-                                <option value="BOTH">Both</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Condition</label>
-                            <select value={form.condition} onChange={e => setForm(p => ({ ...p, condition: e.target.value }))} className={inputCls}>
-                                <option value="New">New</option>
-                                <option value="Good">Good</option>
-                                <option value="Fair">Fair</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Quantity</label>
-                            <input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))}
-                                className={inputCls} placeholder="e.g. 2" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
-                            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
-                                className={inputCls} placeholder="e.g. Kathmandu" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Available From</label>
-                            <input type="date" value={form.availableFrom} onChange={e => setForm(p => ({ ...p, availableFrom: e.target.value }))} className={inputCls} />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Available Until</label>
-                            <input type="date" value={form.availableUntil} onChange={e => setForm(p => ({ ...p, availableUntil: e.target.value }))} className={inputCls} />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tags</label>
-                            <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
-                                className={inputCls} placeholder="Training, Workshop (comma-separated)" />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description</label>
-                            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                                rows={3} className={`${inputCls} resize-none`} placeholder="Describe the resource..." />
-                        </div>
+
+                {step === 'pick' ? (
+                    <div className="p-5 space-y-3">
+                        <p className="text-sm text-slate-500">Choose the type of resource post you want to create.</p>
+                        <button
+                            onClick={() => { setResourceType('OFFER'); setStep('form'); }}
+                            className="w-full flex items-start gap-4 p-4 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl transition-all text-left group"
+                        >
+                            <div className="h-10 w-10 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-indigo-200 transition-colors">
+                                <Package size={18} className="text-indigo-600" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-slate-900 text-sm">Resource Offer</p>
+                                <p className="text-xs text-slate-500 mt-0.5">I have something to share — laptops, projector, office chairs, space, equipment...</p>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => { setResourceType('REQUEST'); setStep('form'); }}
+                            className="w-full flex items-start gap-4 p-4 border-2 border-slate-200 hover:border-orange-400 rounded-2xl transition-all text-left group"
+                        >
+                            <div className="h-10 w-10 bg-orange-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-orange-200 transition-colors">
+                                <HandHelping size={18} className="text-orange-500" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-slate-900 text-sm">Resource Request</p>
+                                <p className="text-xs text-slate-500 mt-0.5">I need something — blankets, volunteers, blood pressure machines, school supplies...</p>
+                            </div>
+                        </button>
                     </div>
-                    <button onClick={handleSubmit} disabled={loading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm">
-                        {loading ? "Adding..." : "Add Resource"}
-                    </button>
-                </div>
+                ) : (
+                    <div className="p-5 space-y-4">
+                        <button
+                            onClick={() => setStep('pick')}
+                            className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1"
+                        >
+                            ← Change type
+                        </button>
+
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold ${resourceType === 'OFFER'
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'bg-orange-50 text-orange-700'
+                            }`}>
+                            {resourceType === 'OFFER' ? <Package size={13} /> : <HandHelping size={13} />}
+                            {resourceType === 'OFFER' ? 'Resource Offer — You have this to share' : 'Resource Request — You need this'}
+                        </div>
+
+                        {error && (
+                            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
+                                <AlertTriangle size={14} />{error}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    {resourceType === 'REQUEST' ? 'What do you need? *' : 'Resource Name *'}
+                                </label>
+                                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                                    className={inputCls}
+                                    placeholder={resourceType === 'REQUEST' ? 'e.g. Need 20 Blankets' : 'e.g. Industrial Projector'} />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
+                                <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className={inputCls}>
+                                    <option value="">Select category</option>
+                                    {CATEGORIES.filter(c => c.value !== "all").map(c => (
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {resourceType === 'OFFER' ? (
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Sharing Type</label>
+                                    <select value={form.sharingType} onChange={e => setForm(p => ({ ...p, sharingType: e.target.value }))} className={inputCls}>
+                                        <option value="DONATE">Donate</option>
+                                        <option value="BORROW">Lend / Borrow</option>
+                                        <option value="BOTH">Both</option>
+                                    </select>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Urgency</label>
+                                    <select value={form.urgency} onChange={e => setForm(p => ({ ...p, urgency: e.target.value }))} className={inputCls}>
+                                        <option value="LOW">Low</option>
+                                        <option value="MEDIUM">Medium</option>
+                                        <option value="HIGH">High — Urgent</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            {resourceType === 'OFFER' && (
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Condition</label>
+                                    <select value={form.condition} onChange={e => setForm(p => ({ ...p, condition: e.target.value }))} className={inputCls}>
+                                        <option value="New">New</option>
+                                        <option value="Good">Good</option>
+                                        <option value="Fair">Fair</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    {resourceType === 'REQUEST' ? 'Quantity Needed' : 'Quantity'}
+                                </label>
+                                <input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))}
+                                    className={inputCls} placeholder="e.g. 20" />
+                            </div>
+
+                            <div className={resourceType === 'OFFER' ? '' : 'sm:col-span-2'}>
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
+                                <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
+                                    className={inputCls} placeholder="e.g. Kathmandu" />
+                            </div>
+
+                            {resourceType === 'OFFER' && (
+                                <>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Available From</label>
+                                        <input type="date" value={form.availableFrom} onChange={e => setForm(p => ({ ...p, availableFrom: e.target.value }))} className={inputCls} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Available Until</label>
+                                        <input type="date" value={form.availableUntil} onChange={e => setForm(p => ({ ...p, availableUntil: e.target.value }))} className={inputCls} />
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tags</label>
+                                <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
+                                    className={inputCls} placeholder="Training, Workshop (comma-separated)" />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description</label>
+                                <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                                    rows={3} className={`${inputCls} resize-none`}
+                                    placeholder={resourceType === 'REQUEST'
+                                        ? 'Why do you need this? Any specific requirements?'
+                                        : 'Describe the resource, its condition, any usage notes...'} />
+                            </div>
+                        </div>
+
+                        <button onClick={handleSubmit} disabled={loading}
+                            className={`w-full disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors ${resourceType === 'REQUEST'
+                                    ? 'bg-orange-500 hover:bg-orange-600'
+                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                                }`}>
+                            {loading ? "Posting..." : resourceType === 'REQUEST' ? 'Post Resource Need' : 'Add Resource Offer'}
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -290,6 +430,7 @@ function RequestModal({ resource, onClose, onSuccess }: {
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const isNeed = resource.resourceType === 'REQUEST';
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -307,14 +448,16 @@ function RequestModal({ resource, onClose, onSuccess }: {
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="font-bold text-slate-900">Request Resource</h2>
+                    <h2 className="font-bold text-slate-900">{isNeed ? 'Offer Help' : 'Request Resource'}</h2>
                     <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3">
                     <p className="font-semibold text-sm text-slate-900">{resource.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">from {resource.ownerName}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        {isNeed ? 'Requested by' : 'from'} {resource.ownerName ?? resource.ownerUsername}
+                    </p>
                 </div>
                 {error && (
                     <div className="flex items-center gap-2 text-red-500 text-xs">
@@ -325,16 +468,18 @@ function RequestModal({ resource, onClose, onSuccess }: {
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Message (optional)</label>
                     <textarea value={message} onChange={e => setMessage(e.target.value)}
                         rows={3} className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 resize-none"
-                        placeholder="Describe how you plan to use this resource..." />
+                        placeholder={isNeed
+                            ? "How can you help? What can you offer?"
+                            : "Describe how you plan to use this resource..."} />
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={onClose}
-                        className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm">
+                    <button onClick={onClose} className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm">
                         Cancel
                     </button>
                     <button onClick={handleSubmit} disabled={loading}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm">
-                        {loading ? "Sending..." : "Send Request"}
+                        className={`flex-1 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm ${isNeed ? 'bg-orange-500 hover:bg-orange-600' : 'bg-indigo-600 hover:bg-indigo-700'
+                            }`}>
+                        {loading ? "Sending..." : isNeed ? "Offer Help" : "Send Request"}
                     </button>
                 </div>
             </div>
@@ -342,45 +487,67 @@ function RequestModal({ resource, onClose, onSuccess }: {
     );
 }
 
+type TabType = 'all' | 'offers' | 'needs' | 'my';
+
 export default function ResourcesPage() {
     const { dbUser } = useAuth();
+    const [tab, setTab] = useState<TabType>('all');
     const [resources, setResources] = useState<Resource[]>([]);
     const [myResources, setMyResources] = useState<Resource[]>([]);
+    const [myRequests, setMyRequests] = useState<MyRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [requestResource_, setRequestResource] = useState<Resource | null>(null);
+    const [requestTarget, setRequestTarget] = useState<Resource | null>(null);
     const [showCreate, setShowCreate] = useState(false);
     const [requestSuccess, setRequestSuccess] = useState(false);
+
+    const resourceTypeParam = tab === 'offers' ? 'OFFER' : tab === 'needs' ? 'REQUEST' : undefined;
 
     const fetchResources = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getResources({
                 category: categoryFilter === "all" ? undefined : categoryFilter,
-                status: statusFilter === "all" ? undefined : statusFilter,
                 search: search || undefined,
+                resourceType: resourceTypeParam,
             });
             setResources(data);
         } catch { setResources([]); }
         finally { setLoading(false); }
-    }, [categoryFilter, statusFilter, search]);
+    }, [categoryFilter, search, resourceTypeParam]);
 
-    const fetchMyResources = useCallback(async () => {
+    const fetchSidebarData = useCallback(async () => {
         if (!dbUser) return;
-        try { setMyResources(await getMyResources()); }
-        catch { setMyResources([]); }
+        try {
+            const [mine, reqs] = await Promise.all([getMyResources(), getMyResourceRequests()]);
+            setMyResources(mine);
+            setMyRequests(reqs);
+        } catch { /* silent */ }
     }, [dbUser]);
 
     useEffect(() => { fetchResources(); }, [fetchResources]);
-    useEffect(() => { fetchMyResources(); }, [fetchMyResources]);
+    useEffect(() => { fetchSidebarData(); }, [fetchSidebarData]);
+
+    const tabs: { key: TabType; label: string }[] = [
+        { key: 'all', label: 'All Resources' },
+        { key: 'offers', label: 'Resource Offers' },
+        { key: 'needs', label: 'Resource Requests' },
+        { key: 'my', label: 'My Resources' },
+    ];
+
+    const displayedResources = tab === 'my'
+        ? myResources.filter(r =>
+            (categoryFilter === 'all' || r.category === categoryFilter) &&
+            (!search || r.name.toLowerCase().includes(search.toLowerCase()))
+        )
+        : resources;
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
             {requestSuccess && (
                 <div className="bg-emerald-600 text-white text-sm font-semibold text-center py-2.5 flex items-center justify-center gap-2">
-                    <CheckCircle size={14} /> Resource request sent successfully!
+                    <CheckCircle size={14} /> Request sent successfully!
                     <button onClick={() => setRequestSuccess(false)} className="ml-2 opacity-70 hover:opacity-100">
                         <X size={14} />
                     </button>
@@ -390,8 +557,8 @@ export default function ResourcesPage() {
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900">Shared Resources</h1>
-                        <p className="text-sm text-slate-500 mt-1">Discover and share resources with the NConnect community</p>
+                        <h1 className="text-2xl font-bold text-slate-900">Resources</h1>
+                        <p className="text-sm text-slate-500 mt-1">Share what you have. Request what you need.</p>
                     </div>
                     {dbUser && (
                         <button onClick={() => setShowCreate(true)}
@@ -403,6 +570,18 @@ export default function ResourcesPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                     <main className="lg:col-span-8 space-y-4">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-hidden">
+                            {tabs.map(({ key, label }) => (
+                                <button key={key} onClick={() => setTab(key)}
+                                    className={`flex-1 py-2.5 text-xs font-bold transition-all ${tab === key
+                                            ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
+                                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                                        }`}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
@@ -413,16 +592,11 @@ export default function ResourcesPage() {
                             <div className="flex flex-wrap gap-2">
                                 {CATEGORIES.map(({ label, value, Icon }) => (
                                     <button key={value} onClick={() => setCategoryFilter(value)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${categoryFilter === value ? "bg-indigo-600 text-white border-indigo-600" : "border-slate-200 text-slate-600 hover:border-indigo-300"}`}>
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${categoryFilter === value
+                                                ? "bg-indigo-600 text-white border-indigo-600"
+                                                : "border-slate-200 text-slate-600 hover:border-indigo-300"
+                                            }`}>
                                         <Icon size={11} />{label}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex gap-2">
-                                {STATUS_OPTIONS.map(s => (
-                                    <button key={s} onClick={() => setStatusFilter(s)}
-                                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${statusFilter === s ? "bg-slate-800 text-white border-slate-800" : "border-slate-200 text-slate-500 hover:border-slate-400"}`}>
-                                        {s === "all" ? "All Status" : s}
                                     </button>
                                 ))}
                             </div>
@@ -440,22 +614,27 @@ export default function ResourcesPage() {
                                     </div>
                                 ))}
                             </div>
-                        ) : resources.length > 0 ? (
+                        ) : displayedResources.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {resources.map(r => (
-                                    <ResourceCard
-                                        key={r.id}
-                                        resource={r}
+                                {displayedResources.map(r => (
+                                    <ResourceCard key={r.id} resource={r}
                                         currentUserId={dbUser?.id}
-                                        onRequest={setRequestResource}
-                                    />
+                                        onRequest={setRequestTarget} />
                                 ))}
                             </div>
                         ) : (
                             <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
                                 <Package size={32} className="mx-auto mb-3 opacity-40" />
                                 <p className="font-semibold">No resources found</p>
-                                <p className="text-sm mt-1">Try adjusting your filters</p>
+                                <p className="text-sm mt-1">
+                                    {tab === 'my' ? "You haven't added any resources yet." : "Try adjusting your filters"}
+                                </p>
+                                {tab === 'my' && dbUser && (
+                                    <button onClick={() => setShowCreate(true)}
+                                        className="mt-4 bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors">
+                                        Add Your First Resource
+                                    </button>
+                                )}
                             </div>
                         )}
                     </main>
@@ -465,9 +644,9 @@ export default function ResourcesPage() {
                             <h2 className="font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
                                 <Tag size={14} className="text-indigo-500" /> My Resources
                             </h2>
-                            {myResources.length > 0 ? (
-                                <div className="space-y-3">
-                                    {myResources.slice(0, 4).map(r => (
+                            {myResources.filter(r => r.resourceType !== 'REQUEST').length > 0 ? (
+                                <div className="space-y-2">
+                                    {myResources.filter(r => r.resourceType !== 'REQUEST').slice(0, 3).map(r => (
                                         <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50 last:border-0">
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-slate-800 truncate">{r.name}</p>
@@ -480,23 +659,57 @@ export default function ResourcesPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-xs text-slate-400 text-center py-3">
-                                    {dbUser ? "You haven't added any resources yet." : "Sign in to manage your resources."}
+                                <p className="text-xs text-slate-400 text-center py-2">
+                                    {dbUser ? "No resources listed yet." : "Sign in to manage resources."}
                                 </p>
                             )}
                             {dbUser && (
                                 <button onClick={() => setShowCreate(true)}
                                     className="w-full mt-3 border border-slate-200 text-slate-600 text-xs font-bold py-2 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5">
-                                    <Plus size={12} /> Add New Resource
+                                    <Plus size={12} /> Add Resource
                                 </button>
                             )}
                         </div>
+
+                        {dbUser && (
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                <h2 className="font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+                                    <HandHelping size={14} className="text-orange-500" /> My Requests
+                                </h2>
+                                {myRequests.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {myRequests.slice(0, 3).map(r => (
+                                            <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-slate-50 last:border-0">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-800 truncate">{r.resourceName}</p>
+                                                    <p className="text-[11px] text-slate-400">{r.resourceCategory}</p>
+                                                </div>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${MY_REQUEST_STATUS_STYLE[r.status] || 'bg-slate-100 text-slate-500'}`}>
+                                                    {r.status}
+                                                </span>
+                                            </div>
+                                        ))}
+                                        {myRequests.length > 3 && (
+                                            <button
+                                                onClick={() => setTab('my')}
+                                                className="w-full text-xs text-indigo-600 font-semibold flex items-center justify-center gap-1 pt-1 hover:underline"
+                                            >
+                                                See All <ArrowRight size={11} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-slate-400 text-center py-2">No active requests.</p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                             <h2 className="font-bold text-sm text-slate-900 mb-3">Resource Stats</h2>
                             {[
                                 { label: "Total Listed", value: resources.length },
-                                { label: "Available", value: resources.filter(r => r.status === "AVAILABLE").length },
+                                { label: "Offers Available", value: resources.filter(r => r.resourceType !== 'REQUEST' && r.status === "AVAILABLE").length },
+                                { label: "Active Needs", value: resources.filter(r => r.resourceType === 'REQUEST').length },
                                 { label: "Currently Shared", value: resources.filter(r => r.status === "SHARED").length },
                             ].map(s => (
                                 <div key={s.label} className="flex justify-between text-xs py-1.5 border-b border-slate-50 last:border-0">
@@ -511,18 +724,13 @@ export default function ResourcesPage() {
                 </div>
             </div>
 
-            {requestResource_ && (
-                <RequestModal
-                    resource={requestResource_}
-                    onClose={() => setRequestResource(null)}
-                    onSuccess={() => { setRequestSuccess(true); fetchResources(); fetchMyResources(); }}
-                />
+            {requestTarget && (
+                <RequestModal resource={requestTarget} onClose={() => setRequestTarget(null)}
+                    onSuccess={() => { setRequestSuccess(true); fetchResources(); fetchSidebarData(); }} />
             )}
             {showCreate && (
-                <CreateResourceModal
-                    onClose={() => setShowCreate(false)}
-                    onCreated={() => { fetchResources(); fetchMyResources(); }}
-                />
+                <AddResourceModal onClose={() => setShowCreate(false)}
+                    onCreated={() => { fetchResources(); fetchSidebarData(); }} />
             )}
         </div>
     );
