@@ -33,6 +33,8 @@ public class ResourceResponse {
     private LocalDate availableFrom;
     private LocalDate availableUntil;
     private ResourceStatus status;
+    private String resourceType;
+    private String urgency;
     private LocalDateTime createdAt;
 
     public static ResourceResponse from(Resource r) {
@@ -58,6 +60,8 @@ public class ResourceResponse {
                 .availableFrom(r.getAvailableFrom())
                 .availableUntil(r.getAvailableUntil())
                 .status(r.getStatus())
+                .resourceType(r.getResourceType() != null ? r.getResourceType() : "OFFER")
+                .urgency(r.getUrgency())
                 .createdAt(r.getCreatedAt())
                 .build();
     }

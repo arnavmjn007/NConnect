@@ -28,6 +28,7 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
         LEFT JOIN FETCH o.ngoProfile
         WHERE (:category IS NULL OR r.category = :category)
         AND (:status IS NULL OR r.status = :status)
+        AND (:resourceType IS NULL OR r.resourceType = :resourceType)
         AND (
             :search IS NULL
             OR LOWER(CAST(r.name AS string)) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
@@ -37,7 +38,8 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
     """)
     List<Resource> searchResources(@Param("category") String category,
                                    @Param("status") ResourceStatus status,
-                                   @Param("search") String search);
+                                   @Param("search") String search,
+                                   @Param("resourceType") String resourceType);
 
     @Query("""
         SELECT r FROM Resource r

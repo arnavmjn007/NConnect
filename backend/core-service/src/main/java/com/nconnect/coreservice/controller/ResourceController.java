@@ -3,7 +3,6 @@ package com.nconnect.coreservice.controller;
 import com.nconnect.coreservice.dto.ResourceCreateRequest;
 import com.nconnect.coreservice.dto.ResourceResponse;
 import com.nconnect.coreservice.model.AppUser;
-import com.nconnect.coreservice.model.ResourceRequest;
 import com.nconnect.coreservice.repository.ResourceRequestRepository;
 import com.nconnect.coreservice.repository.UserRepository;
 import com.nconnect.coreservice.service.ResourceService;
@@ -39,8 +38,9 @@ public class ResourceController {
     public ResponseEntity<List<ResourceResponse>> search(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String search) {
-        return ResponseEntity.ok(resourceService.searchResources(category, status, search));
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String resourceType) {
+        return ResponseEntity.ok(resourceService.searchResources(category, status, search, resourceType));
     }
 
     @GetMapping("/{id}")
@@ -51,6 +51,11 @@ public class ResourceController {
     @GetMapping("/my")
     public ResponseEntity<List<ResourceResponse>> myResources(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(resourceService.getMyResources(jwt));
+    }
+
+    @GetMapping("/my-requests")
+    public ResponseEntity<List<Map<String, Object>>> myRequests(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(resourceService.getMyRequests(jwt));
     }
 
     @PutMapping("/{id}")

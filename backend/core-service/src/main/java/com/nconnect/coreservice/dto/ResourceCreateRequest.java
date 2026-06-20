@@ -23,4 +23,6 @@ public class ResourceCreateRequest {
     private String imageUrl;
     private LocalDate availableFrom;
     private LocalDate availableUntil;
+    private String resourceType = "OFFER";
+    private String urgency;
 }

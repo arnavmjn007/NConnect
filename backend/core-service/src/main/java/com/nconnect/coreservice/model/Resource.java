@@ -56,6 +56,13 @@ public class Resource {
     @Column(name = "available_until")
     private LocalDate availableUntil;
 
+    @Column(name = "resource_type", nullable = false)
+    @Builder.Default
+    private String resourceType = "OFFER";
+
+    @Column
+    private String urgency;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

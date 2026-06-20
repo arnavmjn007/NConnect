@@ -30,6 +30,7 @@ public class ResourceService {
     @Transactional
     public ResourceResponse createResource(Jwt jwt, ResourceCreateRequest req) {
         AppUser user = getUser(jwt);
+        String resourceType = req.getResourceType() != null ? req.getResourceType().toUpperCase() : "OFFER";
         Resource resource = Resource.builder()
                 .owner(user)
                 .name(req.getName())
@@ -43,19 +44,22 @@ public class ResourceService {
                 .imageUrl(req.getImageUrl())
                 .availableFrom(req.getAvailableFrom())
                 .availableUntil(req.getAvailableUntil())
+                .resourceType(resourceType)
+                .urgency(req.getUrgency())
                 .build();
         return ResourceResponse.from(resourceRepository.save(resource));
     }
 
     @Transactional(readOnly = true)
-    public List<ResourceResponse> searchResources(String category, String status, String search) {
+    public List<ResourceResponse> searchResources(String category, String status, String search, String resourceType) {
         String cat = (category == null || category.isBlank() || category.equals("all")) ? null : category;
         ResourceStatus st = null;
         if (status != null && !status.isBlank() && !status.equals("all")) {
             try { st = ResourceStatus.valueOf(status.toUpperCase()); } catch (Exception ignored) {}
         }
         String q = (search == null || search.isBlank()) ? null : search;
-        return resourceRepository.searchResources(cat, st, q)
+        String rt = (resourceType == null || resourceType.isBlank() || resourceType.equals("all")) ? null : resourceType.toUpperCase();
+        return resourceRepository.searchResources(cat, st, q, rt)
                 .stream().map(ResourceResponse::from).toList();
     }
 
@@ -71,6 +75,22 @@ public class ResourceService {
         AppUser user = getUser(jwt);
         return resourceRepository.findByOwnerIdOrderByCreatedAtDesc(user.getId())
                 .stream().map(ResourceResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getMyRequests(Jwt jwt) {
+        AppUser user = getUser(jwt);
+        return resourceRequestRepository.findByRequesterIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .map(req -> Map.<String, Object>of(
+                        "id", req.getId().toString(),
+                        "resourceId", req.getResource().getId().toString(),
+                        "resourceName", req.getResource().getName(),
+                        "resourceCategory", req.getResource().getCategory(),
+                        "status", req.getStatus(),
+                        "createdAt", req.getCreatedAt() != null ? req.getCreatedAt().toString() : ""
+                ))
+                .toList();
     }
 
     @Transactional
@@ -92,6 +112,8 @@ public class ResourceService {
         if (req.getImageUrl() != null) resource.setImageUrl(req.getImageUrl());
         resource.setAvailableFrom(req.getAvailableFrom());
         resource.setAvailableUntil(req.getAvailableUntil());
+        if (req.getResourceType() != null) resource.setResourceType(req.getResourceType().toUpperCase());
+        if (req.getUrgency() != null) resource.setUrgency(req.getUrgency());
         return ResourceResponse.from(resourceRepository.save(resource));
     }
 
@@ -155,7 +177,6 @@ public class ResourceService {
         if (approve) {
             req.getResource().setStatus(ResourceStatus.SHARED);
             resourceRepository.save(req.getResource());
-
             notificationWebhookService.resourceApproved(
                     req.getRequester().getAuth0Id(),
                     req.getResource().getId().toString(),
