@@ -6,6 +6,7 @@ import com.nconnect.coreservice.model.enums.VerificationStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +26,12 @@ public class UserProfileResponse {
     private String education;
     private String profileImageUrl;
     private boolean onboardingComplete;
+    private LocalDateTime createdAt;
 
     private List<String> skills;
     private List<String> interests;
     private List<String> languages;
     private List<String> causes;
-
 
     private String organizationName;
     private String missionStatement;
@@ -53,12 +54,12 @@ public class UserProfileResponse {
                 .education(user.getEducation())
                 .profileImageUrl(user.getProfileImageUrl())
                 .onboardingComplete(user.isOnboardingComplete())
+                .createdAt(user.getCreatedAt())
                 .skills(user.getSkills().stream().map(s -> s.getSkillName()).toList())
                 .interests(user.getInterests().stream().map(i -> i.getInterestName()).toList())
                 .languages(user.getLanguages().stream().map(l -> l.getLanguageName()).toList())
                 .causes(user.getCauses().stream().map(c -> c.getCauseName()).toList())
                 .verified(false);
-
 
         if (user.getNgoProfile() != null) {
             var ngo = user.getNgoProfile();
