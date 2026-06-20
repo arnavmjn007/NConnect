@@ -38,19 +38,18 @@ app.use("/posts/:id/comments", commentsRouter);
 app.use("/chat", chatRouter);
 app.use("/posts/:id/like", makeReactionsRouter(io));
 app.use("/notifications", makeNotificationsRouter(io));
+app.use("/follow", makeFollowsRouter(io));
 
-const followsRouter = makeFollowsRouter(io);
-
-app.post("/follow/:userId", requireAuth, (req, res, next) => {
-  req.params.userId = req.params.userId;
-  followsRouter.handle(req, res, next);
-});
-app.delete("/follow/:userId", requireAuth, (req, res, next) => {
-  followsRouter.handle(req, res, next);
-});
-
-app.get("/followers/:userId", (req, res, next) => {
-  followsRouter.handle(req, res, next);
+app.get("/followers/:userId", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT follower_id, created_at FROM follows WHERE following_id = $1 ORDER BY created_at DESC`,
+      [req.params.userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/following/:userId", async (req, res) => {
