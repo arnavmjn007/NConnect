@@ -4,8 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
     MapPin, Calendar, Briefcase, GraduationCap,
-    BadgeCheck, Building2, Globe, Activity,
-    Check, Users
+    BadgeCheck, Building2, Globe, Users,
+    Check, Loader2, Repeat2, ThumbsUp, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import FollowButton from '@/components/feed/FollowButton';
@@ -40,6 +40,106 @@ interface FollowStats {
     isFollowing: boolean;
 }
 
+interface Post {
+    id: string;
+    author_id: string;
+    author_name: string;
+    author_username: string;
+    author_avatar: string | null;
+    content: string | null;
+    media_urls: string[];
+    like_count: number;
+    comment_count: number;
+    liked_by_me: boolean;
+    created_at: string;
+    is_edited: boolean;
+    post_type: string;
+}
+
+function PostCard({ post }: { post: Post }) {
+    const timeAgo = new Date(post.created_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+    });
+
+    return (
+        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                    {post.author_avatar ? (
+                        <Image src={post.author_avatar} alt={post.author_name} width={36} height={36}
+                            className="rounded-xl object-cover shrink-0" />
+                    ) : (
+                        <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0">
+                            {post.author_name.charAt(0).toUpperCase()}
+                        </div>
+                    )}
+                    <div>
+                        <p className="text-sm font-bold text-slate-900">{post.author_name}</p>
+                        <p className="text-[11px] text-slate-400">
+                            {timeAgo}{post.is_edited && ' · Edited'} · 🌐
+                        </p>
+                    </div>
+                </div>
+
+                {post.post_type === 'project_update' && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full mb-2">
+                        Project Update
+                    </span>
+                )}
+                {post.post_type === 'resource_need' && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-200 px-2 py-0.5 rounded-full mb-2">
+                        Resource Need
+                    </span>
+                )}
+
+                {post.content && (
+                    <p className="text-sm text-slate-700 leading-relaxed">{post.content}</p>
+                )}
+            </div>
+
+            {post.media_urls?.length > 0 && (
+                <div className="relative w-full h-64">
+                    <Image src={post.media_urls[0]} alt="Post media" fill
+                        className="object-cover" sizes="(max-width: 768px) 100vw, 600px" />
+                </div>
+            )}
+
+            <div className="px-4 py-2 border-t border-slate-100 flex gap-1">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500">
+                    <ThumbsUp size={14} /> {post.like_count}
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500">
+                    <MessageSquare size={14} /> {post.comment_count}
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500">
+                    <Repeat2 size={14} /> Repost
+                </div>
+            </div>
+        </article>
+    );
+}
+
+async function loadFollowStats(auth0Id: string): Promise<FollowStats> {
+    try {
+        const res = await fetch(`/api/follow/${encodeURIComponent(auth0Id)}/counts`);
+        if (!res.ok) return { followerCount: 0, followingCount: 0, isFollowing: false };
+        return res.json();
+    } catch {
+        return { followerCount: 0, followingCount: 0, isFollowing: false };
+    }
+}
+
+async function loadUserPosts(auth0Id: string): Promise<Post[]> {
+    try {
+        const res = await fetch('/api/feed/feed?page=1');
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.posts ?? []).filter((p: Post) => p.author_id === auth0Id);
+    } catch {
+        return [];
+    }
+}
+
 export default function PublicProfilePage({
     params,
 }: {
@@ -49,30 +149,72 @@ export default function PublicProfilePage({
     const { user: currentUser } = useAuth();
 
     const [profile, setProfile] = useState<PublicProfile | null>(null);
-    const [followStats, setFollowStats] = useState<FollowStats>({ followerCount: 0, followingCount: 0, isFollowing: false });
+    const [followStats, setFollowStats] = useState<FollowStats>({
+        followerCount: 0,
+        followingCount: 0,
+        isFollowing: false,
+    });
+    const [followLoaded, setFollowLoaded] = useState(false);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [postsLoaded, setPostsLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
         if (!username) return;
         let cancelled = false;
-        fetch(`/api/users/${username}`)
-            .then(r => {
-                if (r.status === 404) { if (!cancelled) setNotFound(true); return null; }
-                return r.ok ? r.json() : null;
-            })
-            .then(data => { if (!cancelled && data) setProfile(data); })
-            .catch(() => { if (!cancelled) setNotFound(true); })
-            .finally(() => { if (!cancelled) setLoading(false); });
+        async function fetchProfile() {
+            try {
+                const r = await fetch(`/api/users/${username}`);
+                if (r.status === 404) {
+                    if (!cancelled) setNotFound(true);
+                    return;
+                }
+                if (r.ok) {
+                    const data = await r.json();
+                    if (!cancelled) setProfile(data);
+                }
+            } catch {
+                if (!cancelled) setNotFound(true);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+        fetchProfile();
         return () => { cancelled = true; };
     }, [username]);
 
     useEffect(() => {
         if (!profile?.auth0Id) return;
-        fetch(`/api/follow/${encodeURIComponent(profile.auth0Id)}/counts`)
-            .then(r => r.ok ? r.json() : null)
-            .then(data => { if (data) setFollowStats(data); })
-            .catch(() => { });
+        let cancelled = false;
+        const auth0Id = profile.auth0Id;
+        async function fetchFollow() {
+            const data = await loadFollowStats(auth0Id);
+            if (!cancelled) {
+                setFollowStats(data);
+                setFollowLoaded(true);
+            }
+        }
+        fetchFollow();
+        return () => { cancelled = true; };
+    }, [profile?.auth0Id]);
+
+    useEffect(() => {
+        if (!profile?.auth0Id) return;
+        let cancelled = false;
+        const auth0Id = profile.auth0Id;
+        async function fetchPosts() {
+            try {
+                const data = await loadUserPosts(auth0Id);
+                if (!cancelled) setPosts(data);
+            } catch {
+                if (!cancelled) setPosts([]);
+            } finally {
+                if (!cancelled) setPostsLoaded(true);
+            }
+        }
+        fetchPosts();
+        return () => { cancelled = true; };
     }, [profile?.auth0Id]);
 
     if (loading) {
@@ -108,36 +250,39 @@ export default function PublicProfilePage({
             <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5">
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="h-24 bg-linear-to-br from-indigo-500 via-indigo-600 to-purple-600" />
-
                     <div className="px-6 pb-6">
                         <div className="flex items-end justify-between -mt-10 mb-4">
                             <div className="h-20 w-20 rounded-2xl overflow-hidden border-4 border-white shadow-md bg-slate-200">
                                 {profile.profileImageUrl ? (
-                                    <Image src={profile.profileImageUrl} alt={displayName} width={80} height={80} className="h-full w-full object-cover" />
+                                    <Image src={profile.profileImageUrl} alt={displayName}
+                                        width={80} height={80} className="h-full w-full object-cover" />
                                 ) : (
-                                    <div className="h-full w-full bg-linear-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-bold text-3xl">
+                                    <div className="h-full w-full bg-indigo-600 flex items-center justify-center text-white font-bold text-3xl">
                                         {initial}
                                     </div>
                                 )}
                             </div>
-
                             <div className="flex items-center gap-2 mt-10">
                                 {isOwnProfile ? (
                                     <Link href="/settings"
                                         className="border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all">
                                         Edit Profile
                                     </Link>
-                                ) : (
+                                ) : followLoaded ? (
                                     <FollowButton
                                         targetAuth0Id={profile.auth0Id}
                                         initialFollowing={followStats.isFollowing}
                                         onFollowChange={(f) => setFollowStats(prev => ({
                                             ...prev,
                                             isFollowing: f,
-                                            followerCount: f ? prev.followerCount + 1 : Math.max(0, prev.followerCount - 1),
+                                            followerCount: f
+                                                ? prev.followerCount + 1
+                                                : Math.max(0, prev.followerCount - 1),
                                         }))}
                                         size="md"
                                     />
+                                ) : (
+                                    <div className="h-9 w-24 bg-slate-100 rounded-xl animate-pulse" />
                                 )}
                             </div>
                         </div>
@@ -148,7 +293,9 @@ export default function PublicProfilePage({
                                     {displayName}
                                     {profile.verified && <BadgeCheck size={20} className="text-indigo-500" />}
                                     {isNGO && (
-                                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">NGO</span>
+                                        <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                                            NGO
+                                        </span>
                                     )}
                                 </h1>
                                 {profile.username && (
@@ -275,11 +422,27 @@ export default function PublicProfilePage({
                     </div>
                 )}
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-                    <Activity size={28} className="mx-auto mb-3 text-slate-300" />
-                    <p className="text-sm font-semibold text-slate-500">No public activity yet</p>
+                <div className="space-y-4">
+                    <h2 className="font-bold text-slate-900 text-sm px-1">
+                        Posts by {displayName}
+                    </h2>
+                    {!postsLoaded ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="animate-spin text-slate-400" size={22} />
+                        </div>
+                    ) : posts.length > 0 ? (
+                        posts.map(post => <PostCard key={post.id} post={post} />)
+                    ) : (
+                        <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                            <p className="text-slate-500 font-semibold text-sm">No posts yet</p>
+                            <p className="text-slate-400 text-xs mt-1">
+                                {isNGO
+                                    ? `${displayName} hasn't shared anything yet.`
+                                    : 'No public posts yet.'}
+                            </p>
+                        </div>
+                    )}
                 </div>
-
                 <SiteFooter />
             </div>
         </div>
