@@ -3,11 +3,10 @@ import { auth0 } from "@/lib/auth0";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ userId: string }> }
+    { params }: { params: Promise<{ userid: string }> }
 ) {
     try {
-        const { userId } = await params;
-
+        const { userid } = await params;
         const headers: Record<string, string> = {};
         let currentUserSub: string | null = null;
         try {
@@ -18,8 +17,8 @@ export async function GET(
         } catch { /* unauthenticated */ }
 
         const [followersRes, followingRes] = await Promise.all([
-            fetch(`http://localhost:5000/followers/${userId}`, { headers }),
-            fetch(`http://localhost:5000/following/${userId}`, { headers }),
+            fetch(`http://localhost:5000/followers/${encodeURIComponent(userid)}`, { headers }),
+            fetch(`http://localhost:5000/following/${encodeURIComponent(userid)}`, { headers }),
         ]);
 
         const followers: Array<{ follower_id: string }> = followersRes.ok ? await followersRes.json() : [];
