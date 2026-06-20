@@ -91,11 +91,12 @@ export async function getMyProjects() {
 }
 
 
-export async function getResources(params?: { category?: string; status?: string; search?: string }) {
+export async function getResources(params?: { category?: string; status?: string; search?: string; resourceType?: string }) {
     const q = new URLSearchParams();
     if (params?.category) q.set("category", params.category);
     if (params?.status) q.set("status", params.status);
     if (params?.search) q.set("search", params.search);
+    if (params?.resourceType) q.set("resourceType", params.resourceType);
     const res = await fetch(`/api/resources?${q}`);
     if (!res.ok) throw new Error("Failed to fetch resources");
     return res.json();
@@ -117,6 +118,12 @@ export async function getMyResources() {
     return res.json();
 }
 
+export async function getMyResourceRequests() {
+    const res = await fetch("/api/resources/my-requests");
+    if (!res.ok) throw new Error("Failed to fetch your resource requests");
+    return res.json();
+}
+
 export async function requestResource(id: string, message?: string) {
     const res = await fetch(`/api/resources/${id}/request`, {
         method: "POST",
@@ -126,3 +133,4 @@ export async function requestResource(id: string, message?: string) {
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed");
     return res.json();
 }
+
