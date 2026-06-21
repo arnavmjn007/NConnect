@@ -2,12 +2,11 @@
 import React, { useState } from 'react';
 import {
     ThumbsUp, MessageSquare, UserPlus, DollarSign,
-    Bell, Settings, Check, Filter, Repeat2,
+    Bell, Check, Repeat2,
     ShieldCheck, Package, FolderOpen, Megaphone,
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { deleteNotification } from '@/lib/feedApi';
 
 type Tab = 'All' | 'Social' | 'Donations' | 'Projects' | 'System';
 
@@ -57,7 +56,7 @@ function timeAgo(iso: string) {
 const TABS: Tab[] = ['All', 'Social', 'Donations', 'Projects', 'System'];
 
 export default function NotificationsPage() {
-    const { notifications, unreadCount, loading, handleMarkAll, handleMarkOne } = useNotifications();
+    const { notifications, unreadCount, loading, handleMarkAll, handleMarkOne, handleDelete } = useNotifications();
     const [activeTab, setActiveTab] = useState<Tab>('All');
 
     const displayed = activeTab === 'All'
@@ -68,9 +67,9 @@ export default function NotificationsPage() {
         ? notifications.length
         : notifications.filter(n => TAB_TYPES[tab].includes(n.type)).length;
 
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
+    const onDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        await deleteNotification(id);
+        handleDelete(id);
     };
 
     return (
@@ -96,12 +95,6 @@ export default function NotificationsPage() {
                                         <Check size={13} /> Mark all read
                                     </button>
                                 )}
-                                <button className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700 transition-all">
-                                    <Filter size={15} />
-                                </button>
-                                <button className="p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700 transition-all">
-                                    <Settings size={15} />
-                                </button>
                             </div>
                         </div>
 
@@ -168,7 +161,7 @@ export default function NotificationsPage() {
                                                     <div className="h-2.5 w-2.5 bg-indigo-600 rounded-full" />
                                                 )}
                                                 <button
-                                                    onClick={(e) => handleDelete(e, notif.id)}
+                                                    onClick={(e) => onDelete(e, notif.id)}
                                                     className="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400 hover:text-red-500 transition-all font-semibold"
                                                 >
                                                     Remove
