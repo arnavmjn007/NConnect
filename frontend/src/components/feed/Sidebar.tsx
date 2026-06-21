@@ -135,7 +135,9 @@ export default function Sidebar() {
 
             {isNGO && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Management</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">
+                        Management
+                    </p>
 
                     <Link href="/analytics"
                         className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
@@ -157,24 +159,28 @@ export default function Sidebar() {
                         </div>
                     </Link>
 
-                    <Link href="/admin/volunteers"
+                    <Link href="/project"
                         className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
                         <div className="flex items-center gap-3">
                             <Users2 size={16} className="text-[#0A66C2]" />
                             <span className="text-sm font-semibold text-slate-700">Volunteers</span>
                         </div>
-                        <span className="bg-[#0A66C2] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0 new</span>
+                        <span className="text-[9px] font-bold text-[#0A66C2] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                            Manage
+                        </span>
                     </Link>
                 </div>
             )}
 
             {!isNGO && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-2 space-y-1">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">Quick Access</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-3 pt-1 pb-0.5">
+                        Quick Access
+                    </p>
                     <div>
                         <button
                             onClick={() => setContributionsOpen(p => !p)}
-                            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group"
+                            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors"
                         >
                             <div className="flex items-center gap-3">
                                 <Sparkles size={16} className="text-indigo-500" />
@@ -196,7 +202,9 @@ export default function Sidebar() {
                                     <Link key={label} href={href}
                                         className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-xl transition-colors group">
                                         <Icon size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors shrink-0" />
-                                        <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
+                                        <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
+                                            {label}
+                                        </span>
                                     </Link>
                                 ))}
                             </div>
@@ -206,7 +214,9 @@ export default function Sidebar() {
                     <Link href="/discover-ngos"
                         className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
                         <Building2 size={16} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
-                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">Discover NGOs</span>
+                        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
+                            Discover NGOs
+                        </span>
                     </Link>
                 </div>
             )}
