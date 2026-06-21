@@ -1,7 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from './useSocket';
-import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '@/lib/feedApi';
+import {
+    getNotifications,
+    getUnreadCount,
+    markAllRead,
+    markOneRead,
+    deleteNotification,
+} from '@/lib/feedApi';
 
 export interface Notification {
     id: string;
@@ -41,6 +47,7 @@ export function useNotifications() {
     }, []);
 
     useEffect(() => { load(); }, [load]);
+
     useEffect(() => {
         const off = on<Notification>('notification', (notif) => {
             setNotifications(prev => [notif, ...prev]);
@@ -63,5 +70,24 @@ export function useNotifications() {
         setUnreadCount(prev => Math.max(0, prev - 1));
     }, []);
 
-    return { notifications, unreadCount, loading, handleMarkAll, handleMarkOne, reload: load };
+    const handleDelete = useCallback(async (id: string) => {
+        await deleteNotification(id);
+        setNotifications(prev => {
+            const target = prev.find(n => n.id === id);
+            if (target && !target.is_read) {
+                setUnreadCount(c => Math.max(0, c - 1));
+            }
+            return prev.filter(n => n.id !== id);
+        });
+    }, []);
+
+    return {
+        notifications,
+        unreadCount,
+        loading,
+        handleMarkAll,
+        handleMarkOne,
+        handleDelete,
+        reload: load,
+    };
 }
