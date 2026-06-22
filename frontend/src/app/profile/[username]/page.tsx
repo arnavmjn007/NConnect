@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, use } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     MapPin, Calendar, Briefcase, GraduationCap,
@@ -148,6 +149,8 @@ export default function PublicProfilePage({
     const { username } = use(params);
     const { user: currentUser } = useAuth();
 
+    const router = useRouter();
+
     const [profile, setProfile] = useState<PublicProfile | null>(null);
     const [followStats, setFollowStats] = useState<FollowStats>({
         followerCount: 0,
@@ -264,25 +267,43 @@ export default function PublicProfilePage({
                             </div>
                             <div className="flex items-center gap-2 mt-10">
                                 {isOwnProfile ? (
-                                    <Link href="/settings"
-                                        className="border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all">
+                                    <Link
+                                        href="/settings"
+                                        className="border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                                    >
                                         Edit Profile
                                     </Link>
-                                ) : followLoaded ? (
-                                    <FollowButton
-                                        targetAuth0Id={profile.auth0Id}
-                                        initialFollowing={followStats.isFollowing}
-                                        onFollowChange={(f) => setFollowStats(prev => ({
-                                            ...prev,
-                                            isFollowing: f,
-                                            followerCount: f
-                                                ? prev.followerCount + 1
-                                                : Math.max(0, prev.followerCount - 1),
-                                        }))}
-                                        size="md"
-                                    />
                                 ) : (
-                                    <div className="h-9 w-24 bg-slate-100 rounded-xl animate-pulse" />
+                                    <>
+                                        {!followLoaded ? (
+                                            <div className="h-9 w-24 bg-slate-100 rounded-xl animate-pulse" />
+                                        ) : (
+                                            <FollowButton
+                                                targetAuth0Id={profile.auth0Id}
+                                                initialFollowing={followStats.isFollowing}
+                                                onFollowChange={(f) =>
+                                                    setFollowStats(prev => ({
+                                                        ...prev,
+                                                        isFollowing: f,
+                                                        followerCount: f
+                                                            ? prev.followerCount + 1
+                                                            : Math.max(0, prev.followerCount - 1),
+                                                    }))
+                                                }
+                                                size="md"
+                                            />
+                                        )}
+
+                                        <button
+                                            onClick={() =>
+                                                router.push(`/messages?with=${profile.auth0Id}`)
+                                            }
+                                            className="flex items-center gap-1.5 border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                                        >
+                                            <MessageSquare size={13} />
+                                            Message
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         </div>
