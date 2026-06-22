@@ -147,7 +147,7 @@ public class VolunteerController {
             );
         }
 
-        return ResponseEntity.ok(Map.of("success", true, "status", action));
+        return ResponseEntity.ok(Map.of("success", true, "status", action,  "volunteerAuth0Id", app.getApplicant().getAuth0Id()));
     }
 
     @GetMapping("/my")

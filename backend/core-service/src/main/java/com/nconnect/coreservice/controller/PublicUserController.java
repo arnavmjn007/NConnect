@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -55,5 +56,32 @@ public class PublicUserController {
                 })
                 .toList();
         return ResponseEntity.ok(ngos);
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<List<Map<String, Object>>> getByIds(@RequestBody List<String> ids) {
+        List<UUID> uuids = ids.stream()
+                .map(this::safeParseUuid)
+                .filter(id -> id != null)
+                .toList();
+
+        List<Map<String, Object>> result = userRepository.findAllById(uuids).stream()
+                .map(u -> Map.<String, Object>of(
+                        "id", u.getId().toString(),
+                        "username", u.getUsername() != null ? u.getUsername() : "",
+                        "fullName", u.getFullName() != null ? u.getFullName() : "",
+                        "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : ""
+                ))
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
+    private UUID safeParseUuid(String s) {
+        try {
+            return UUID.fromString(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
