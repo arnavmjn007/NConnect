@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { TrendingUp, BadgeCheck } from 'lucide-react';
+import { TrendingUp, BadgeCheck, CheckCircle } from 'lucide-react';
 import SiteFooter from '../ui/SiteFooter';
 import FollowButton from '../feed/FollowButton';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,10 +28,11 @@ interface ProjectItem {
 
 function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
     const pct = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
+    const goalReached = goal > 0 && raised >= goal;
     return (
         <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
             <div
-                className="bg-[#0A66C2] h-full rounded-full transition-all duration-700"
+                className={`h-full rounded-full transition-all duration-700 ${goalReached ? 'bg-emerald-500' : 'bg-[#0A66C2]'}`}
                 style={{ width: `${pct}%` }}
             />
         </div>
@@ -72,7 +73,6 @@ export default function RightBar() {
                 if (!cancelled && ngoRes.ok) {
                     const data: NgoItem[] = await ngoRes.json();
                     const filtered = data.filter(n => n.auth0Id !== user?.sub);
-
                     const states = await getFollowStates(filtered);
                     if (!cancelled) {
                         const unFollowed = filtered
@@ -159,9 +159,7 @@ export default function RightBar() {
                                     targetAuth0Id={ngo.auth0Id}
                                     initialFollowing={false}
                                     onFollowChange={(f) => {
-                                        if (f) {
-                                            setNgos(prev => prev.filter(n => n.auth0Id !== ngo.auth0Id));
-                                        }
+                                        if (f) setNgos(prev => prev.filter(n => n.auth0Id !== ngo.auth0Id));
                                     }}
                                     size="sm"
                                     className="shrink-0"
@@ -180,18 +178,27 @@ export default function RightBar() {
                     </div>
                     <div className="space-y-5">
                         {projects.map((p) => {
-                            const pct = p.goalAmount > 0
-                                ? Math.round((p.raisedAmount / p.goalAmount) * 100)
-                                : 0;
+                            const goalReached = p.raisedAmount >= p.goalAmount;
+                            const pct = goalReached
+                                ? 100
+                                : p.goalAmount > 0
+                                    ? Math.round((p.raisedAmount / p.goalAmount) * 100)
+                                    : 0;
                             return (
                                 <Link key={p.id} href="/project" className="block group cursor-pointer">
                                     <div className="flex items-start justify-between gap-2">
                                         <h3 className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">
                                             {p.title}
                                         </h3>
-                                        <span className="text-[10px] font-bold text-indigo-600 bg-[#EEF3F8] px-1.5 py-0.5 rounded-md shrink-0">
-                                            {pct}%
-                                        </span>
+                                        {goalReached ? (
+                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-0.5">
+                                                <CheckCircle size={9} /> Done
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-indigo-600 bg-[#EEF3F8] px-1.5 py-0.5 rounded-md shrink-0">
+                                                {pct}%
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex justify-between text-[11px] font-medium text-slate-400 mt-1">
                                         <span>NPR {p.raisedAmount.toLocaleString()} raised</span>
@@ -204,7 +211,6 @@ export default function RightBar() {
                     </div>
                 </div>
             )}
-
             <SiteFooter />
         </div>
     );

@@ -1,8 +1,9 @@
 "use client";
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart } from "lucide-react";
+import { MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2 } from "lucide-react";
 import { likePost, unlikePost, deletePost } from '@/lib/feedApi';
+import { summarizeText } from '@/lib/api';
 
 export interface Post {
     id: string;
@@ -30,10 +31,16 @@ interface Props {
     onDelete?: (id: string) => void;
 }
 
+const SUMMARIZE_THRESHOLD = 200;
+
 export default function PostItem({ post, currentUserId, onDelete }: Props) {
     const [liked, setLiked] = useState(post.liked_by_me);
     const [likeCount, setLikeCount] = useState(post.like_count);
     const [busy, setBusy] = useState(false);
+    const [summary, setSummary] = useState<string | null>(null);
+    const [summarizing, setSummarizing] = useState(false);
+    const [showSummary, setShowSummary] = useState(false);
+    const [summarizeError, setSummarizeError] = useState(false);
 
     const handleLike = async () => {
         if (busy) return;
@@ -59,8 +66,29 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         }
     };
 
+    const handleSummarize = async () => {
+        if (!post.content) return;
+        if (summary) {
+            setShowSummary(true);
+            return;
+        }
+        setSummarizing(true);
+        setSummarizeError(false);
+        try {
+            const result = await summarizeText(post.content);
+            setSummary(result);
+            setShowSummary(true);
+        } catch (err) {
+            console.error(err);
+            setSummarizeError(true);
+        } finally {
+            setSummarizing(false);
+        }
+    };
+
     const isOwner = currentUserId && post.author_id === currentUserId;
     const timeAgo = new Date(post.created_at).toLocaleDateString();
+    const canSummarize = !!post.content && post.content.length > SUMMARIZE_THRESHOLD;
 
     const actions = [
         { icon: ThumbsUp, label: 'Like', active: liked, color: 'hover:text-[#0A66C2]', activeColor: 'text-[#0A66C2]', onClick: handleLike },
@@ -123,8 +151,44 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
             )}
 
             {post.content && (
-                <div className="px-4 pb-3">
-                    <p className="text-sm text-slate-700 leading-relaxed">{post.content}</p>
+                <div className="px-4 pb-3 space-y-2">
+                    {showSummary && summary ? (
+                        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-1.5">
+                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
+                                <Sparkles size={11} /> AI Summary
+                            </p>
+                            <p className="text-sm text-slate-700 leading-relaxed">{summary}</p>
+                            <button
+                                onClick={() => setShowSummary(false)}
+                                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700"
+                            >
+                                Show original
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                    )}
+
+                    {canSummarize && !showSummary && (
+                        <button
+                            onClick={handleSummarize}
+                            disabled={summarizing}
+                            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                        >
+                            {summarizing ? (
+                                <>
+                                    <Loader2 size={11} className="animate-spin" /> Summarizing...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={11} /> Summarize
+                                </>
+                            )}
+                        </button>
+                    )}
+                    {summarizeError && (
+                        <p className="text-[11px] text-red-500">Couldn&apos;t summarize right now. Try again later.</p>
+                    )}
                 </div>
             )}
 
