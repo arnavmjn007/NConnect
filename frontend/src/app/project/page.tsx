@@ -2,12 +2,12 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getProjects } from '@/lib/api';
+import { getProjects, getProjectRecommendations, getVolunteerRecommendations, getUsersByIds, type BasicUser } from '@/lib/api';
 import Image from 'next/image';
 import {
     Search, TrendingUp, Droplets, GraduationCap,
     Heart, Leaf, Utensils, AlertTriangle, MapPin, Clock,
-    Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle
+    Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle, Sparkles
 } from 'lucide-react';
 import DonationModal from '@/components/payment/DonationModal';
 import SiteFooter from '@/components/ui/SiteFooter';
@@ -44,6 +44,7 @@ interface Project {
     title: string;
     description: string;
     category: string;
+    ngoId: string;
     ngoName: string;
     ngoUsername: string;
     ngoVerified: boolean;
@@ -62,6 +63,249 @@ interface Project {
     endDate: string;
     imageUrl: string;
     status: string;
+}
+
+interface VolunteerApplication {
+    id: string;
+    applicantId: string;
+    applicantName: string;
+    applicantUsername: string;
+    applicantImage: string | null;
+    message: string;
+    status: string;
+    createdAt: string;
+}
+
+interface SuggestedVolunteer {
+    userId: string;
+    score: number;
+}
+
+function VolunteerApplicationsModal({
+    project,
+    onClose,
+}: {
+    project: Project;
+    onClose: () => void;
+}) {
+    const [applications, setApplications] = useState<VolunteerApplication[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [suggested, setSuggested] = useState<SuggestedVolunteer[]>([]);
+    const [suggestedProfiles, setSuggestedProfiles] = useState<Record<string, BasicUser>>({});
+    const [suggestedLoading, setSuggestedLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            try {
+                const res = await fetch(`/api/volunteer/${project.id}/applications`);
+                if (res.ok && !cancelled) setApplications(await res.json());
+            } catch { /* silent */ }
+            finally { if (!cancelled) setLoading(false); }
+        }
+        load();
+        return () => { cancelled = true; };
+    }, [project.id]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadSuggested() {
+            try {
+                const data = await getVolunteerRecommendations(project.id);
+                const top = data.slice(0, 5);
+                if (cancelled) return;
+                setSuggested(top);
+
+                if (top.length > 0) {
+                    const profiles = await getUsersByIds(top.map(s => s.userId));
+                    if (cancelled) return;
+                    const map: Record<string, BasicUser> = {};
+                    profiles.forEach(p => { map[p.id] = p; });
+                    setSuggestedProfiles(map);
+                }
+            } catch { /* silent — AI service may be offline */ }
+            finally { if (!cancelled) setSuggestedLoading(false); }
+        }
+        loadSuggested();
+        return () => { cancelled = true; };
+    }, [project.id]);
+
+    async function respond(applicationId: string, action: 'ACCEPTED' | 'REJECTED') {
+        setActionLoading(applicationId);
+        try {
+            const res = await fetch(`/api/volunteer/applications/${applicationId}/respond`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+            });
+            if (res.ok) {
+                setApplications(prev => prev.map(a =>
+                    a.id === applicationId ? { ...a, status: action } : a
+                ));
+            }
+        } catch { /* silent */ }
+        finally { setActionLoading(null); }
+    }
+
+    const pending = applications.filter(a => a.status === 'PENDING');
+    const decided = applications.filter(a => a.status !== 'PENDING');
+
+    const statusStyle: Record<string, string> = {
+        ACCEPTED: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        REJECTED: "bg-red-50 text-red-600 border border-red-200",
+        PENDING: "bg-amber-50 text-amber-700 border border-amber-200",
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div>
+                        <h2 className="font-bold text-slate-900">Volunteer Applications</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">{project.title}</p>
+                    </div>
+                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+                        <X size={16} className="text-slate-400" />
+                    </button>
+                </div>
+
+                <div className="p-5 space-y-4">
+                    {!suggestedLoading && suggested.length > 0 && (
+                        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-2">
+                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
+                                <Sparkles size={11} /> AI Suggested Volunteers (Not Yet Applied)
+                            </p>
+                            <div className="space-y-1.5">
+                                {suggested.map(s => {
+                                    const profile = suggestedProfiles[s.userId];
+                                    const name = profile?.fullName || profile?.username || `User ${s.userId.slice(0, 8)}…`;
+                                    return (
+                                        <div key={s.userId} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                                    {profile?.profileImageUrl ? (
+                                                        <Image src={profile.profileImageUrl} alt={name} width={28} height={28} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-indigo-700 font-bold text-[11px]">
+                                                            {name.charAt(0).toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold text-slate-800 truncate">{name}</p>
+                                                    {profile?.username && (
+                                                        <p className="text-[10px] text-slate-400 truncate">@{profile.username}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <span className="text-[11px] font-bold text-indigo-600 shrink-0">
+                                                {s.score}% match
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {loading ? (
+                        <div className="space-y-3">
+                            {[...Array(3)].map((_, i) => (
+                                <div key={i} className="animate-pulse bg-slate-50 rounded-xl p-4 h-20" />
+                            ))}
+                        </div>
+                    ) : applications.length === 0 ? (
+                        <div className="text-center py-10">
+                            <Users size={32} className="mx-auto mb-3 text-slate-300" />
+                            <p className="text-slate-500 font-semibold">No applications yet</p>
+                            <p className="text-slate-400 text-xs mt-1">Applications will appear here when volunteers apply</p>
+                        </div>
+                    ) : (
+                        <>
+                            {pending.length > 0 && (
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Pending Review ({pending.length})
+                                    </p>
+                                    {pending.map(app => (
+                                        <div key={app.id} className="bg-slate-50 rounded-xl p-4 space-y-3">
+                                            <div className="flex items-start gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                                    {app.applicantImage ? (
+                                                        <Image src={app.applicantImage} alt={app.applicantName} width={40} height={40} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-indigo-700 font-bold text-sm">
+                                                            {(app.applicantName || '?').charAt(0)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900">{app.applicantName}</p>
+                                                    <p className="text-[11px] text-slate-400">@{app.applicantUsername}</p>
+                                                    {app.message && (
+                                                        <p className="text-xs text-slate-600 mt-1.5 italic">&ldquo;{app.message}&rdquo;</p>
+                                                    )}
+                                                    <p className="text-[10px] text-slate-400 mt-1">
+                                                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => respond(app.id, 'ACCEPTED')}
+                                                    disabled={actionLoading === app.id}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2 rounded-xl text-xs transition-colors"
+                                                >
+                                                    <CheckCircle size={12} />
+                                                    {actionLoading === app.id ? 'Processing...' : 'Accept'}
+                                                </button>
+                                                <button
+                                                    onClick={() => respond(app.id, 'REJECTED')}
+                                                    disabled={actionLoading === app.id}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-2 rounded-xl text-xs transition-colors"
+                                                >
+                                                    <X size={12} />
+                                                    {actionLoading === app.id ? 'Processing...' : 'Reject'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {decided.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Decided ({decided.length})
+                                    </p>
+                                    {decided.map(app => (
+                                        <div key={app.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                                                    <span className="text-indigo-700 font-bold text-xs">
+                                                        {(app.applicantName || '?').charAt(0)}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-900 truncate">{app.applicantName}</p>
+                                                    <p className="text-[11px] text-slate-400">@{app.applicantUsername}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
+                                                {app.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function VolunteerButton({ projectId }: { projectId: string }) {
@@ -156,17 +400,12 @@ function VolunteerButton({ projectId }: { projectId: string }) {
                             />
                         </div>
                         <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm"
-                            >
+                            <button onClick={() => setShowModal(false)}
+                                className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm">
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleApply}
-                                disabled={loading}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm"
-                            >
+                            <button onClick={handleApply} disabled={loading}
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm">
                                 {loading ? "Submitting..." : "Submit Application"}
                             </button>
                         </div>
@@ -179,14 +418,22 @@ function VolunteerButton({ projectId }: { projectId: string }) {
 
 function ProjectCard({
     project,
+    currentUserNgoId,
+    matchScore,
     onDonate,
+    onManageVolunteers,
 }: {
     project: Project;
+    currentUserNgoId?: string | null;
+    matchScore?: number;
     onDonate: (p: Project) => void;
+    onManageVolunteers: (p: Project) => void;
 }) {
-    const progress = project.goalAmount
-        ? Math.min(((project.raisedAmount || 0) / project.goalAmount) * 100, 100)
-        : 0;
+    const isOwner = currentUserNgoId === project.ngoId;
+    const raised = project.raisedAmount || 0;
+    const goal = project.goalAmount || 0;
+    const goalReached = goal > 0 && raised >= goal;
+    const progress = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
     const gradient = CATEGORY_GRADIENT[project.category] || CATEGORY_GRADIENT.default;
     const spotsLeft = project.volunteerSlots
         ? project.volunteerSlots - (project.volunteersJoined || 0)
@@ -196,13 +443,8 @@ function ProjectCard({
         <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
             <div className={`h-28 bg-linear-to-br ${gradient} relative overflow-hidden`}>
                 {project.imageUrl && (
-                    <Image
-                        src={project.imageUrl}
-                        alt={project.title}
-                        fill
-                        className="object-cover opacity-40"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                    />
+                    <Image src={project.imageUrl} alt={project.title} fill
+                        className="object-cover opacity-40" sizes="(max-width: 768px) 100vw, 33vw" />
                 )}
                 <div className="absolute inset-0 p-3 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
@@ -222,6 +464,11 @@ function ProjectCard({
                         </div>
                     )}
                 </div>
+                {matchScore !== undefined && (
+                    <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-indigo-600/90 px-2 py-1 rounded-full">
+                        <Sparkles size={10} /> {matchScore}% match
+                    </span>
+                )}
             </div>
 
             <div className="p-4 space-y-3">
@@ -244,9 +491,6 @@ function ProjectCard({
                                 {s}
                             </span>
                         ))}
-                        {project.requiredSkills.length > 3 && (
-                            <span className="text-[10px] text-slate-400">+{project.requiredSkills.length - 3}</span>
-                        )}
                     </div>
                 )}
 
@@ -262,33 +506,55 @@ function ProjectCard({
                     )}
                 </div>
 
-                {project.goalAmount > 0 && (
+                {goal > 0 && (
                     <div>
-                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
                             <div
-                                className="h-full bg-linear-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
+                                className={`h-full rounded-full transition-all duration-500 ${goalReached ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
-                        <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                        <div className="flex justify-between text-[10px] mt-1">
                             <span className="font-semibold text-slate-700">
-                                NPR {(project.raisedAmount || 0).toLocaleString()}
+                                NPR {raised.toLocaleString()}
                             </span>
-                            <span>of NPR {project.goalAmount?.toLocaleString()} · {project.donorCount || 0} donors</span>
+                            {goalReached ? (
+                                <span className="text-emerald-600 font-bold flex items-center gap-0.5">
+                                    <CheckCircle size={10} /> Goal Achieved
+                                </span>
+                            ) : (
+                                <span className="text-slate-400">
+                                    of NPR {goal.toLocaleString()} · {project.donorCount || 0} donors
+                                </span>
+                            )}
                         </div>
+                        {goalReached && (
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                of NPR {goal.toLocaleString()} · {project.donorCount || 0} donors
+                            </p>
+                        )}
                     </div>
                 )}
 
                 <div className="flex gap-2 pt-1">
-                    {project.goalAmount > 0 && (
+                    {goal > 0 && (
                         <button
-                            onClick={() => { onDonate(project); }}
+                            onClick={() => onDonate(project)}
                             className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
                         >
                             <Heart size={12} /> Donate
                         </button>
                     )}
-                    <VolunteerButton projectId={project.id} />
+                    {isOwner ? (
+                        <button
+                            onClick={() => onManageVolunteers(project)}
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 rounded-xl text-xs transition-colors border border-indigo-100"
+                        >
+                            <Users size={12} /> Volunteers
+                        </button>
+                    ) : (
+                        <VolunteerButton projectId={project.id} />
+                    )}
                 </div>
             </div>
         </article>
@@ -440,6 +706,9 @@ function ProjectsContent() {
     const [donateProject, setDonateProject] = useState<Project | null>(null);
     const [showCreate, setShowCreate] = useState(false);
     const [donationSuccess, setDonationSuccess] = useState(false);
+    const [volunteersProject, setVolunteersProject] = useState<Project | null>(null);
+    const [matchScores, setMatchScores] = useState<Record<string, number>>({});
+    const [showRecommended, setShowRecommended] = useState(false);
 
     const fetchProjects = useCallback(async () => {
         setLoading(true);
@@ -454,6 +723,20 @@ function ProjectsContent() {
     }, [activeCategory, searchQuery]);
 
     useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+    useEffect(() => {
+        if (!dbUser || dbUser.role !== "USER") return;
+        let cancelled = false;
+        getProjectRecommendations()
+            .then(data => {
+                if (cancelled) return;
+                const map: Record<string, number> = {};
+                data.forEach(d => { map[d.projectId] = d.matchScore; });
+                setMatchScores(map);
+            })
+            .catch(() => { /* AI service may be offline — fail silently */ });
+        return () => { cancelled = true; };
+    }, [dbUser]);
 
     useEffect(() => {
         const donation = searchParams.get("donation");
@@ -520,6 +803,12 @@ function ProjectsContent() {
         setDonateProject(null);
     }, []);
 
+    const displayedProjects = showRecommended
+        ? [...projects]
+            .filter(p => (matchScores[p.id] ?? 0) > 0)
+            .sort((a, b) => (matchScores[b.id] ?? 0) - (matchScores[a.id] ?? 0))
+        : projects;
+
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
             {donationSuccess && (
@@ -535,9 +824,7 @@ function ProjectsContent() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
                     <aside className="hidden md:flex md:flex-col md:col-span-3 sticky top-20 self-start space-y-4 max-h-[calc(100vh-5rem)]">
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-2 pb-2">
-                                Categories
-                            </p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-2 pb-2">Categories</p>
                             {CATEGORIES.map(({ label, value, Icon }) => (
                                 <button key={value} onClick={() => setActiveCategory(value)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium text-left ${activeCategory === value ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
@@ -574,10 +861,21 @@ function ProjectsContent() {
                             <div>
                                 <h1 className="text-xl font-bold text-slate-900">Projects</h1>
                                 <p className="text-sm text-slate-500">
-                                    {loading ? "Loading..." : `${projects.length} project${projects.length !== 1 ? "s" : ""} found`}
+                                    {loading ? "Loading..." : `${displayedProjects.length} project${displayedProjects.length !== 1 ? "s" : ""} found`}
                                 </p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                                {dbUser?.role === "USER" && Object.keys(matchScores).length > 0 && (
+                                    <button
+                                        onClick={() => setShowRecommended(p => !p)}
+                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${showRecommended
+                                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                                            : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                                            }`}
+                                    >
+                                        <Sparkles size={13} /> Recommended for You
+                                    </button>
+                                )}
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                                     <input type="text" placeholder="Search projects..."
@@ -606,15 +904,24 @@ function ProjectsContent() {
                                     </div>
                                 ))}
                             </div>
-                        ) : projects.length > 0 ? (
+                        ) : displayedProjects.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {projects.map(p => (
+                                {displayedProjects.map(p => (
                                     <ProjectCard
                                         key={p.id}
                                         project={p}
+                                        currentUserNgoId={dbUser?.id}
+                                        matchScore={showRecommended ? matchScores[p.id] : undefined}
                                         onDonate={setDonateProject}
+                                        onManageVolunteers={setVolunteersProject}
                                     />
                                 ))}
+                            </div>
+                        ) : showRecommended ? (
+                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                                <Sparkles size={32} className="mx-auto mb-3 opacity-40" />
+                                <p className="font-semibold">No strong matches yet</p>
+                                <p className="text-sm mt-1">Add more skills and interests to your profile for better recommendations</p>
                             </div>
                         ) : (
                             <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
@@ -635,9 +942,12 @@ function ProjectsContent() {
                 />
             )}
             {showCreate && (
-                <CreateProjectModal
-                    onClose={() => setShowCreate(false)}
-                    onCreated={fetchProjects}
+                <CreateProjectModal onClose={() => setShowCreate(false)} onCreated={fetchProjects} />
+            )}
+            {volunteersProject && (
+                <VolunteerApplicationsModal
+                    project={volunteersProject}
+                    onClose={() => setVolunteersProject(null)}
                 />
             )}
         </div>
