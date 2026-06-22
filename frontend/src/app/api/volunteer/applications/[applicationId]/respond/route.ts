@@ -21,6 +21,22 @@ export async function PATCH(
             }
         );
         const data = await res.json();
+
+        if (res.ok && body.action === "ACCEPTED" && data.volunteerAuth0Id) {
+            try {
+                await fetch(`http://localhost:5000/chat/conversations`, {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ otherUserId: data.volunteerAuth0Id }),
+                });
+            } catch (chatErr) {
+                console.error("Auto-chat creation failed:", chatErr);
+            }
+        }
+
         return NextResponse.json(data, { status: res.status });
     } catch (err) {
         console.error("Volunteer respond error:", err);
