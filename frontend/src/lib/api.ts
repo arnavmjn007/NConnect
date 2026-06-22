@@ -134,3 +134,64 @@ export async function requestResource(id: string, message?: string) {
     return res.json();
 }
 
+export interface MatchScore {
+    projectId: string;
+    matchScore: number;
+}
+
+export interface VolunteerScore {
+    userId: string;
+    score: number;
+}
+
+export interface NgoScore {
+    ngoId: string;
+    score: number;
+}
+
+export async function getProjectRecommendations(): Promise<MatchScore[]> {
+    const res = await fetch("/api/recommend/projects");
+    if (!res.ok) throw new Error("Failed to fetch project recommendations");
+    return res.json();
+}
+
+export async function getVolunteerRecommendations(projectId: string): Promise<VolunteerScore[]> {
+    const res = await fetch(`/api/recommend/volunteers/${projectId}`);
+    if (!res.ok) throw new Error("Failed to fetch volunteer recommendations");
+    return res.json();
+}
+
+export async function getNgoRecommendations(): Promise<NgoScore[]> {
+    const res = await fetch("/api/recommend/ngos");
+    if (!res.ok) throw new Error("Failed to fetch NGO recommendations");
+    return res.json();
+}
+
+export async function summarizeText(text: string): Promise<string> {
+    const res = await fetch("/api/recommend/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error("Failed to summarize");
+    const data = await res.json();
+    return data.summary;
+}
+
+export interface BasicUser {
+    id: string;
+    username: string;
+    fullName: string;
+    profileImageUrl: string;
+}
+
+export async function getUsersByIds(ids: string[]): Promise<BasicUser[]> {
+    if (ids.length === 0) return [];
+    const res = await fetch("/api/users/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ids),
+    });
+    if (!res.ok) throw new Error("Failed to fetch user details");
+    return res.json();
+}
