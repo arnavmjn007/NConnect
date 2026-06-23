@@ -1,13 +1,15 @@
 "use client";
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getProjects, getProjectRecommendations, getVolunteerRecommendations, getUsersByIds, type BasicUser } from '@/lib/api';
+import { getProjects, getMyProjects, getProjectRecommendations, getVolunteerRecommendations, getUsersByIds, type BasicUser } from '@/lib/api';
+import { startConversation } from '@/lib/feedApi';
 import Image from 'next/image';
 import {
     Search, TrendingUp, Droplets, GraduationCap,
     Heart, Leaf, Utensils, AlertTriangle, MapPin, Clock,
-    Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle, Sparkles
+    Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle, Sparkles,
+    Pencil, FolderOpen, MessageSquare,
 } from 'lucide-react';
 import DonationModal from '@/components/payment/DonationModal';
 import SiteFooter from '@/components/ui/SiteFooter';
@@ -71,6 +73,7 @@ interface VolunteerApplication {
     applicantName: string;
     applicantUsername: string;
     applicantImage: string | null;
+    applicantAuth0Id: string;
     message: string;
     status: string;
     createdAt: string;
@@ -81,6 +84,7 @@ interface SuggestedVolunteer {
     score: number;
 }
 
+
 function VolunteerApplicationsModal({
     project,
     onClose,
@@ -88,6 +92,7 @@ function VolunteerApplicationsModal({
     project: Project;
     onClose: () => void;
 }) {
+    const router = useRouter();
     const [applications, setApplications] = useState<VolunteerApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -116,7 +121,6 @@ function VolunteerApplicationsModal({
                 const top = data.slice(0, 5);
                 if (cancelled) return;
                 setSuggested(top);
-
                 if (top.length > 0) {
                     const profiles = await getUsersByIds(top.map(s => s.userId));
                     if (cancelled) return;
@@ -131,7 +135,7 @@ function VolunteerApplicationsModal({
         return () => { cancelled = true; };
     }, [project.id]);
 
-    async function respond(applicationId: string, action: 'ACCEPTED' | 'REJECTED') {
+    async function respond(applicationId: string, action: 'ACCEPTED' | 'REJECTED', applicantAuth0Id: string) {
         setActionLoading(applicationId);
         try {
             const res = await fetch(`/api/volunteer/applications/${applicationId}/respond`, {
@@ -143,9 +147,19 @@ function VolunteerApplicationsModal({
                 setApplications(prev => prev.map(a =>
                     a.id === applicationId ? { ...a, status: action } : a
                 ));
+                if (action === 'ACCEPTED' && applicantAuth0Id) {
+                    try {
+                        await startConversation(applicantAuth0Id);
+                    } catch { /* silent — conversation may already exist */ }
+                }
             }
         } catch { /* silent */ }
         finally { setActionLoading(null); }
+    }
+
+    function handleChatWithVolunteer(auth0Id: string) {
+        onClose();
+        router.push(`/messages?with=${encodeURIComponent(auth0Id)}`);
     }
 
     const pending = applications.filter(a => a.status === 'PENDING');
@@ -163,7 +177,7 @@ function VolunteerApplicationsModal({
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
                     <div>
-                        <h2 className="font-bold text-slate-900">Volunteer Applications</h2>
+                        <h2 className="font-bold text-slate-900">Volunteer List</h2>
                         <p className="text-xs text-slate-400 mt-0.5">{project.title}</p>
                     </div>
                     <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
@@ -254,7 +268,7 @@ function VolunteerApplicationsModal({
                                             </div>
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => respond(app.id, 'ACCEPTED')}
+                                                    onClick={() => respond(app.id, 'ACCEPTED', app.applicantAuth0Id)}
                                                     disabled={actionLoading === app.id}
                                                     className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2 rounded-xl text-xs transition-colors"
                                                 >
@@ -262,7 +276,7 @@ function VolunteerApplicationsModal({
                                                     {actionLoading === app.id ? 'Processing...' : 'Accept'}
                                                 </button>
                                                 <button
-                                                    onClick={() => respond(app.id, 'REJECTED')}
+                                                    onClick={() => respond(app.id, 'REJECTED', app.applicantAuth0Id)}
                                                     disabled={actionLoading === app.id}
                                                     className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-bold py-2 rounded-xl text-xs transition-colors"
                                                 >
@@ -293,9 +307,21 @@ function VolunteerApplicationsModal({
                                                     <p className="text-[11px] text-slate-400">@{app.applicantUsername}</p>
                                                 </div>
                                             </div>
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
-                                                {app.status}
-                                            </span>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
+                                                    {app.status}
+                                                </span>
+                                                {/* Bug 4 fix: chat icon on accepted rows */}
+                                                {app.status === 'ACCEPTED' && app.applicantAuth0Id && (
+                                                    <button
+                                                        onClick={() => handleChatWithVolunteer(app.applicantAuth0Id)}
+                                                        title="Message this volunteer"
+                                                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 transition-colors"
+                                                    >
+                                                        <MessageSquare size={13} />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -416,18 +442,185 @@ function VolunteerButton({ projectId }: { projectId: string }) {
     );
 }
 
+function EditProjectModal({
+    project,
+    onClose,
+    onUpdated,
+}: {
+    project: Project;
+    onClose: () => void;
+    onUpdated: () => void;
+}) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [form, setForm] = useState({
+        title: project.title || "",
+        description: project.description || "",
+        category: project.category || "",
+        requiredSkills: Array.isArray(project.requiredSkills)
+            ? project.requiredSkills.join(", ")
+            : (project.requiredSkills || ""),
+        tags: Array.isArray(project.tags)
+            ? project.tags.join(", ")
+            : (project.tags || ""),
+        location: project.location || "",
+        duration: project.duration || "",
+        beneficiaryGroup: project.beneficiaryGroup || "",
+        volunteerSlots: project.volunteerSlots?.toString() || "",
+        priorityLevel: project.priorityLevel || "NORMAL",
+        goalAmount: project.goalAmount?.toString() || "",
+        startDate: project.startDate ? project.startDate.slice(0, 10) : "",
+        endDate: project.endDate ? project.endDate.slice(0, 10) : "",
+    });
+
+    const handleSubmit = async () => {
+        if (!form.title || !form.category) { setError("Title and category are required"); return; }
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/projects/${project.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...form,
+                    volunteerSlots: form.volunteerSlots ? parseInt(form.volunteerSlots) : null,
+                    goalAmount: form.goalAmount ? parseInt(form.goalAmount) : null,
+                    startDate: form.startDate || null,
+                    endDate: form.endDate || null,
+                }),
+            });
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed to update"); }
+            onUpdated();
+            onClose();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Failed to update project");
+        } finally { setLoading(false); }
+    };
+
+    const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10";
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div>
+                        <h2 className="font-bold text-slate-900">Edit Project</h2>
+                        <p className="text-xs text-slate-400 mt-0.5">{project.title}</p>
+                    </div>
+                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+                        <X size={16} className="text-slate-400" />
+                    </button>
+                </div>
+                <div className="p-5 space-y-4">
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
+                            <AlertTriangle size={14} />{error}
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Project Title *</label>
+                            <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                                className={inputCls} placeholder="e.g. Clean Water Initiative" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
+                            <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className={inputCls}>
+                                <option value="">Select category</option>
+                                {CATEGORIES.filter(c => c.value !== "all").map(c => (
+                                    <option key={c.value} value={c.value}>{c.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Priority Level</label>
+                            <select value={form.priorityLevel} onChange={e => setForm(p => ({ ...p, priorityLevel: e.target.value }))} className={inputCls}>
+                                <option value="LOW">Low</option>
+                                <option value="NORMAL">Normal</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
+                            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
+                                className={inputCls} placeholder="e.g. Kathmandu, Nepal" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Duration</label>
+                            <input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
+                                className={inputCls} placeholder="e.g. 3 months" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Volunteer Slots</label>
+                            <input type="number" value={form.volunteerSlots} onChange={e => setForm(p => ({ ...p, volunteerSlots: e.target.value }))}
+                                className={inputCls} placeholder="e.g. 20" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Goal Amount (NPR)</label>
+                            <input type="number" value={form.goalAmount} onChange={e => setForm(p => ({ ...p, goalAmount: e.target.value }))}
+                                className={inputCls} placeholder="e.g. 500000" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Start Date</label>
+                            <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputCls} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">End Date</label>
+                            <input type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} className={inputCls} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Beneficiary Group</label>
+                            <input value={form.beneficiaryGroup} onChange={e => setForm(p => ({ ...p, beneficiaryGroup: e.target.value }))}
+                                className={inputCls} placeholder="e.g. Children, Women" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Required Skills</label>
+                            <input value={form.requiredSkills} onChange={e => setForm(p => ({ ...p, requiredSkills: e.target.value }))}
+                                className={inputCls} placeholder="Teaching, Medical (comma-separated)" />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tags</label>
+                            <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
+                                className={inputCls} placeholder="Education, Youth (comma-separated)" />
+                        </div>
+                        <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description</label>
+                            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                                rows={4} className={`${inputCls} resize-none`}
+                                placeholder="Describe your project's goals and impact..." />
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={onClose}
+                            className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button onClick={handleSubmit} disabled={loading}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                            {loading ? "Saving..." : "Save Changes"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ProjectCard({
     project,
     currentUserNgoId,
     matchScore,
     onDonate,
     onManageVolunteers,
+    onEdit,
 }: {
     project: Project;
     currentUserNgoId?: string | null;
     matchScore?: number;
     onDonate: (p: Project) => void;
     onManageVolunteers: (p: Project) => void;
+    onEdit: (p: Project) => void;
 }) {
     const isOwner = currentUserNgoId === project.ngoId;
     const raised = project.raisedAmount || 0;
@@ -448,15 +641,28 @@ function ProjectCard({
                 )}
                 <div className="absolute inset-0 p-3 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        {project.priorityLevel && project.priorityLevel !== "NORMAL" && (
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${PRIORITY_COLOR[project.priorityLevel]}`}>
-                                {project.priorityLevel === "URGENT" && <Flame size={9} />}
-                                {project.priorityLevel}
+                        <div className="flex items-center gap-1.5">
+                            {project.priorityLevel && project.priorityLevel !== "NORMAL" && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${PRIORITY_COLOR[project.priorityLevel]}`}>
+                                    {project.priorityLevel === "URGENT" && <Flame size={9} />}
+                                    {project.priorityLevel}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            {isOwner && (
+                                <button
+                                    onClick={e => { e.stopPropagation(); onEdit(project); }}
+                                    title="Edit project"
+                                    className="flex items-center justify-center h-6 w-6 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-lg transition-colors"
+                                >
+                                    <Pencil size={11} className="text-white" />
+                                </button>
+                            )}
+                            <span className="text-[10px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded-full">
+                                {project.category}
                             </span>
-                        )}
-                        <span className="ml-auto text-[10px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded-full">
-                            {project.category}
-                        </span>
+                        </div>
                     </div>
                     {project.location && (
                         <div className="flex items-center gap-1 text-[11px] text-white/90">
@@ -550,7 +756,7 @@ function ProjectCard({
                             onClick={() => onManageVolunteers(project)}
                             className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 rounded-xl text-xs transition-colors border border-indigo-100"
                         >
-                            <Users size={12} /> Volunteers
+                            <Users size={12} /> Volunteer List
                         </button>
                     ) : (
                         <VolunteerButton projectId={project.id} />
@@ -707,22 +913,35 @@ function ProjectsContent() {
     const [showCreate, setShowCreate] = useState(false);
     const [donationSuccess, setDonationSuccess] = useState(false);
     const [volunteersProject, setVolunteersProject] = useState<Project | null>(null);
+    const [editProject, setEditProject] = useState<Project | null>(null);
     const [matchScores, setMatchScores] = useState<Record<string, number>>({});
     const [showRecommended, setShowRecommended] = useState(false);
+    const [showMyProjects, setShowMyProjects] = useState(false);
+
+    const isNgo = dbUser?.role === "NGO";
 
     const fetchProjects = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getProjects({
-                category: activeCategory === "all" ? undefined : activeCategory,
-                search: searchQuery || undefined,
-            });
+            const data = (showMyProjects && isNgo)
+                ? (await getMyProjects()).filter((p: Project) => p.status !== 'CANCELLED')
+                : await getProjects({
+                    category: activeCategory === "all" ? undefined : activeCategory,
+                    search: searchQuery || undefined,
+                });
             setProjects(data);
         } catch { setProjects([]); }
         finally { setLoading(false); }
-    }, [activeCategory, searchQuery]);
+    }, [activeCategory, searchQuery, showMyProjects, isNgo]);
 
     useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+    useEffect(() => {
+        if (showMyProjects) {
+            setActiveCategory("all");
+            setSearchQuery("");
+        }
+    }, [showMyProjects]);
 
     useEffect(() => {
         if (!dbUser || dbUser.role !== "USER") return;
@@ -734,7 +953,7 @@ function ProjectsContent() {
                 data.forEach(d => { map[d.projectId] = d.matchScore; });
                 setMatchScores(map);
             })
-            .catch(() => { /* AI service may be offline — fail silently */ });
+            .catch(() => { });
         return () => { cancelled = true; };
     }, [dbUser]);
 
@@ -826,10 +1045,16 @@ function ProjectsContent() {
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1">
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-2 pb-2">Categories</p>
                             {CATEGORIES.map(({ label, value, Icon }) => (
-                                <button key={value} onClick={() => setActiveCategory(value)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium text-left ${activeCategory === value ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}>
+                                <button
+                                    key={value}
+                                    onClick={() => {
+                                        setActiveCategory(value);
+                                        if (showMyProjects) setShowMyProjects(false);
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium text-left ${activeCategory === value && !showMyProjects ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}
+                                >
                                     {Icon
-                                        ? <Icon size={15} className={activeCategory === value ? "text-indigo-600" : "text-slate-400"} />
+                                        ? <Icon size={15} className={activeCategory === value && !showMyProjects ? "text-indigo-600" : "text-slate-400"} />
                                         : <div className="w-3.5" />}
                                     {label}
                                 </button>
@@ -861,10 +1086,25 @@ function ProjectsContent() {
                             <div>
                                 <h1 className="text-xl font-bold text-slate-900">Projects</h1>
                                 <p className="text-sm text-slate-500">
-                                    {loading ? "Loading..." : `${displayedProjects.length} project${displayedProjects.length !== 1 ? "s" : ""} found`}
+                                    {loading
+                                        ? "Loading..."
+                                        : showMyProjects
+                                            ? `${displayedProjects.length} of your project${displayedProjects.length !== 1 ? "s" : ""}`
+                                            : `${displayedProjects.length} project${displayedProjects.length !== 1 ? "s" : ""} found`}
                                 </p>
                             </div>
                             <div className="flex gap-2 flex-wrap">
+                                {isNgo && (
+                                    <button
+                                        onClick={() => setShowMyProjects(p => !p)}
+                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${showMyProjects
+                                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                                            : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                                            }`}
+                                    >
+                                        <FolderOpen size={13} /> {showMyProjects ? 'Back' : 'My Projects'}
+                                    </button>
+                                )}
                                 {dbUser?.role === "USER" && Object.keys(matchScores).length > 0 && (
                                     <button
                                         onClick={() => setShowRecommended(p => !p)}
@@ -876,13 +1116,15 @@ function ProjectsContent() {
                                         <Sparkles size={13} /> Recommended for You
                                     </button>
                                 )}
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                    <input type="text" placeholder="Search projects..."
-                                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                        className="pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
-                                </div>
-                                {dbUser?.role === "NGO" && (
+                                {!showMyProjects && (
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                        <input type="text" placeholder="Search projects..."
+                                            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                            className="pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
+                                    </div>
+                                )}
+                                {isNgo && (
                                     <button onClick={() => setShowCreate(true)}
                                         className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors">
                                         <Plus size={14} /> New
@@ -914,8 +1156,15 @@ function ProjectsContent() {
                                         matchScore={showRecommended ? matchScores[p.id] : undefined}
                                         onDonate={setDonateProject}
                                         onManageVolunteers={setVolunteersProject}
+                                        onEdit={setEditProject}
                                     />
                                 ))}
+                            </div>
+                        ) : showMyProjects ? (
+                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                                <FolderOpen size={32} className="mx-auto mb-3 opacity-40" />
+                                <p className="font-semibold">No projects yet</p>
+                                <p className="text-sm mt-1">Create your first project to get started</p>
                             </div>
                         ) : showRecommended ? (
                             <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
@@ -948,6 +1197,17 @@ function ProjectsContent() {
                 <VolunteerApplicationsModal
                     project={volunteersProject}
                     onClose={() => setVolunteersProject(null)}
+                />
+            )}
+
+            {editProject && (
+                <EditProjectModal
+                    project={editProject}
+                    onClose={() => setEditProject(null)}
+                    onUpdated={() => {
+                        setEditProject(null);
+                        fetchProjects();
+                    }}
                 />
             )}
         </div>
