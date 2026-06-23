@@ -54,7 +54,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectResponse> searchProjects(String category, String search) {
         String cat = (category == null || category.isBlank() || category.equals("all")) ? null : category;
-        String q   = (search == null || search.isBlank()) ? null : search;
+        String q = (search == null || search.isBlank()) ? null : search;
         return projectRepository.searchProjects(cat, q)
                 .stream().map(ProjectResponse::from).toList();
     }
@@ -69,7 +69,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<ProjectResponse> getMyProjects(Jwt jwt) {
         AppUser user = getUser(jwt);
-        return projectRepository.findByNgoIdOrderByCreatedAtDesc(user.getId())
+        return projectRepository.findByNgoIdOrderByCreatedAtDesc(user.getId(), ProjectStatus.CANCELLED)
                 .stream().map(ProjectResponse::from).toList();
     }
 
