@@ -15,4 +15,6 @@ public interface ResourceRequestRepository extends JpaRepository<ResourceRequest
     List<ResourceRequest> findByResourceOwnerIdOrderByCreatedAtDesc(UUID ownerId);
 
     boolean existsByResourceIdAndRequesterId(UUID resourceId, UUID requesterId);
+
+    void deleteByResourceId(UUID resourceId);
 }

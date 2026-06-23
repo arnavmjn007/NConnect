@@ -125,6 +125,7 @@ public class ResourceService {
         if (!resource.getOwner().getId().equals(user.getId())) {
             throw new RuntimeException("You do not own this resource");
         }
+        resourceRequestRepository.deleteByResourceId(id);
         resourceRepository.delete(resource);
     }
 
