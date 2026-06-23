@@ -81,6 +81,7 @@ app.delete("/comments/:id", requireAuth, async (req, res) => {
 app.use(authErrorHandler);
 
 const onlineUsers = new Map();
+
 io.on("connection", (socket) => {
   const userId = socket.handshake.auth.userId;
   if (!userId) {
@@ -93,7 +94,9 @@ io.on("connection", (socket) => {
   io.emit("user_online", { userId });
 
   socket.on("join_conversations", (ids) => {
-    ids.forEach((id) => socket.join(`conv:${id}`));
+    if (Array.isArray(ids)) {
+      ids.forEach((id) => socket.join(`conv:${id}`));
+    }
   });
 
   socket.on("send_message", async ({ conversationId, content }) => {
@@ -104,7 +107,13 @@ io.on("connection", (socket) => {
          VALUES ($1, $2, $3) RETURNING *`,
         [conversationId, userId, content.trim()]
       );
-      io.to(`conv:${conversationId}`).emit("receive_message", rows[0]);
+      const message = rows[0];
+
+      socket.broadcast
+        .to(`conv:${conversationId}`)
+        .emit("receive_message", message);
+
+      socket.emit("message_sent", message);
     } catch (err) {
       socket.emit("error", { message: err.message });
     }
