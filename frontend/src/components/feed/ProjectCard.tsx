@@ -31,8 +31,8 @@ export type ProjectResponse = {
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
-    URGENT: "bg-red-500 text-white",
-    HIGH: "bg-orange-500 text-white",
+    URGENT: "bg-red-500 text-white shadow-xs",
+    HIGH: "bg-orange-500 text-white shadow-xs",
     NORMAL: "",
     LOW: "",
 };
@@ -50,7 +50,7 @@ const CATEGORY_GRADIENT: Record<string, string> = {
 function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
     const pct = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
     return (
-        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <div
                 className="bg-linear-to-r from-indigo-600 to-blue-500 h-full rounded-full transition-all duration-700"
                 style={{ width: `${pct}%` }}
@@ -81,101 +81,118 @@ export default function ProjectCard({ project, onDonate }: ProjectCardProps) {
         .join(' – ');
 
     return (
-        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all group cursor-pointer">
-            <div className={`h-32 bg-linear-to-br ${gradient} relative flex items-end p-4`}>
+        <article className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden hover:shadow-md transition-all duration-300 group cursor-pointer flex flex-col h-full">
+            <div className={`h-36 bg-linear-to-br ${gradient} relative flex items-end p-4 overflow-hidden shrink-0`}>
                 {project.imageUrl && (
                     <Image
                         src={project.imageUrl}
                         alt={project.title}
                         fill
-                        className="object-cover opacity-30"
+                        className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 100vw, 33vw"
                     />
                 )}
+
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+
                 {(isUrgent || isHigh) && (
-                    <span className={`absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 ${PRIORITY_COLOR[project.priorityLevel]}`}>
-                        {isUrgent ? <Flame size={10} /> : <AlertTriangle size={10} />}
+                    <span className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 z-10 backdrop-blur-xs ${PRIORITY_COLOR[project.priorityLevel]}`}>
+                        {isUrgent ? <Flame size={11} className="animate-pulse" /> : <AlertTriangle size={11} />}
                         {project.priorityLevel}
                     </span>
                 )}
-                <button className="absolute top-3 left-3 p-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-all">
+                <button className="absolute top-3 left-3 p-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-lg text-white transition-all z-10 shadow-xs">
                     <BookmarkPlus size={14} />
                 </button>
-                <h3 className="text-white font-bold text-sm leading-tight line-clamp-2 relative z-10">
+                <h3 className="text-white font-bold text-sm leading-snug line-clamp-2 relative z-10 drop-shadow-sm">
                     {project.title}
                 </h3>
             </div>
 
-            <div className="p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 bg-slate-100 rounded-lg flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                        {(project.ngoName || 'N').charAt(0)}
-                    </div>
-                    <p className="text-xs font-bold text-slate-800 truncate flex items-center gap-1">
-                        {project.ngoName || project.ngoUsername || 'Unknown NGO'}
-                        {project.ngoVerified && <BadgeCheck size={13} className="text-indigo-500 shrink-0" />}
-                    </p>
-                </div>
-
-                {project.requiredSkills?.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {project.requiredSkills.slice(0, 3).map(s => (
-                            <span key={s} className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
-                                {s}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <div className="space-y-1">
-                    {project.location && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <MapPin size={11} />{project.location}
+            <div className="p-4 flex flex-col flex-1 justify-between space-y-4">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 bg-slate-100 border border-slate-200/60 rounded-lg flex items-center justify-center text-xs font-bold text-slate-600 shrink-0 shadow-2xs">
+                            {(project.ngoName || 'N').charAt(0)}
                         </div>
-                    )}
-                    {dateRange && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <Calendar size={11} />{dateRange}
-                        </div>
-                    )}
-                    {project.duration && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <Clock size={11} />{project.duration}
-                        </div>
-                    )}
-                    {spotsLeft !== null && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                            <Users size={11} />
-                            {spotsLeft > 0 ? `${spotsLeft} volunteer spots left` : 'All spots filled'}
-                        </div>
-                    )}
-                </div>
-
-                {goal > 0 && (
-                    <div>
-                        <div className="flex justify-between text-[11px] font-semibold mb-1">
-                            <span className="text-slate-700">NPR {raised.toLocaleString()} raised</span>
-                            <span className="text-indigo-600">{pct}%</span>
-                        </div>
-                        <ProgressBar raised={raised} goal={goal} />
-                        <p className="text-[10px] text-slate-400 mt-1">
-                            of NPR {goal.toLocaleString()} goal · {project.donorCount ?? 0} donors
+                        <p className="text-xs font-bold text-slate-700 truncate flex items-center gap-1">
+                            {project.ngoName || project.ngoUsername || 'Unknown NGO'}
+                            {project.ngoVerified && <BadgeCheck size={13} className="text-indigo-500 shrink-0" />}
                         </p>
                     </div>
-                )}
 
-                <div className="flex gap-2 pt-1">
-                    {goal > 0 && (
-                        <button
-                            onClick={() => onDonate?.(project)}
-                            className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 text-xs font-bold py-2 rounded-xl transition-colors"
-                        >
-                            <Heart size={12} /> Donate
-                        </button>
+                    {project.requiredSkills?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                            {project.requiredSkills.slice(0, 3).map(s => (
+                                <span key={s} className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200/40 px-2 py-0.5 rounded-md font-medium">
+                                    {s}
+                                </span>
+                            ))}
+                        </div>
                     )}
-                    <button className="flex-1 bg-indigo-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-indigo-700 transition-colors">
-                        Volunteer
-                    </button>
+
+                    <div className="space-y-1.5 pt-0.5">
+                        {project.location && (
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                <MapPin size={12} className="text-slate-400" />{project.location}
+                            </div>
+                        )}
+                        {dateRange && (
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                <Calendar size={12} className="text-slate-400" />{dateRange}
+                            </div>
+                        )}
+                        {project.duration && (
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                <Clock size={12} className="text-slate-400" />{project.duration}
+                            </div>
+                        )}
+                        {spotsLeft !== null && (
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                <Users size={12} className="text-slate-400" />
+                                {spotsLeft > 0 ? (
+                                    <span className="text-emerald-600 font-semibold">{spotsLeft} spots left</span>
+                                ) : (
+                                    <span className="text-slate-400">All spots filled</span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                    {goal > 0 && (
+                        <div>
+                            <div className="flex justify-between text-[11px] font-bold mb-1.5">
+                                <span className="text-slate-800">NPR {raised.toLocaleString()} raised</span>
+                                <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-sm">{pct}%</span>
+                            </div>
+                            <ProgressBar raised={raised} goal={goal} />
+                            <p className="text-[10px] text-slate-400 font-medium mt-1.5">
+                                of NPR {goal.toLocaleString()} goal · {project.donorCount ?? 0} donors
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2">
+                        {goal > 0 && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDonate?.(project);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100/80 border border-rose-200/60 text-rose-600 text-xs font-bold py-2.5 rounded-xl transition-all shadow-2xs cursor-pointer"
+                            >
+                                <Heart size={13} className="fill-rose-600/10" /> Donate
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-xs hover:shadow-sm cursor-pointer"
+                        >
+                            Volunteer
+                        </button>
+                    </div>
                 </div>
             </div>
         </article>

@@ -55,9 +55,9 @@ export default function FollowButton({
             <button
                 onClick={handleClick}
                 disabled={loading}
-                className={`flex items-center gap-1.5 font-bold rounded-full border transition-all
-                    bg-indigo-600 text-white border-indigo-600 hover:bg-red-50 hover:text-red-600 hover:border-red-400
-                    disabled:opacity-40 ${sizeClasses} ${className}`}
+                className={`flex items-center justify-center gap-1.5 font-semibold rounded-full border transition-colors duration-200
+                    bg-indigo-600 text-white border-indigo-600 hover:bg-red-600 hover:text-white hover:border-red-600
+                    disabled:opacity-50 ${sizeClasses} ${className}`}
             >
                 <UserMinus size={size === 'sm' ? 12 : 14} />
                 {loading ? '...' : 'Following'}
@@ -69,12 +69,12 @@ export default function FollowButton({
         <button
             onClick={handleClick}
             disabled={loading}
-            className={`flex items-center gap-1.5 font-bold rounded-full border transition-all
-                border-indigo-600 text-indigo-600 hover:bg-indigo-600 hover:text-white
-                disabled:opacity-40 ${sizeClasses} ${className}`}
+            className={`flex items-center justify-center gap-1.5 font-semibold rounded-full border transition-colors duration-200
+                border-indigo-600 text-indigo-600 hover:bg-indigo-50
+                disabled:opacity-50 ${sizeClasses} ${className}`}
         >
             <UserPlus size={size === 'sm' ? 12 : 14} />
-            {loading ? '...' : '+ Follow'}
+            {loading ? '...' : 'Follow'}
         </button>
     );
 }
