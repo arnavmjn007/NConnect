@@ -98,12 +98,13 @@ interface IncomingRequest {
     createdAt: string;
 }
 
-function ResourceCard({ resource, currentUserId, onRequest, onEdit, onDelete }: {
+function ResourceCard({ resource, currentUserId, onRequest, onEdit, onDelete, deleteLoading }: {
     resource: Resource;
     currentUserId?: string;
     onRequest: (r: Resource) => void;
     onEdit: (r: Resource) => void;
     onDelete: (id: string) => void;
+    deleteLoading: string | null;
 }) {
     const isOwner = currentUserId === resource.ownerId;
     const isOffer = resource.resourceType !== 'REQUEST';
@@ -204,9 +205,14 @@ function ResourceCard({ resource, currentUserId, onRequest, onEdit, onDelete }: 
                             </button>
                             <button
                                 onClick={() => onDelete(resource.id)}
-                                className="flex-1 flex items-center justify-center gap-1.5 border border-red-100 hover:bg-red-50 text-red-500 font-bold py-2 rounded-xl text-xs transition-colors"
+                                disabled={deleteLoading === resource.id}
+                                className="flex-1 flex items-center justify-center gap-1.5 border border-red-100 hover:bg-red-50 text-red-500 font-bold py-2 rounded-xl text-xs transition-colors disabled:opacity-40"
                             >
-                                <Trash2 size={11} /> Delete
+                                {deleteLoading === resource.id ? (
+                                    <span className="flex items-center gap-1"><Trash2 size={11} /> Deleting...</span>
+                                ) : (
+                                    <span className="flex items-center gap-1"><Trash2 size={11} /> Delete</span>
+                                )}
                             </button>
                         </div>
                     ) : isOffer && resource.status === 'AVAILABLE' ? (
@@ -649,6 +655,54 @@ function RequestModal({ resource, onClose, onSuccess }: {
     );
 }
 
+function DeleteConfirmModal({ resourceName, onConfirm, onCancel, loading, error }: {
+    resourceName: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+    loading: boolean;
+    error: string | null;
+}) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+                        <Trash2 size={18} className="text-red-500" />
+                    </div>
+                    <div>
+                        <h2 className="font-bold text-slate-900">Delete Resource</h2>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate max-w-50">{resourceName}</p>
+                    </div>
+                </div>
+                <p className="text-sm text-slate-600">Are you sure? This cannot be undone.</p>
+                {error && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
+                        <AlertTriangle size={14} />{error}
+                    </div>
+                )}
+                <div className="flex gap-2 pt-1">
+                    <button
+                        onClick={onCancel}
+                        disabled={loading}
+                        className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm hover:bg-slate-50 disabled:opacity-40"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        disabled={loading}
+                        className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
+                    >
+                        <Trash2 size={13} />
+                        {loading ? "Deleting..." : "Delete"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 type TabType = 'all' | 'offers' | 'my';
 
 export default function ResourcesPage() {
@@ -667,6 +721,10 @@ export default function ResourcesPage() {
     const [requestSuccess, setRequestSuccess] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [deleteConfirmName, setDeleteConfirmName] = useState<string>("");
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const resourceTypeParam = tab === 'offers' ? 'OFFER' : undefined;
 
@@ -722,20 +780,39 @@ export default function ResourcesPage() {
         setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
     }
 
-    async function handleDeleteResource(id: string) {
-        if (!confirm("Delete this resource? This cannot be undone.")) return;
-        setDeleteLoading(id);
+    function handleDeleteClick(id: string, name: string) {
+        setDeleteError(null);
+        setDeleteConfirmId(id);
+        setDeleteConfirmName(name);
+    }
+
+    async function handleDeleteConfirmed() {
+        if (!deleteConfirmId) return;
+        setDeleteLoading(deleteConfirmId);
+        setDeleteError(null);
         try {
-            const res = await fetch(`/api/resources/${id}`, { method: "DELETE" });
+            const res = await fetch(`/api/resources/${deleteConfirmId}`, { method: "DELETE" });
             if (res.ok) {
-                setResources(prev => prev.filter(r => r.id !== id));
-                setMyResources(prev => prev.filter(r => r.id !== id));
+                setResources(prev => prev.filter(r => r.id !== deleteConfirmId));
+                setMyResources(prev => prev.filter(r => r.id !== deleteConfirmId));
+                setDeleteConfirmId(null);
+                setDeleteConfirmName("");
             } else {
                 const d = await res.json();
-                alert(d.error || "Failed to delete resource");
+                setDeleteError(d.error || "Failed to delete resource");
             }
-        } catch { alert("Failed to delete resource"); }
-        finally { setDeleteLoading(null); }
+        } catch {
+            setDeleteError("Failed to delete resource");
+        } finally {
+            setDeleteLoading(null);
+        }
+    }
+
+    function handleDeleteCancel() {
+        if (deleteLoading) return;
+        setDeleteConfirmId(null);
+        setDeleteConfirmName("");
+        setDeleteError(null);
     }
 
     const tabs: { key: TabType; label: string }[] = [
@@ -834,7 +911,8 @@ export default function ResourcesPage() {
                                         currentUserId={dbUser?.id}
                                         onRequest={setRequestTarget}
                                         onEdit={setEditTarget}
-                                        onDelete={handleDeleteResource}
+                                        onDelete={(id) => handleDeleteClick(id, r.name)}
+                                        deleteLoading={deleteLoading}
                                     />
                                 ))}
                             </div>
@@ -1025,7 +1103,6 @@ export default function ResourcesPage() {
                                 </div>
                             ))}
                         </div>
-
                         <SiteFooter />
                     </aside>
                 </div>
@@ -1044,6 +1121,15 @@ export default function ResourcesPage() {
                     resource={editTarget}
                     onClose={() => setEditTarget(null)}
                     onUpdated={() => { fetchResources(); fetchSidebarData(); setEditTarget(null); }}
+                />
+            )}
+            {deleteConfirmId && (
+                <DeleteConfirmModal
+                    resourceName={deleteConfirmName}
+                    onConfirm={handleDeleteConfirmed}
+                    onCancel={handleDeleteCancel}
+                    loading={deleteLoading === deleteConfirmId}
+                    error={deleteError}
                 />
             )}
         </div>
