@@ -14,9 +14,9 @@ const FOOTER_TEXT = "© 2026 NConnect Corporation • User Agreement • Privacy
 
 export default function InfoLayout({ title, subtitle, children, showSearch = false }: InfoLayoutProps) {
     return (
-        <div className="min-h-screen bg-[#F3F2EF] font-sans text-slate-900">
-            <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="min-h-screen bg-[#F3F2EF] text-slate-900 font-sans">
+            <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
+                <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="shrink-0">
                             <Image
@@ -24,44 +24,44 @@ export default function InfoLayout({ title, subtitle, children, showSearch = fal
                                 alt="NConnect"
                                 width={80}
                                 height={80}
-                                className="rounded-sm object-contain"
+                                className="rounded-xs object-contain"
                                 priority
                             />
                         </Link>
-                        <div className="h-6 w-px bg-slate-200 hidden md:block" />
-                        <span className="text-slate-500 text-sm font-medium hidden md:block">{title}</span>
+                        <div className="hidden h-6 w-px bg-slate-200 md:block" />
+                        <span className="hidden text-sm font-medium text-slate-500 md:block">{title}</span>
                     </div>
 
-                    <Link href="/" className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-medium text-sm transition-colors">
+                    <Link href="/" className="flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-indigo-600">
                         <ArrowLeft size={16} /> Back to Feed
                     </Link>
                 </div>
             </nav>
 
             <div className="bg-white border-b border-slate-200 py-12">
-                <div className="max-w-4xl mx-auto px-6">
+                <div className="mx-auto max-w-4xl px-6">
                     <h1 className="text-4xl font-light text-slate-800">{title}</h1>
-                    {subtitle && <p className="text-lg text-slate-500 mt-2 font-light">{subtitle}</p>}
+                    {subtitle && <p className="mt-2 text-lg font-light text-slate-500">{subtitle}</p>}
 
                     {showSearch && (
-                        <div className="mt-6 relative max-w-xl">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                        <div className="relative mt-6 max-w-xl">
+                            <Search className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400" size={20} />
                             <input
                                 type="text"
                                 placeholder="How can we help?"
-                                className="w-full pl-12 pr-4 py-3 bg-slate-100 border border-transparent focus:bg-white focus:border-indigo-600 rounded-md outline-none transition-all"
+                                className="w-full rounded-md border border-transparent bg-slate-100 py-3 pr-4 pl-12 outline-hidden transition-all focus:border-indigo-600 focus:bg-white"
                             />
                         </div>
                     )}
                 </div>
             </div>
 
-            <main className="max-w-4xl mx-auto py-12 px-6">
-                <div className="bg-white rounded-lg border border-slate-200 p-8 md:p-12 shadow-sm">
+            <main className="mx-auto max-w-4xl py-12 px-6">
+                <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-xs md:p-12">
                     {children}
                 </div>
 
-                <footer className="mt-12 text-center text-slate-400 text-xs pb-12">
+                <footer className="mt-12 pb-12 text-center text-xs text-slate-400">
                     {FOOTER_TEXT}
                 </footer>
             </main>
