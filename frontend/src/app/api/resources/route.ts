@@ -4,23 +4,19 @@ import { auth0 } from "@/lib/auth0";
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
         };
-
         try {
             const { token } = await auth0.getAccessToken();
             if (token) headers["Authorization"] = `Bearer ${token}`;
         } catch {
             // Not authenticated — proceed without token
         }
-
         const backendUrl = process.env.NEXT_PUBLIC_API_URL;
         if (!backendUrl) {
             return NextResponse.json({ error: "API URL not configured" }, { status: 500 });
         }
-
         const res = await fetch(
             `${backendUrl}/api/resources?${searchParams}`,
             { headers }
