@@ -53,24 +53,43 @@ function getDisplayName(conv: Conversation) {
 }
 
 async function enrichConversations(convs: Conversation[]): Promise<Conversation[]> {
-    const enriched = await Promise.all(convs.map(async (conv) => {
+    const uniqueIds = [...new Set(convs.map(c => c.other_user_id))];
+    const profileMap: Record<string, { name: string; image: string | null }> = {};
+
+    await Promise.all(uniqueIds.map(async (auth0Id) => {
         try {
-            const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(conv.other_user_id)}`);
+            const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(auth0Id)}`);
             if (res.ok) {
                 const users = await res.json();
                 const u = Array.isArray(users) ? users[0] : users;
                 if (u) {
-                    return {
-                        ...conv,
-                        other_user_name: u.organizationName || u.fullName || u.username || conv.other_user_id,
-                        other_user_image: u.profileImageUrl || null,
+                    profileMap[auth0Id] = {
+                        name: u.organizationName || u.fullName || u.username || auth0Id,
+                        image: u.profileImageUrl || null,
                     };
                 }
             }
         } catch { /* silent */ }
-        return conv;
     }));
-    return enriched;
+
+    return convs.map(conv => {
+        const profile = profileMap[conv.other_user_id];
+        if (!profile) return conv;
+        return {
+            ...conv,
+            other_user_name: profile.name,
+            other_user_image: profile.image ?? undefined,
+        };
+    });
+}
+
+function deduplicateConvs(convs: Conversation[]): Conversation[] {
+    const seen = new Set<string>();
+    return convs.filter(c => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+    });
 }
 
 function MessagesContent() {
@@ -101,12 +120,13 @@ function MessagesContent() {
                 const raw = await getConversations();
                 const enriched = await enrichConversations(raw);
                 if (!cancelled) {
-                    setConversations(enriched);
-                    joinConversations(enriched.map((c: Conversation) => c.id));
+                    const deduped = deduplicateConvs(enriched);
+                    setConversations(deduped);
+                    joinConversations(deduped.map((c: Conversation) => c.id));
 
                     const withUserId = searchParams.get('with');
                     if (withUserId) {
-                        const existing = enriched.find((c: Conversation) => c.other_user_id === withUserId);
+                        const existing = deduped.find((c: Conversation) => c.other_user_id === withUserId);
                         if (existing) {
                             setActiveConv(existing);
                         } else {
@@ -122,7 +142,10 @@ function MessagesContent() {
                                 };
                                 const enrichedNew = await enrichConversations([newConvFull]);
                                 if (!cancelled) {
-                                    setConversations(prev => [enrichedNew[0], ...prev]);
+                                    setConversations(prev =>
+                                        // Bug 3 fix: check id doesn't already exist before prepending
+                                        deduplicateConvs([enrichedNew[0], ...prev])
+                                    );
                                     setActiveConv(enrichedNew[0]);
                                     joinConversations([newConv.id]);
                                 }
@@ -130,8 +153,8 @@ function MessagesContent() {
                             finally { if (!cancelled) setStartingChat(false); }
                         }
                         router.replace('/messages');
-                    } else if (enriched.length) {
-                        setActiveConv(enriched[0]);
+                    } else if (deduped.length) {
+                        setActiveConv(deduped[0]);
                     }
                 }
             } catch (e) {
@@ -166,11 +189,31 @@ function MessagesContent() {
         return () => { cancelled = true; };
     }, [activeConv, on, markRead]);
 
-    // Socket events
     useEffect(() => {
+        const offSent = on<Message>('message_sent', (msg) => {
+            if (msg.conversation_id === activeConv?.id) {
+                setMessages(prev => {
+                    const tempIdx = prev.findIndex(m => m.id.startsWith('temp-'));
+                    if (tempIdx === -1) return prev;
+                    const next = [...prev];
+                    next[tempIdx] = msg;
+                    return next;
+                });
+            }
+        });
+
         const offMsg = on<Message>('receive_message', (msg) => {
             if (msg.conversation_id === activeConv?.id) {
-                setMessages(prev => [...prev, msg]);
+                setMessages(prev => {
+                    if (prev.some(m => m.id === msg.id)) return prev;
+                    const tempIdx = prev.findIndex(m => m.id.startsWith('temp-'));
+                    if (tempIdx !== -1) {
+                        const next = [...prev];
+                        next[tempIdx] = msg;
+                        return next;
+                    }
+                    return [...prev, msg];
+                });
                 markRead(msg.conversation_id);
             } else {
                 setConversations(prev => prev.map(c =>
@@ -197,7 +240,7 @@ function MessagesContent() {
             setOnlineUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         });
 
-        return () => { offMsg?.(); offTyping?.(); offOnline?.(); offOffline?.(); };
+        return () => { offSent?.(); offMsg?.(); offTyping?.(); offOnline?.(); offOffline?.(); };
     }, [activeConv?.id, on, markRead]);
 
     useEffect(() => {
@@ -357,7 +400,6 @@ function MessagesContent() {
                             </div>
                         </div>
 
-                        {/* Chat area */}
                         <div className="flex-1 flex flex-col min-w-0 bg-white">
                             {activeConv ? (
                                 <>
