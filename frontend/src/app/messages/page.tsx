@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import {
     Search, Send, Info,
     Smile, Paperclip, ImageIcon, MoreHorizontal,
-    Star, Edit2, Loader2, MessageSquare,
+    Star, Edit2, Loader2, MessageSquare, X, Trash2, Users,
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
 import { useSocket } from '@/hooks/useSocket';
@@ -30,9 +30,28 @@ interface Message {
     created_at: string;
 }
 
+interface SearchUser {
+    auth0Id: string;
+    name: string;
+    image: string | null;
+}
+
+interface RawUser {
+    auth0Id: string;
+    organizationName?: string;
+    fullName?: string;
+    username?: string;
+    displayName?: string;
+    profileImageUrl?: string;
+}
+
 const filters = ['All', 'Unread'] as const;
 const headerActions = [Star, Info] as React.ElementType[];
-const inputActions = [ImageIcon, Paperclip, Smile] as React.ElementType[];
+const emojis = [
+    '😀', '😂', '😊', '😍', '🥰', '😎', '😭', '😅', '🤔', '👍',
+    '👎', '❤️', '🔥', '✅', '🙏', '💯', '🎉', '😢', '😡', '🤝',
+    '😁', '🤣', '😇', '🤩', '😏', '😒', '😔', '😤', '🤯', '🥳',
+];
 
 function timeLabel(iso: string | null) {
     if (!iso) return '';
@@ -52,6 +71,15 @@ function getDisplayName(conv: Conversation) {
     return conv.other_user_name || conv.other_user_id;
 }
 
+async function feedFetch(path: string, opts: RequestInit = {}) {
+    const res = await fetch(`/api/feed/${path}`, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', ...opts.headers },
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    return res.json();
+}
+
 async function enrichConversations(convs: Conversation[]): Promise<Conversation[]> {
     const uniqueIds = [...new Set(convs.map(c => c.other_user_id))];
     const profileMap: Record<string, { name: string; image: string | null }> = {};
@@ -61,10 +89,10 @@ async function enrichConversations(convs: Conversation[]): Promise<Conversation[
             const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(auth0Id)}`);
             if (res.ok) {
                 const users = await res.json();
-                const u = Array.isArray(users) ? users[0] : users;
+                const u: RawUser = Array.isArray(users) ? users[0] : users;
                 if (u) {
                     profileMap[auth0Id] = {
-                        name: u.organizationName || u.fullName || u.username || auth0Id,
+                        name: u.displayName || u.organizationName || u.fullName || u.username || auth0Id,
                         image: u.profileImageUrl || null,
                     };
                 }
@@ -110,8 +138,32 @@ function MessagesContent() {
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
     const [startingChat, setStartingChat] = useState(false);
 
+    const [showNewChat, setShowNewChat] = useState(false);
+    const [newChatSearch, setNewChatSearch] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
+    const [searching, setSearching] = useState(false);
+
+    const [deletingConvId, setDeletingConvId] = useState<string | null>(null);
+
+    const [showEmoji, setShowEmoji] = useState(false);
+    const emojiRef = useRef<HTMLDivElement>(null);
+
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const bottomRef = useRef<HTMLDivElement>(null);
     const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+                setShowEmoji(false);
+            }
+        }
+        if (showEmoji) document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showEmoji]);
 
     useEffect(() => {
         let cancelled = false;
@@ -142,10 +194,7 @@ function MessagesContent() {
                                 };
                                 const enrichedNew = await enrichConversations([newConvFull]);
                                 if (!cancelled) {
-                                    setConversations(prev =>
-                                        // Bug 3 fix: check id doesn't already exist before prepending
-                                        deduplicateConvs([enrichedNew[0], ...prev])
-                                    );
+                                    setConversations(prev => deduplicateConvs([enrichedNew[0], ...prev]));
                                     setActiveConv(enrichedNew[0]);
                                     joinConversations([newConv.id]);
                                 }
@@ -274,6 +323,105 @@ function MessagesContent() {
         typingTimer.current = setTimeout(() => sendTyping(activeConv.id, false), 1500);
     };
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeConv) return;
+        setInput(prev => prev + `[Image: ${file.name}]`);
+        e.target.value = '';
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeConv) return;
+        setInput(prev => prev + `[File: ${file.name}]`);
+        e.target.value = '';
+    };
+
+    const searchUsers = useCallback(async (query: string) => {
+        if (!query.trim()) { setSearchResults([]); return; }
+        if (!user?.sub) return;
+        setSearching(true);
+        try {
+            const [followersRes, followingRes] = await Promise.all([
+                feedFetch(`followers/${user.sub}`).catch(() => []),
+                feedFetch(`following/${user.sub}`).catch(() => []),
+            ]);
+
+            const ids = new Set<string>();
+            (followersRes || []).forEach((f: { follower_id: string }) => {
+                if (f.follower_id !== user.sub) ids.add(f.follower_id);
+            });
+            (followingRes || []).forEach((f: { following_id: string }) => {
+                if (f.following_id !== user.sub) ids.add(f.following_id);
+            });
+
+            if (ids.size === 0) { setSearchResults([]); return; }
+
+            const lower = query.toLowerCase();
+            const profiles = await Promise.all(
+                [...ids].map(async (auth0Id) => {
+                    try {
+                        const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(auth0Id)}`);
+                        if (!res.ok) return null;
+                        const users = await res.json();
+                        const u: RawUser = Array.isArray(users) ? users[0] : null;
+                        if (!u) return null;
+                        const name = u.displayName || u.organizationName || u.fullName || u.username || auth0Id;
+                        if (
+                            !name.toLowerCase().includes(lower) &&
+                            !(u.username?.toLowerCase().includes(lower))
+                        ) return null;
+                        return { auth0Id: u.auth0Id, name, image: u.profileImageUrl || null } as SearchUser;
+                    } catch { return null; }
+                })
+            );
+
+            setSearchResults(profiles.filter((p): p is SearchUser => p !== null));
+        } catch { setSearchResults([]); }
+        finally { setSearching(false); }
+    }, [user?.sub]);
+
+    const handleNewChatSearchChange = (val: string) => {
+        setNewChatSearch(val);
+        if (searchTimer.current) clearTimeout(searchTimer.current);
+        searchTimer.current = setTimeout(() => searchUsers(val), 300);
+    };
+
+    const startChatWithUser = useCallback(async (auth0Id: string) => {
+        setShowNewChat(false);
+        setNewChatSearch('');
+        setSearchResults([]);
+        const existing = conversations.find(c => c.other_user_id === auth0Id);
+        if (existing) { setActiveConv(existing); return; }
+        setStartingChat(true);
+        try {
+            const newConv = await startConversation(auth0Id);
+            const newConvFull: Conversation = {
+                id: newConv.id, other_user_id: auth0Id,
+                last_message: null, last_message_at: null, unread_count: 0,
+            };
+            const enrichedNew = await enrichConversations([newConvFull]);
+            setConversations(prev => deduplicateConvs([enrichedNew[0], ...prev]));
+            setActiveConv(enrichedNew[0]);
+            joinConversations([newConv.id]);
+        } catch (e) { console.error(e); }
+        finally { setStartingChat(false); }
+    }, [conversations, joinConversations]);
+
+    const deleteConversation = useCallback(async (convId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDeletingConvId(convId);
+        try {
+            await feedFetch(`chat/conversations/${convId}`, { method: 'DELETE' });
+            setConversations(prev => prev.filter(c => c.id !== convId));
+            if (activeConv?.id === convId) {
+                setActiveConv(null);
+                setMessages([]);
+            }
+        } catch (err) { console.error(err); }
+        finally { setDeletingConvId(null); }
+    }, [activeConv]);
+
     const filteredConvs = conversations.filter(c => {
         const nameMatch = getDisplayName(c).toLowerCase().includes(convSearch.toLowerCase());
         if (activeFilter === 'Unread') return nameMatch && c.unread_count > 0;
@@ -298,14 +446,17 @@ function MessagesContent() {
         <div className="bg-[#F4F2EE] h-[calc(100vh-64px)] w-full overflow-hidden flex flex-col">
             <div className="max-w-7xl w-full mx-auto px-4 flex flex-col h-full pt-4">
                 <div className="flex gap-4 min-h-0 flex-1 items-stretch">
-
                     <div className="flex-1 bg-white rounded-t-xl border-t border-x border-stone-200 shadow-sm flex min-h-0 overflow-hidden">
-                        <div className="w-72 xl:w-80 border-r border-stone-200 flex flex-col shrink-0 bg-white">
+                        <div className="w-72 xl:w-80 border-r border-stone-200 flex flex-col shrink-0 bg-white relative">
                             <div className="px-4 pt-3 pb-3 border-b border-stone-200 shrink-0">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="font-bold text-slate-900 text-base">Messaging</h2>
                                     <div className="flex items-center gap-1">
-                                        <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
+                                        <button
+                                            onClick={() => { setShowNewChat(true); setNewChatSearch(''); setSearchResults([]); }}
+                                            title="New conversation"
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"
+                                        >
                                             <Edit2 size={15} />
                                         </button>
                                         <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
@@ -345,15 +496,17 @@ function MessagesContent() {
                                     <div className="text-center py-10 px-4">
                                         <MessageSquare size={28} className="mx-auto mb-2 text-slate-300" />
                                         <p className="text-xs text-slate-400 font-medium">No conversations yet</p>
-                                        <p className="text-[11px] text-slate-300 mt-1">Start chatting from a profile page or after a volunteer is accepted</p>
+                                        <p className="text-[11px] text-slate-300 mt-1">Click the pencil icon to start a new chat</p>
                                     </div>
                                 ) : (
                                     filteredConvs.map(conv => {
                                         const displayName = getDisplayName(conv);
                                         const initial = getInitial(conv.other_user_id, conv.other_user_name);
                                         return (
-                                            <button key={conv.id} onClick={() => setActiveConv(conv)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-slate-100 ${activeConv?.id === conv.id
+                                            <div
+                                                key={conv.id}
+                                                onClick={() => setActiveConv(conv)}
+                                                className={`group w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-slate-100 cursor-pointer ${activeConv?.id === conv.id
                                                     ? 'bg-slate-100/80 border-l-[3px] border-l-stone-700'
                                                     : 'hover:bg-slate-50 border-l-[3px] border-l-transparent'
                                                     }`}>
@@ -375,6 +528,7 @@ function MessagesContent() {
                                                         <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-white rounded-full" />
                                                     )}
                                                 </div>
+
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center">
                                                         <span className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'}`}>
@@ -388,16 +542,90 @@ function MessagesContent() {
                                                         {conv.last_message ?? 'No messages yet'}
                                                     </p>
                                                 </div>
-                                                {conv.unread_count > 0 && (
-                                                    <span className="h-5 w-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
-                                                        {conv.unread_count > 9 ? '9+' : conv.unread_count}
-                                                    </span>
-                                                )}
-                                            </button>
+
+                                                <div className="shrink-0 flex items-center gap-1">
+                                                    {conv.unread_count > 0 && (
+                                                        <span className="h-5 w-5 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                                            {conv.unread_count > 9 ? '9+' : conv.unread_count}
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => deleteConversation(conv.id, e)}
+                                                        title="Delete conversation"
+                                                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-slate-300 transition-all"
+                                                    >
+                                                        {deletingConvId === conv.id
+                                                            ? <Loader2 size={13} className="animate-spin" />
+                                                            : <Trash2 size={13} />
+                                                        }
+                                                    </button>
+                                                </div>
+                                            </div>
                                         );
                                     })
                                 )}
                             </div>
+
+                            {showNewChat && (
+                                <div className="absolute inset-0 z-50 bg-white flex flex-col rounded-tl-xl border-r border-stone-200">
+                                    <div className="px-4 pt-3 pb-2 border-b border-stone-200 flex items-center gap-2 shrink-0">
+                                        <button
+                                            onClick={() => { setShowNewChat(false); setNewChatSearch(''); setSearchResults([]); }}
+                                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+                                        >
+                                            <X size={15} />
+                                        </button>
+                                        <span className="font-bold text-slate-900 text-sm">New Message</span>
+                                    </div>
+                                    <div className="px-4 py-2 border-b border-stone-200 shrink-0">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="Search followers / following..."
+                                                value={newChatSearch}
+                                                onChange={e => handleNewChatSearchChange(e.target.value)}
+                                                className="w-full pl-8 pr-4 py-2 text-xs bg-slate-100 border border-transparent rounded-xl focus:outline-none focus:bg-white focus:border-indigo-500 transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto">
+                                        {searching ? (
+                                            <div className="flex justify-center py-8">
+                                                <Loader2 className="animate-spin text-slate-300" size={18} />
+                                            </div>
+                                        ) : searchResults.length === 0 && newChatSearch.trim() ? (
+                                            <div className="text-center py-10 px-4">
+                                                <Users size={24} className="mx-auto mb-2 text-slate-300" />
+                                                <p className="text-xs text-slate-400">No followers or following match</p>
+                                            </div>
+                                        ) : searchResults.length === 0 ? (
+                                            <div className="text-center py-10 px-4">
+                                                <Search size={24} className="mx-auto mb-2 text-slate-300" />
+                                                <p className="text-xs text-slate-400">Search among your followers &amp; following</p>
+                                            </div>
+                                        ) : (
+                                            searchResults.map(u => (
+                                                <div
+                                                    key={u.auth0Id}
+                                                    onClick={() => startChatWithUser(u.auth0Id)}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 text-left cursor-pointer"
+                                                >
+                                                    {u.image ? (
+                                                        <Image src={u.image} alt={u.name} width={36} height={36} className="h-9 w-9 rounded-xl object-cover shrink-0" />
+                                                    ) : (
+                                                        <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xs shrink-0">
+                                                            {u.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm font-medium text-slate-700 truncate">{u.name}</span>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex-1 flex flex-col min-w-0 bg-white">
@@ -490,23 +718,72 @@ function MessagesContent() {
                                         <div ref={bottomRef} />
                                     </div>
 
-                                    <div className="px-4 py-3 border-t border-stone-200 bg-white shrink-0">
+                                    <div className="px-4 py-3 border-t border-stone-200 bg-white shrink-0 relative">
+                                        {showEmoji && (
+                                            <div ref={emojiRef} className="absolute bottom-16 left-4 bg-white border border-stone-200 rounded-xl shadow-lg p-3 z-50 w-72">
+                                                <div className="grid grid-cols-10 gap-1">
+                                                    {emojis.map(emoji => (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => { setInput(prev => prev + emoji); setShowEmoji(false); }}
+                                                            className="text-lg hover:bg-slate-100 rounded p-0.5 transition-colors"
+                                                        >
+                                                            {emoji}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <input
+                                            ref={imageInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={handleImageSelect}
+                                        />
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden"
+                                            onChange={handleFileSelect}
+                                        />
+
                                         <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 focus-within:border-stone-400 transition-all">
-                                            {inputActions.map((Icon, i) => (
-                                                <button key={i} className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
-                                                    <Icon size={17} />
-                                                </button>
-                                            ))}
+                                            <button
+                                                onClick={() => imageInputRef.current?.click()}
+                                                className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                                                title="Send image"
+                                            >
+                                                <ImageIcon size={17} />
+                                            </button>
+                                            <button
+                                                onClick={() => fileInputRef.current?.click()}
+                                                className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+                                                title="Attach file"
+                                            >
+                                                <Paperclip size={17} />
+                                            </button>
+                                            <button
+                                                onClick={() => setShowEmoji(prev => !prev)}
+                                                className={`p-1 transition-colors shrink-0 ${showEmoji ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
+                                                title="Emoji"
+                                            >
+                                                <Smile size={17} />
+                                            </button>
                                             <input
                                                 type="text"
                                                 placeholder="Write a message..."
                                                 value={input}
-                                                onChange={e => handleInputChange(e.target.value)}
+                                                onChange={e => { handleInputChange(e.target.value); setShowEmoji(false); }}
                                                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                                                 className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none mx-1"
                                             />
-                                            <button onClick={handleSend} disabled={!input.trim()}
-                                                className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shrink-0 disabled:opacity-30">
+                                            <button
+                                                onClick={handleSend}
+                                                disabled={!input.trim()}
+                                                className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shrink-0 disabled:opacity-30"
+                                            >
                                                 <Send size={14} />
                                             </button>
                                         </div>
@@ -516,7 +793,7 @@ function MessagesContent() {
                                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
                                     <MessageSquare size={40} className="text-slate-200" />
                                     <p className="text-slate-400 text-sm font-medium">Select a conversation</p>
-                                    <p className="text-slate-300 text-xs">or start one from a profile page</p>
+                                    <p className="text-slate-300 text-xs">or click the pencil icon to start one</p>
                                 </div>
                             )}
                         </div>
