@@ -30,10 +30,61 @@ public class PublicUserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> listNgos(
+    public ResponseEntity<List<Map<String, Object>>> listUsers(
             @RequestParam(required = false, defaultValue = "NGO") String role,
-            @RequestParam(required = false, defaultValue = "8") int limit) {
-        List<Map<String, Object>> ngos = userRepository.findAll().stream()
+            @RequestParam(required = false, defaultValue = "8") int limit,
+            @RequestParam(required = false) String auth0Id,
+            @RequestParam(required = false) String search) {
+
+        if (auth0Id != null && !auth0Id.isBlank()) {
+            return userRepository.findByAuth0Id(auth0Id).map(u -> {
+                String name = u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
+                        ? u.getNgoProfile().getOrganizationName()
+                        : u.getFullName() != null ? u.getFullName()
+                        : u.getUsername();
+                return ResponseEntity.ok(List.of(Map.<String, Object>of(
+                        "auth0Id", u.getAuth0Id(),
+                        "username", u.getUsername() != null ? u.getUsername() : "",
+                        "fullName", u.getFullName() != null ? u.getFullName() : "",
+                        "organizationName", u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
+                                ? u.getNgoProfile().getOrganizationName() : "",
+                        "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : "",
+                        "displayName", name != null ? name : ""
+                )));
+            }).orElse(ResponseEntity.ok(List.of()));
+        }
+
+        if (search != null && !search.isBlank()) {
+            String lower = search.toLowerCase();
+            List<Map<String, Object>> result = userRepository.findAll().stream()
+                    .filter(u -> u.getDeletedAt() == null
+                            && u.isOnboardingComplete()
+                            && (
+                            (u.getUsername() != null && u.getUsername().toLowerCase().contains(lower))
+                                    || (u.getFullName() != null && u.getFullName().toLowerCase().contains(lower))
+                                    || (u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
+                                    && u.getNgoProfile().getOrganizationName().toLowerCase().contains(lower))
+                    ))
+                    .limit(20)
+                    .map(u -> {
+                        String name = u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
+                                ? u.getNgoProfile().getOrganizationName()
+                                : u.getFullName() != null ? u.getFullName() : u.getUsername();
+                        return Map.<String, Object>of(
+                                "auth0Id", u.getAuth0Id(),
+                                "username", u.getUsername() != null ? u.getUsername() : "",
+                                "fullName", u.getFullName() != null ? u.getFullName() : "",
+                                "organizationName", u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
+                                        ? u.getNgoProfile().getOrganizationName() : "",
+                                "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : "",
+                                "displayName", name != null ? name : ""
+                        );
+                    })
+                    .toList();
+            return ResponseEntity.ok(result);
+        }
+
+        List<Map<String, Object>> users = userRepository.findAll().stream()
                 .filter(u -> u.getRole().name().equals(role)
                         && u.isOnboardingComplete()
                         && u.getDeletedAt() == null
@@ -55,7 +106,7 @@ public class PublicUserController {
                     );
                 })
                 .toList();
-        return ResponseEntity.ok(ngos);
+        return ResponseEntity.ok(users);
     }
 
     @PostMapping("/batch")
