@@ -96,4 +96,28 @@ router.post("/conversations", requireAuth, async (req, res) => {
   }
 });
 
+
+router.delete("/conversations/:conversationId", requireAuth, async (req, res) => {
+    try {
+        const { rowCount } = await pool.query(
+            `DELETE FROM conversation_participants
+             WHERE conversation_id = $1 AND user_id = $2`,
+            [req.params.conversationId, req.auth.sub]
+        );
+        if (!rowCount) {
+            return res.status(404).json({ error: "Conversation not found or not a participant" });
+        }
+        const { rows } = await pool.query(
+            `SELECT COUNT(*)::int AS cnt FROM conversation_participants WHERE conversation_id = $1`,
+            [req.params.conversationId]
+        );
+        if (rows[0].cnt === 0) {
+            await pool.query(`DELETE FROM conversations WHERE id = $1`, [req.params.conversationId]);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;
