@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { getConversations } from '@/lib/feedApi';
 import {
     Home, MessageSquare, Search, Bell, Package,
     FolderOpen, LucideIcon, ChevronDown, User,
@@ -221,6 +222,21 @@ export default function Navbar() {
     const router = useRouter();
     const { user, dbUser, isLoading } = useAuth();
     const { unreadCount } = useNotifications();
+    const [unreadConvCount, setUnreadConvCount] = useState(0);
+
+    useEffect(() => {
+        if (!user) return;
+        async function loadUnread() {
+            try {
+                const convs = await getConversations();
+                const count = convs.filter((c: { unread_count: number }) => c.unread_count > 0).length;
+                setUnreadConvCount(count);
+            } catch { /* silent */ }
+        }
+        loadUnread();
+        const interval = setInterval(loadUnread, 30000);
+        return () => clearInterval(interval);
+    }, [user]);
 
     const [query, setQuery] = useState('');
     const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
@@ -335,7 +351,7 @@ export default function Navbar() {
                         <NavItem href="/" icon={Home} label="Home" />
                         <NavItem href="/project" icon={FolderOpen} label="Projects" />
                         <NavItem href="/resources" icon={Package} label="Resources" />
-                        <NavItem href="/messages" icon={MessageSquare} label="Messaging" />
+                        <NavItem href="/messages" icon={MessageSquare} label="Messaging" badge={unreadConvCount} />
                         <NavItem href="/notifications" icon={Bell} label="Alerts" badge={unreadCount} />
 
                         <div className="h-8 w-px bg-slate-200 mx-3" />
@@ -428,7 +444,7 @@ export default function Navbar() {
                     </div>
 
                     <div className="flex lg:hidden items-center">
-                        <button 
+                        <button
                             onClick={() => setMobileMenuOpen(prev => !prev)}
                             className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
                             aria-label="Toggle Menu"
@@ -507,7 +523,7 @@ export default function Navbar() {
                 <NavItem href="/" icon={Home} label="Home" />
                 <NavItem href="/project" icon={FolderOpen} label="Projects" />
                 <NavItem href="/resources" icon={Package} label="Resources" />
-                <NavItem href="/messages" icon={MessageSquare} label="Messaging" />
+                <NavItem href="/messages" icon={MessageSquare} label="Messaging" badge={unreadConvCount} />
                 <NavItem href="/notifications" icon={Bell} label="Alerts" badge={unreadCount} />
             </div>
         </>
