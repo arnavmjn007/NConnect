@@ -7,7 +7,13 @@ export async function PATCH(
 ) {
     try {
         const { applicationId } = await params;
-        const { token } = await auth0.getAccessToken();
+        const session = await auth0.getSession();
+        const token = session?.tokenSet?.accessToken;
+
+        if (!token) {
+            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        }
+
         const body = await request.json();
         const res = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/volunteer/applications/${applicationId}/respond`,
@@ -24,11 +30,12 @@ export async function PATCH(
 
         if (res.ok && body.action === "ACCEPTED" && data.volunteerAuth0Id) {
             try {
-                await fetch(`http://localhost:5000/chat/conversations`, {
+                const baseUrl = request.nextUrl.origin;
+                await fetch(`${baseUrl}/api/feed/chat/conversations`, {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
+                        "Cookie": request.headers.get("cookie") ?? "",
                     },
                     body: JSON.stringify({ otherUserId: data.volunteerAuth0Id }),
                 });
