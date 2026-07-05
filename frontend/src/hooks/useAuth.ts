@@ -27,6 +27,8 @@ export type DbUser = {
     operatingLocations: string | null;
     verificationStatus: "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | null;
     verified: boolean;
+    pro: boolean;
+    proExpiresAt: string | null;
 };
 
 const SYNC_KEY = "nconnect_synced";

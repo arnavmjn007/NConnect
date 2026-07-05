@@ -5,47 +5,55 @@ import { ExternalLink } from 'lucide-react';
 interface EsewaPaymentFormProps {
     amount: number;
     userId: string;
+    purpose?: string;
     onInitiated: () => void;
 }
 
-export default function EsewaPaymentForm({ amount, userId, onInitiated }: EsewaPaymentFormProps) {
+export default function EsewaPaymentForm({ amount, userId, purpose = "verification", onInitiated }: EsewaPaymentFormProps) {
     const [loading, setLoading] = useState(false);
-    const [pid] = useState(() => `nconnect_verify_${userId}_${Date.now()}`);
+    const [error, setError] = useState("");
 
-    const successUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/verification?payment=success&oid=${pid}`;
-    const failureUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/verification?payment=failed`;
-
-    const handlePay = () => {
+    const handlePay = async () => {
         setLoading(true);
-        onInitiated();
-        sessionStorage.setItem("esewa_pid", pid);
-        sessionStorage.setItem("esewa_amt", String(amount));
-        const form = document.getElementById("esewa-form") as HTMLFormElement;
-        form?.submit();
+        setError("");
+        try {
+            const res = await fetch("/api/payment/esewa/initiate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount, purpose, referenceId: userId }),
+            });
+            if (!res.ok) throw new Error("Failed to initiate eSewa payment");
+            const { formFields, actionUrl } = await res.json();
+
+            sessionStorage.setItem("esewa_transaction_uuid", formFields.transaction_uuid);
+            sessionStorage.setItem("esewa_amt", String(amount));
+
+            onInitiated();
+
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = actionUrl;
+            Object.entries(formFields).forEach(([key, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = String(value);
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        } catch (err) {
+            console.error(err);
+            setError("Failed to start eSewa payment. Please try again.");
+            setLoading(false);
+        }
     };
 
     return (
         <div className="space-y-4">
-            <form
-                id="esewa-form"
-                action={process.env.NEXT_PUBLIC_ESEWA_SANDBOX_URL}
-                method="POST"
-                className="hidden"
-            >
-                <input name="tAmt" value={amount} readOnly />
-                <input name="amt" value={amount} readOnly />
-                <input name="txAmt" value="0" readOnly />
-                <input name="psc" value="0" readOnly />
-                <input name="pdc" value="0" readOnly />
-                <input name="scd" value={process.env.NEXT_PUBLIC_ESEWA_MERCHANT_CODE || "EPAYTEST"} readOnly />
-                <input name="pid" value={pid} readOnly />
-                <input name="su" value={successUrl} readOnly />
-                <input name="fu" value={failureUrl} readOnly />
-            </form>
-
             <div className="bg-emerald-50 rounded-xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-700">NGO Verification Fee</span>
+                    <span className="text-sm font-semibold text-slate-700">Amount</span>
                     <span className="text-sm font-bold text-emerald-700">NPR {amount.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-500">
@@ -57,6 +65,8 @@ export default function EsewaPaymentForm({ amount, userId, onInitiated }: EsewaP
                     <span className="text-sm font-bold text-emerald-700">NPR {amount.toLocaleString()}</span>
                 </div>
             </div>
+
+            {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
 
             <button
                 onClick={handlePay}
@@ -73,7 +83,7 @@ export default function EsewaPaymentForm({ amount, userId, onInitiated }: EsewaP
                         Sandbox Test Credentials
                     </summary>
                     <div className="mt-2 space-y-1">
-                        <p>eSewa ID: <span className="font-mono">9806800001</span></p>
+                        <p>eSewa ID: <span className="font-mono">9711111111</span></p>
                         <p>Password: <span className="font-mono">Nepal@123</span></p>
                         <p>MPIN: <span className="font-mono">1122</span></p>
                         <p>Token: <span className="font-mono">123456</span></p>

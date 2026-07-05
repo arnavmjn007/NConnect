@@ -36,32 +36,23 @@ function VerificationContent() {
 
     useEffect(() => {
         const payment = searchParams.get("payment");
-        const oid = searchParams.get("oid");
-        const refId = searchParams.get("refId");
+        const encodedData = searchParams.get("data");
 
-        if (payment === "success" && oid) {
-            const storedAmt = sessionStorage.getItem("esewa_amt") || "5000";
-            const storedPid = sessionStorage.getItem("esewa_pid") || oid;
-
+        if (payment === "success" && encodedData) {
             const verify = async () => {
                 try {
                     const res = await fetch("/api/payment/esewa/verify", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            amt: storedAmt,
-                            rid: refId || oid,
-                            pid: storedPid,
-                            scd: process.env.NEXT_PUBLIC_ESEWA_MERCHANT_CODE || "EPAYTEST",
-                        }),
+                        body: JSON.stringify({ encodedData }),
                     });
                     const data = await res.json();
                     if (data.verified) {
-                        setPaymentRef(refId || oid);
+                        setPaymentRef(data.ref);
                         setPaymentDone(true);
                         setPaymentMethod("ESEWA");
                         setStep(3);
-                        sessionStorage.removeItem("esewa_pid");
+                        sessionStorage.removeItem("esewa_transaction_uuid");
                         sessionStorage.removeItem("esewa_amt");
                     } else {
                         setError("eSewa payment verification failed. Please try again.");
@@ -169,7 +160,7 @@ function VerificationContent() {
         }
     };
 
-    const AMOUNT = 5000;
+    const AMOUNT = 500;
 
     return (
         <div className="min-h-screen bg-[#EEF3F8] flex flex-col">

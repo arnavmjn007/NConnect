@@ -128,7 +128,7 @@ function VolunteerApplicationsModal({
                     profiles.forEach(p => { map[p.id] = p; });
                     setSuggestedProfiles(map);
                 }
-            } catch { /* silent — AI service may be offline */ }
+            } catch { /* silent */ }
             finally { if (!cancelled) setSuggestedLoading(false); }
         }
         loadSuggested();
@@ -150,7 +150,7 @@ function VolunteerApplicationsModal({
                 if (action === 'ACCEPTED' && applicantAuth0Id) {
                     try {
                         await startConversation(applicantAuth0Id);
-                    } catch { /* silent — conversation may already exist */ }
+                    } catch { /* silent */ }
                 }
             }
         } catch { /* silent */ }
@@ -311,7 +311,6 @@ function VolunteerApplicationsModal({
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
                                                     {app.status}
                                                 </span>
-                                                {/* Bug 4 fix: chat icon on accepted rows */}
                                                 {app.status === 'ACCEPTED' && app.applicantAuth0Id && (
                                                     <button
                                                         onClick={() => handleChatWithVolunteer(app.applicantAuth0Id)}
@@ -959,35 +958,29 @@ function ProjectsContent() {
 
     useEffect(() => {
         const donation = searchParams.get("donation");
-        const oid = searchParams.get("oid");
-        const refId = searchParams.get("refId");
+        const encodedData = searchParams.get("data");
 
-        if (donation === "success" && oid) {
+        if (donation === "success" && encodedData) {
             const storedAmt = sessionStorage.getItem("esewa_amt") || "0";
-            const storedPid = sessionStorage.getItem("esewa_pid") || oid;
             const storedProjectId = sessionStorage.getItem("esewa_project_id");
 
             fetch("/api/payment/esewa/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    amt: storedAmt,
-                    rid: refId || oid,
-                    pid: storedPid,
-                    scd: process.env.NEXT_PUBLIC_ESEWA_MERCHANT_CODE || "EPAYTEST",
-                }),
+                body: JSON.stringify({ encodedData }),
             })
                 .then(r => r.json())
                 .then(async data => {
                     if (data.verified) {
+                        const confirmedAmount = parseInt(data.amount) || parseInt(storedAmt) || 0;
                         if (storedProjectId) {
                             await fetch("/api/donations/confirm", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
                                     projectId: storedProjectId,
-                                    amount: parseInt(storedAmt),
-                                    paymentRef: refId || oid,
+                                    amount: confirmedAmount,
+                                    paymentRef: data.ref,
                                     paymentMethod: "ESEWA",
                                 }),
                             });
@@ -996,21 +989,25 @@ function ProjectsContent() {
                         if (storedProjectId) {
                             setProjects(prev => prev.map(p =>
                                 p.id === storedProjectId
-                                    ? { ...p, raisedAmount: p.raisedAmount + parseInt(storedAmt), donorCount: p.donorCount + 1 }
+                                    ? { ...p, raisedAmount: p.raisedAmount + confirmedAmount, donorCount: p.donorCount + 1 }
                                     : p
                             ));
                         }
-                        sessionStorage.removeItem("esewa_pid");
+                        sessionStorage.removeItem("esewa_transaction_uuid");
                         sessionStorage.removeItem("esewa_amt");
-                        sessionStorage.removeItem("esewa_purpose");
                         sessionStorage.removeItem("esewa_project_id");
                     }
                 })
                 .catch(() => { });
-        } else if (donation === "success" && !oid) {
-            setDonationSuccess(true);
+        } else if (donation === "failed") {
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (searchParams.get("view") === "my" && isNgo) {
+            setShowMyProjects(true);
+        }
+    }, [searchParams, isNgo]);
 
     const handleDonated = useCallback((projectId: string, amount: number) => {
         setProjects(prev => prev.map(p =>

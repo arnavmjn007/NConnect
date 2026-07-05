@@ -120,34 +120,53 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
     const [error, setError] = useState("");
     const [paymentRef, setPaymentRef] = useState("");
     const [confirming, setConfirming] = useState(false);
+    const [esewaLoading, setEsewaLoading] = useState(false);
 
     const finalAmount = customAmount ? parseInt(customAmount) || 0 : amount;
-    const failureUrl = typeof window !== "undefined"
-        ? `${window.location.origin}/project?donation=failed`
-        : "";
 
-    const handleEsewaSubmit = () => {
+    const handleEsewaSubmit = async () => {
         if (finalAmount < 100) { setError("Minimum donation is NPR 100"); return; }
-        const dynamicPid = `nconnect_donate_${project.id}_${Date.now()}`;
-        const dynamicSuccessUrl = `${window.location.origin}/project?donation=success&pid=${dynamicPid}&amt=${finalAmount}&projectId=${project.id}`;
+        setError("");
+        setEsewaLoading(true);
+        try {
+            const res = await fetch("/api/payment/esewa/initiate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    amount: finalAmount,
+                    purpose: "donation",
+                    referenceId: project.id,
+                }),
+            });
+            if (!res.ok) throw new Error("Failed to initiate eSewa payment");
+            const { formFields, actionUrl } = await res.json();
 
-        sessionStorage.setItem("esewa_pid", dynamicPid);
-        sessionStorage.setItem("esewa_amt", String(finalAmount));
-        sessionStorage.setItem("esewa_purpose", "donation");
-        sessionStorage.setItem("esewa_project_id", project.id);
+            sessionStorage.setItem("esewa_transaction_uuid", formFields.transaction_uuid);
+            sessionStorage.setItem("esewa_amt", String(finalAmount));
+            sessionStorage.setItem("esewa_project_id", project.id);
 
-        const form = document.getElementById("donate-esewa-form") as HTMLFormElement;
-        if (form) {
-            (form.elements.namedItem("pid") as HTMLInputElement).value = dynamicPid;
-            (form.elements.namedItem("su") as HTMLInputElement).value = dynamicSuccessUrl;
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = actionUrl;
+            Object.entries(formFields).forEach(([key, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = String(value);
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
             form.submit();
+        } catch (err) {
+            console.error(err);
+            setError("Failed to start eSewa payment. Please try again.");
+            setEsewaLoading(false);
         }
     };
 
     const handleStripeSuccess = async (intentId: string) => {
         setPaymentRef(intentId);
         setConfirming(true);
-        // Confirm in DB
         await confirmDonationInDB(project.id, finalAmount, intentId, "STRIPE");
         setConfirming(false);
         onDonated?.(finalAmount);
@@ -228,25 +247,14 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
 
                             {paymentMethod === "ESEWA" ? (
                                 <>
-                                    <form id="donate-esewa-form" action={process.env.NEXT_PUBLIC_ESEWA_SANDBOX_URL} method="POST" className="hidden">
-                                        <input name="amt" value={finalAmount} readOnly />
-                                        <input name="psc" value="0" readOnly />
-                                        <input name="pdc" value="0" readOnly />
-                                        <input name="txAmt" value="0" readOnly />
-                                        <input name="tAmt" value={finalAmount} readOnly />
-                                        <input name="pid" value="" readOnly />
-                                        <input name="scd" value={process.env.NEXT_PUBLIC_ESEWA_MERCHANT_CODE || "EPAYTEST"} readOnly />
-                                        <input name="su" value="" readOnly />
-                                        <input name="fu" value={failureUrl} readOnly />
-                                    </form>
-                                    <button onClick={handleEsewaSubmit}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
+                                    <button onClick={handleEsewaSubmit} disabled={esewaLoading}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
                                         <ExternalLink size={14} />
-                                        Pay NPR {finalAmount.toLocaleString()} via eSewa
+                                        {esewaLoading ? "Redirecting to eSewa..." : `Pay NPR ${finalAmount.toLocaleString()} via eSewa`}
                                     </button>
                                     <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-0.5">
                                         <p className="font-semibold text-slate-700">Sandbox Credentials:</p>
-                                        <p>ID: <span className="font-mono">9806800001</span> · Pass: <span className="font-mono">Nepal@123</span></p>
+                                        <p>ID: <span className="font-mono">9711111111</span> · Pass: <span className="font-mono">Nepal@123</span></p>
                                     </div>
                                 </>
                             ) : (

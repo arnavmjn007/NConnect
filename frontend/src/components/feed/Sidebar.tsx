@@ -44,7 +44,7 @@ export default function Sidebar() {
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
     const isNGO = dbUser?.role === "NGO";
     const initial = displayName.charAt(0).toUpperCase();
-    const isPremium = false;
+    const isPremium = dbUser?.pro || false;
 
     const joinedDate = dbUser?.createdAt
         ? new Date(dbUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -159,7 +159,7 @@ export default function Sidebar() {
                         </div>
                     </Link>
 
-                    <Link href="/project"
+                    <Link href="/project?view=my"
                         className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
                         <div className="flex items-center gap-3">
                             <Users2 size={16} className="text-[#0A66C2]" />
