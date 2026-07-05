@@ -39,6 +39,8 @@ public class UserProfileResponse {
     private String operatingLocations;
     private VerificationStatus verificationStatus;
     private boolean verified;
+    private boolean pro;
+    private java.time.LocalDateTime proExpiresAt;
 
     public static UserProfileResponse from(AppUser user) {
         UserProfileResponse.UserProfileResponseBuilder builder = UserProfileResponse.builder()
@@ -59,6 +61,8 @@ public class UserProfileResponse {
                 .interests(user.getInterests().stream().map(i -> i.getInterestName()).toList())
                 .languages(user.getLanguages().stream().map(l -> l.getLanguageName()).toList())
                 .causes(user.getCauses().stream().map(c -> c.getCauseName()).toList())
+                .pro(user.getProExpiresAt() != null && user.getProExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                .proExpiresAt(user.getProExpiresAt())
                 .verified(false);
 
         if (user.getNgoProfile() != null) {

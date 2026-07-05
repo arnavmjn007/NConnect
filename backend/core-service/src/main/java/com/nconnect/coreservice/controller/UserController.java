@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import com.nconnect.coreservice.model.PaymentRecord;
+import com.nconnect.coreservice.repository.PaymentRecordRepository;
+
+import java.time.LocalDateTime;
 
 import java.util.List;
 import java.util.Map;
@@ -60,6 +64,45 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(jwt, request));
+    }
+
+    @PostMapping("/subscription/confirm")
+    public ResponseEntity<?> confirmSubscription(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody Map<String, Object> body) {
+
+        String plan = (String) body.get("plan");
+        String paymentRef = (String) body.get("paymentRef");
+        String paymentMethod = (String) body.get("paymentMethod");
+        Object amountObj = body.get("amount");
+
+        if (plan == null || paymentRef == null || amountObj == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "plan, paymentRef, amount required"));
+        }
+
+        AppUser user = userRepository.findByAuth0Id(jwt.getSubject())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        long amount = ((Number) amountObj).longValue();
+        int days = "YEARLY".equalsIgnoreCase(plan) ? 365 : 30;
+
+        LocalDateTime base = (user.getProExpiresAt() != null && user.getProExpiresAt().isAfter(LocalDateTime.now()))
+                ? user.getProExpiresAt()
+                : LocalDateTime.now();
+        user.setProExpiresAt(base.plusDays(days));
+        userRepository.save(user);
+
+        PaymentRecord record = PaymentRecord.builder()
+                .user(user)
+                .paymentMethod(paymentMethod != null ? paymentMethod : "STRIPE")
+                .paymentRef(paymentRef)
+                .amount((int) amount)
+                .purpose("pro_subscription:" + plan)
+                .status("COMPLETED")
+                .build();
+        paymentRecordRepository.save(record);
+
+        return ResponseEntity.ok(UserProfileResponse.from(user));
     }
 
     @DeleteMapping("/account")

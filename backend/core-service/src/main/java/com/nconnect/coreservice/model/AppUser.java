@@ -48,6 +48,9 @@ public class AppUser {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "pro_expires_at")
+    private LocalDateTime proExpiresAt;
+
     @Column(name = "onboarding_complete")
     @Builder.Default
     private boolean onboardingComplete = false;
