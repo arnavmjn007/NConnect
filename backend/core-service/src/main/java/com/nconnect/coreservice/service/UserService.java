@@ -26,6 +26,7 @@ public class UserService {
         String auth0Id = jwt.getSubject();
         String name = jwt.getClaimAsString("name");
         String picture = jwt.getClaimAsString("picture");
+        String realEmail = extractEmail(jwt);
 
         return userRepository.findByAuth0IdWithCollections(auth0Id)
                 .map(user -> {
@@ -38,23 +39,22 @@ public class UserService {
                         user.setProfileImageUrl(picture);
                         changed = true;
                     }
+                    if (realEmail != null && !realEmail.equals(user.getEmail())) {
+                        user.setEmail(realEmail);
+                        changed = true;
+                    }
                     if (changed) userRepository.save(user);
                     return UserProfileResponse.from(user);
                 })
                 .orElseGet(() -> {
-                    String email = jwt.getClaimAsString("email");
-                    if (email == null) {
-                        email = jwt.getClaimAsString("https://uni-auth-project.jp.auth0.com/email");
-                    }
-                    if (email == null) {
-                        email = auth0Id.replace("|", "_") + "@placeholder.nconnect.local";
-                    }
-                    final String finalEmail = email;
+                    String email = realEmail != null
+                            ? realEmail
+                            : auth0Id.replace("|", "_") + "@placeholder.nconnect.local";
 
                     try {
                         AppUser newUser = AppUser.builder()
                                 .auth0Id(auth0Id)
-                                .email(finalEmail)
+                                .email(email)
                                 .fullName(name)
                                 .profileImageUrl(picture)
                                 .role(Role.USER)
@@ -71,6 +71,14 @@ public class UserService {
                                 .orElseThrow(() -> new RuntimeException("Failed to sync user"));
                     }
                 });
+    }
+
+    private String extractEmail(Jwt jwt) {
+        String email = jwt.getClaimAsString("email");
+        if (email == null) {
+            email = jwt.getClaimAsString("https://nconnect.com/email");
+        }
+        return email;
     }
 
     @Transactional

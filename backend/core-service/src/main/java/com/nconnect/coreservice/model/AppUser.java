@@ -55,6 +55,10 @@ public class AppUser {
     @Builder.Default
     private boolean onboardingComplete = false;
 
+    @Column(name = "is_suspended")
+    @Builder.Default
+    private boolean suspended = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<UserSkill> skills = new LinkedHashSet<>();

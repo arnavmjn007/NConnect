@@ -1,4 +1,5 @@
 package com.nconnect.coreservice.model.enums;
 
-public class ReportStatus {
+public enum ReportStatus {
+    OPEN, IN_REVIEW, RESOLVED, DISMISSED
 }

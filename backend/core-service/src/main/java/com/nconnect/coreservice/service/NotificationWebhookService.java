@@ -46,7 +46,7 @@ public class NotificationWebhookService {
         }
     }
 
-    // Convenience methods
+
     public void ngoVerified(String ngoAuth0Id) {
         sendEvent("NGO_VERIFIED", null, ngoAuth0Id, "NGO", ngoAuth0Id, null);
     }
@@ -91,5 +91,10 @@ public class NotificationWebhookService {
         Map<String, Object> meta = Map.of("amount", amount);
         sendEvent("DONATION_CONFIRMED", null, donorAuth0Id,
                 "PROJECT", projectId, meta);
+    }
+
+    public void announcement(String recipientAuth0Id, String title, String message) {
+        Map<String, Object> meta = Map.of("title", title, "message", message);
+        sendEvent("ANNOUNCEMENT", null, recipientAuth0Id, "ANNOUNCEMENT", null, meta);
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -20,6 +21,12 @@ public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private List<String> allowedOrigins;
+
+    private final SuspensionCheckFilter suspensionCheckFilter;
+
+    public SecurityConfig(SuspensionCheckFilter suspensionCheckFilter) {
+        this.suspensionCheckFilter = suspensionCheckFilter;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -46,7 +53,8 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> {
                         })
-                );
+                )
+                .addFilterAfter(suspensionCheckFilter, BearerTokenAuthenticationFilter.class);
         return http.build();
     }
 

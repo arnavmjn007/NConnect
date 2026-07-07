@@ -48,8 +48,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                 SELECT p FROM Project p
                 LEFT JOIN FETCH p.ngo n
                 LEFT JOIN FETCH n.ngoProfile
-                WHERE p.ngo.id = :ngoId
-                AND p.status != 'CANCELLED'
                 ORDER BY p.createdAt DESC
             """)
     List<Project> findAllWithNgo();
