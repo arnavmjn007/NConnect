@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Sidebar  from "@/components/feed/Sidebar";
+import Image from 'next/image';
+import Sidebar from "@/components/feed/Sidebar";
 import RightBar from "@/components/feed/RightBar";
-import Postbox  from "@/components/feed/Postbox";
+import Postbox from "@/components/feed/Postbox";
 import PostItem, { Post } from "@/components/feed/PostItem";
+import SiteFooter from "@/components/ui/SiteFooter";
 import { useAuth } from "@/hooks/useAuth";
 import { getFeed, getTrendingFeed, getFollowingFeed } from "@/lib/feedApi";
 import { Loader2 } from 'lucide-react';
@@ -23,15 +25,15 @@ function Spinner() {
 export default function Home() {
   const { isAuthenticated, dbUser, isLoading, user } = useAuth();
 
-  const [tab, setTab]         = useState<Tab>('all');
-  const [posts, setPosts]     = useState<Post[]>([]);
-  const [page, setPage]       = useState(1);
+  const [tab, setTab] = useState<Tab>('all');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [fetching, setFetching] = useState(false);
-  const [error, setError]     = useState('');
-  const loaderRef             = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState('');
+  const loaderRef = useRef<HTMLDivElement>(null);
 
-  const initialFetchDone      = useRef(false);
+  const initialFetchDone = useRef(false);
 
   const fetchPosts = useCallback(async (
     currentTab: Tab,
@@ -41,9 +43,9 @@ export default function Home() {
     setFetching(true);
     setError('');
     try {
-      const fn = currentTab === 'trending'  ? getTrendingFeed
-               : currentTab === 'following' ? getFollowingFeed
-               : getFeed;
+      const fn = currentTab === 'trending' ? getTrendingFeed
+        : currentTab === 'following' ? getFollowingFeed
+          : getFeed;
       const data = await fn(currentPage);
       setPosts(prev => replace ? data.posts : [...prev, ...data.posts]);
       setHasMore(data.has_more);
@@ -104,18 +106,115 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="bg-[#EEF3F8] min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm max-w-sm w-full text-center border border-slate-200">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">Welcome to NConnect</h2>
-          <p className="text-slate-500 text-sm mb-6">
-            Connect with NGOs, volunteers, and social impact professionals.
-          </p>
-          <Link
-            href="/auth/login"
-            className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all text-sm"
-          >
-            Sign In to Continue
-          </Link>
+      <div className="bg-white">
+        <section className="bg-[#EEF3F8]">
+          <div className="max-w-6xl mx-auto px-6 py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+                Connect for a Better World with{" "}
+                <span className="text-[#0A66C2]">NConnect</span>
+              </h1>
+              <p className="mt-5 text-base md:text-lg text-slate-600 leading-relaxed max-w-lg">
+                A professional platform bringing together NGOs, volunteers, and donors
+                across Nepal — to discover causes, give your time, and fund real impact.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/auth/login"
+                  className="bg-[#0A66C2] hover:bg-[#004182] text-white font-bold px-6 py-3 rounded-xl shadow-sm transition-all text-sm text-center"
+                >
+                  Get Started — It&apos;s Free
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="border border-slate-300 text-slate-700 hover:bg-white font-bold px-6 py-3 rounded-xl transition-all text-sm text-center"
+                >
+                  Sign In
+                </Link>
+              </div>
+              <div className="mt-8 flex items-center gap-6 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Free for NGOs & volunteers
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#0A66C2]" /> Secure eSewa & card payments
+                </span>
+              </div>
+            </div>
+
+            <div className="relative w-full h-64 md:h-96">
+              <Image
+                src="/landing-illustration.png"
+                alt="People collaborating on social impact projects"
+                fill
+                className="object-contain mix-blend-multiply"
+                priority
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+              One platform, three ways to make an impact
+            </h2>
+            <p className="text-slate-500 mt-2 text-sm md:text-base">
+              Whether you&apos;re running a cause, giving your time, or funding change — NConnect brings it together.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "For NGOs",
+                desc: "Amplify your reach, publish projects, manage volunteers, and get verified with a blue-tick badge.",
+                color: "bg-blue-50 text-[#0A66C2]",
+                icon: "📢",
+              },
+              {
+                title: "For Volunteers",
+                desc: "Find projects that match your skills, apply in one click, and get AI-recommended causes worth your time.",
+                color: "bg-emerald-50 text-emerald-600",
+                icon: "🤝",
+              },
+              {
+                title: "For Donors",
+                desc: "Fund projects directly via eSewa or card, track exactly where your money goes, and follow real progress.",
+                color: "bg-violet-50 text-violet-600",
+                icon: "💚",
+              },
+            ].map((f) => (
+              <div key={f.title} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-2xl mb-4 ${f.color}`}>
+                  {f.icon}
+                </div>
+                <h3 className="font-bold text-slate-900 mb-1.5">{f.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[#0A66C2]">
+          <div className="max-w-4xl mx-auto px-6 py-14 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
+              Ready to make an impact?
+            </h2>
+            <p className="text-blue-100 mt-2 text-sm md:text-base">
+              Join NGOs, volunteers, and donors already using NConnect across Nepal.
+            </p>
+            <Link
+              href="/auth/login"
+              className="inline-block mt-6 bg-white text-[#0A66C2] font-bold px-7 py-3 rounded-xl hover:bg-blue-50 transition-all text-sm"
+            >
+              Sign In to Continue
+            </Link>
+          </div>
+        </section>
+
+        <div className="py-8 flex justify-center">
+          <SiteFooter />
         </div>
       </div>
     );
@@ -124,9 +223,9 @@ export default function Home() {
   if (!dbUser?.onboardingComplete) return <Spinner />;
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'all',       label: 'All Posts'  },
-    { key: 'trending',  label: 'Trending'   },
-    { key: 'following', label: 'Following'  },
+    { key: 'all', label: 'All Posts' },
+    { key: 'trending', label: 'Trending' },
+    { key: 'following', label: 'Following' },
   ];
 
   return (
@@ -146,11 +245,10 @@ export default function Home() {
                 <button
                   key={key}
                   onClick={() => setTab(key)}
-                  className={`flex-1 py-2.5 text-xs font-bold transition-all ${
-                    tab === key
+                  className={`flex-1 py-2.5 text-xs font-bold transition-all ${tab === key
                       ? 'text-[#0A66C2] border-b-2 border-[#0A66C2] bg-blue-50/50'
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {label}
                 </button>
