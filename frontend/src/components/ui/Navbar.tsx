@@ -14,13 +14,23 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface NavItemProps { href: string; icon: LucideIcon; label: string; badge?: number; }
+interface NavItemProps { href: string; icon: LucideIcon; label: string; badge?: number; requireAuth?: boolean; }
 
-const NavItem = ({ href, icon: Icon, label, badge }: NavItemProps) => {
+const NavItem = ({ href, icon: Icon, label, badge, requireAuth = true }: NavItemProps) => {
     const pathname = usePathname();
+    const router = useRouter();
+    const { user } = useAuth();
     const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (requireAuth && !user && href !== '/') {
+            e.preventDefault();
+            router.push('/auth/login');
+        }
+    };
+
     return (
-        <Link href={href} className={cn(
+        <Link href={href} onClick={handleClick} className={cn(
             "relative flex flex-col items-center justify-center flex-1 lg:flex-none lg:min-w-18 py-2 lg:py-1 transition-all group",
             isActive ? "text-indigo-600" : "text-slate-500 hover:text-slate-800"
         )}>
@@ -348,7 +358,7 @@ export default function Navbar() {
                     </div>
 
                     <div className="hidden lg:flex items-center h-full gap-1 shrink-0">
-                        <NavItem href="/" icon={Home} label="Home" />
+                        <NavItem href="/" icon={Home} label="Home" requireAuth={false} />
                         <NavItem href="/project" icon={FolderOpen} label="Projects" />
                         <NavItem href="/resources" icon={Package} label="Resources" />
                         <NavItem href="/messages" icon={MessageSquare} label="Messaging" badge={unreadConvCount} />
@@ -520,7 +530,7 @@ export default function Navbar() {
             )}
 
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40 flex items-center justify-around px-2 py-1 lg:hidden backdrop-blur-md">
-                <NavItem href="/" icon={Home} label="Home" />
+                <NavItem href="/" icon={Home} label="Home" requireAuth={false} />
                 <NavItem href="/project" icon={FolderOpen} label="Projects" />
                 <NavItem href="/resources" icon={Package} label="Resources" />
                 <NavItem href="/messages" icon={MessageSquare} label="Messaging" badge={unreadConvCount} />
