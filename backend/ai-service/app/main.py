@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import recommendation, summarize
+from app.routes import recommendation, summarize, performance
 
 app = FastAPI(title="NConnect AI Service")
 
@@ -13,6 +13,7 @@ app.add_middleware(
 
 app.include_router(recommendation.router)
 app.include_router(summarize.router)
+app.include_router(performance.router)
 
 
 @app.get("/health")
