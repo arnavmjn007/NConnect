@@ -4,8 +4,13 @@ import { useSearchParams } from 'next/navigation';
 import {
     DollarSign, Users, Heart, FolderOpen,
     Zap, Crown, CheckCircle, ArrowRight, X,
-    Smartphone, CreditCard, AlertTriangle
+    Smartphone, CreditCard, AlertTriangle,
+    TrendingUp, Activity, Trophy, Target, Download, Loader2
 } from 'lucide-react';
+import {
+    LineChart, Line, BarChart, Bar, XAxis, YAxis,
+    CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import EsewaPaymentForm from '@/components/payment/EsewaPaymentForm';
 import StripePaymentForm from '@/components/payment/StripePaymentForm';
@@ -15,6 +20,31 @@ interface NgoStats {
     totalVolunteers: number;
     totalFollowers: number;
     projectCount: number;
+}
+
+interface TrendPoint {
+    month: string;
+    amount?: number;
+    count?: number;
+}
+
+interface VolunteerPerformance {
+    userId: string;
+    name: string;
+    score: number;
+}
+
+interface ProjectSuccessScore {
+    projectId: string;
+    title: string;
+    score: number;
+}
+
+interface ProAnalytics {
+    donationTrend: TrendPoint[];
+    volunteerActivityTrend: TrendPoint[];
+    volunteerPerformance: VolunteerPerformance[];
+    projectSuccessScores: ProjectSuccessScore[];
 }
 
 type Plan = "MONTHLY" | "YEARLY";
@@ -171,6 +201,223 @@ function UpgradeModal({
     );
 }
 
+function monthLabel(ym: string) {
+    const [year, month] = ym.split("-");
+    const d = new Date(Number(year), Number(month) - 1, 1);
+    return d.toLocaleDateString('en-US', { month: 'short' });
+}
+
+function ProAnalyticsSection({ dbUser }: { dbUser: { fullName?: string | null; id?: string | null } | null | undefined }) {
+    const [data, setData] = useState<ProAnalytics | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [exporting, setExporting] = useState(false);
+
+    useEffect(() => {
+        const load = async () => {
+            setLoading(true);
+            setError("");
+            try {
+                const res = await fetch('/api/ngo/analytics/pro');
+                if (!res.ok) throw new Error("Failed to load Pro analytics");
+                const json = await res.json();
+                setData(json);
+            } catch {
+                setError("Couldn't load advanced analytics right now.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, []);
+
+    const handleExportPdf = async () => {
+        if (!data) return;
+        setExporting(true);
+        try {
+            const { jsPDF } = await import('jspdf');
+            const doc = new jsPDF();
+            const marginX = 14;
+            let y = 18;
+
+            doc.setFontSize(16);
+            doc.text("NConnect — NGO Analytics Report", marginX, y);
+            y += 6;
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`${dbUser?.fullName || "NGO"} · Generated ${new Date().toLocaleDateString()}`, marginX, y);
+            y += 10;
+            doc.setTextColor(0);
+
+            doc.setFontSize(12);
+            doc.text("Donation Trend (last 6 months)", marginX, y);
+            y += 7;
+            doc.setFontSize(9);
+            data.donationTrend.forEach(p => {
+                doc.text(`${monthLabel(p.month)}: NPR ${(p.amount ?? 0).toLocaleString()}`, marginX + 2, y);
+                y += 5;
+            });
+            y += 5;
+
+            doc.setFontSize(12);
+            doc.text("Volunteer Activity Trend (last 6 months)", marginX, y);
+            y += 7;
+            doc.setFontSize(9);
+            data.volunteerActivityTrend.forEach(p => {
+                doc.text(`${monthLabel(p.month)}: ${p.count ?? 0} accepted volunteers`, marginX + 2, y);
+                y += 5;
+            });
+            y += 5;
+
+            doc.setFontSize(12);
+            doc.text("Top Volunteer Performance Scores", marginX, y);
+            y += 7;
+            doc.setFontSize(9);
+            if (data.volunteerPerformance.length === 0) {
+                doc.text("No volunteer data yet.", marginX + 2, y);
+                y += 5;
+            } else {
+                data.volunteerPerformance.slice(0, 10).forEach((v, i) => {
+                    doc.text(`${i + 1}. ${v.name} — ${v.score}/100`, marginX + 2, y);
+                    y += 5;
+                });
+            }
+            y += 5;
+
+            doc.setFontSize(12);
+            doc.text("Project Success Scores", marginX, y);
+            y += 7;
+            doc.setFontSize(9);
+            if (data.projectSuccessScores.length === 0) {
+                doc.text("No project data yet.", marginX + 2, y);
+            } else {
+                data.projectSuccessScores.forEach((p, i) => {
+                    doc.text(`${i + 1}. ${p.title} — ${p.score}/100`, marginX + 2, y);
+                    y += 5;
+                });
+            }
+
+            doc.save(`nconnect-analytics-${new Date().toISOString().slice(0, 10)}.pdf`);
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 flex items-center justify-center">
+                <div className="animate-spin h-6 w-6 border-2 border-[#0A66C2] border-t-transparent rounded-full" />
+            </div>
+        );
+    }
+
+    if (error || !data) {
+        return (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 text-sm text-red-500">
+                {error || "Advanced analytics unavailable."}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <Crown size={14} className="text-amber-400" /> Advanced Analytics
+                </h2>
+                <button
+                    onClick={handleExportPdf}
+                    disabled={exporting}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#0A66C2] hover:text-[#004182] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50"
+                >
+                    {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                    Export PDF
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-3">
+                        <TrendingUp size={13} className="text-rose-500" /> Donation Trend
+                    </p>
+                    <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={data.donationTrend.map(p => ({ ...p, label: monthLabel(p.month) }))}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                            <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                            <Tooltip
+                                formatter={(value) => [
+                                    `NPR ${Number(value).toLocaleString()}`,
+                                    "Donations",
+                                ]}
+                            />
+                            <Line type="monotone" dataKey="amount" stroke="#e11d48" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-3">
+                        <Activity size={13} className="text-indigo-500" /> Volunteer Activity
+                    </p>
+                    <ResponsiveContainer width="100%" height={180}>
+                        <BarChart data={data.volunteerActivityTrend.map(p => ({ ...p, label: monthLabel(p.month) }))}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                            <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                            <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} />
+                            <Tooltip
+                                formatter={(value) => [
+                                    value,
+                                    "Accepted Volunteers",
+                                ]}
+                            />
+                            <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-3">
+                        <Trophy size={13} className="text-amber-500" /> Volunteer Performance (AI)
+                    </p>
+                    {data.volunteerPerformance.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4 text-center">No volunteer applications yet.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {data.volunteerPerformance.slice(0, 5).map((v, i) => (
+                                <div key={v.userId} className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-600 font-medium">#{i + 1} {v.name}</span>
+                                    <span className="font-bold text-[#0A66C2]">{v.score}/100</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-3">
+                        <Target size={13} className="text-emerald-500" /> Project Success Score (AI)
+                    </p>
+                    {data.projectSuccessScores.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4 text-center">No active projects yet.</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {data.projectSuccessScores.slice(0, 5).map((p, i) => (
+                                <div key={p.projectId} className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-600 font-medium">#{i + 1} {p.title}</span>
+                                    <span className="font-bold text-emerald-600">{p.score}/100</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function AnalyticsContent() {
     const { dbUser, refreshUser } = useAuth();
     const searchParams = useSearchParams();
@@ -303,6 +550,8 @@ function AnalyticsContent() {
                     ))}
                 </div>
 
+                {isPro && <ProAnalyticsSection dbUser={dbUser} />}
+
                 {!isPro && (
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="bg-linear-to-br from-[#0A66C2] to-[#004182] p-6 text-white">
@@ -335,11 +584,10 @@ function AnalyticsContent() {
 
                             <div className="space-y-2">
                                 {[
-                                    "Donor breakdown & retention analytics",
-                                    "Volunteer performance reports",
-                                    "Project impact visualizations",
+                                    "Donation trend & volunteer activity charts",
+                                    "AI volunteer performance scoring",
+                                    "AI project success scoring",
                                     "Priority search listing",
-                                    "Advanced notification targeting",
                                     "Export reports as PDF",
                                 ].map(f => (
                                     <div key={f} className="flex items-center gap-2 text-sm">
