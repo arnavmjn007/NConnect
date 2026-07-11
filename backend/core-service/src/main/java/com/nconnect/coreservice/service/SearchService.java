@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -65,6 +67,7 @@ public class SearchService {
                             ngo.getNgoCategories(), ngo.getOperatingLocations(),
                             u.getLocation(), u.getUsername());
                 })
+                .sorted(Comparator.comparing((AppUser u) -> !isNgoPro(u)))
                 .limit(8)
                 .map(u -> {
                     NgoProfile ngo = u.getNgoProfile();
@@ -135,8 +138,10 @@ public class SearchService {
 
         List<String> ngoNames = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.NGO && u.getNgoProfile() != null)
+                .filter(u -> u.getNgoProfile().getOrganizationName() != null
+                        && u.getNgoProfile().getOrganizationName().toLowerCase().contains(q))
+                .sorted(Comparator.comparing((AppUser u) -> !isNgoPro(u)))
                 .map(u -> u.getNgoProfile().getOrganizationName())
-                .filter(n -> n != null && n.toLowerCase().contains(q))
                 .limit(4)
                 .toList();
 
@@ -157,6 +162,10 @@ public class SearchService {
                 .distinct()
                 .limit(8)
                 .toList();
+    }
+
+    private boolean isNgoPro(AppUser u) {
+        return u.getProExpiresAt() != null && u.getProExpiresAt().isAfter(LocalDateTime.now());
     }
 
     private boolean matches(String query, String... fields) {

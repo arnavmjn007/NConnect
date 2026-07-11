@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 
@@ -19,7 +20,8 @@ public class AiClientService {
                 .uri("/recommend/projects")
                 .body(request)
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<MatchScore>>() {});
+                .body(new ParameterizedTypeReference<List<MatchScore>>() {
+                });
     }
 
     public List<VolunteerScore> recommendVolunteers(VolunteerRecommendationRequest request) {
@@ -27,7 +29,8 @@ public class AiClientService {
                 .uri("/recommend/volunteers")
                 .body(request)
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<VolunteerScore>>() {});
+                .body(new ParameterizedTypeReference<List<VolunteerScore>>() {
+                });
     }
 
     public List<NgoScore> recommendNgos(NgoRecommendationRequest request) {
@@ -35,7 +38,8 @@ public class AiClientService {
                 .uri("/recommend/ngos")
                 .body(request)
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<NgoScore>>() {});
+                .body(new ParameterizedTypeReference<List<NgoScore>>() {
+                });
     }
 
     public String summarize(String text) {
@@ -45,5 +49,33 @@ public class AiClientService {
                 .retrieve()
                 .body(SummarizeResponse.class);
         return res != null ? res.getSummary() : "";
+    }
+
+    public List<VolunteerPerformanceScore> scoreVolunteerPerformance(VolunteerPerformanceRequest request) {
+        try {
+            return aiServiceClient.post()
+                    .uri("/performance/volunteers")
+                    .body(request)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<List<VolunteerPerformanceScore>>() {
+                    });
+        } catch (RestClientResponseException e) {
+            System.out.println("AI SERVICE ERROR BODY: " + e.getResponseBodyAsString());
+            throw e;
+        }
+    }
+
+    public List<ProjectPerformanceScore> scoreProjectPerformance(ProjectPerformanceRequest request) {
+        try {
+            return aiServiceClient.post()
+                    .uri("/performance/projects")
+                    .body(request)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<List<ProjectPerformanceScore>>() {
+                    });
+        } catch (RestClientResponseException e) {
+            System.out.println("AI SERVICE ERROR BODY: " + e.getResponseBodyAsString());
+            throw e;
+        }
     }
 }

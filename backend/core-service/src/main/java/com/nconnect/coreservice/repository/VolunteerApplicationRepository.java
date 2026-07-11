@@ -18,4 +18,6 @@ public interface VolunteerApplicationRepository extends JpaRepository<VolunteerA
     boolean existsByProjectIdAndApplicantId(UUID projectId, UUID applicantId);
 
     Optional<VolunteerApplication> findByProjectIdAndApplicantId(UUID projectId, UUID applicantId);
+
+    List<VolunteerApplication> findByProjectIdIn(List<UUID> projectIds);
 }
