@@ -22,7 +22,7 @@ const allowedOrigin =
 const io = new Server(server, {
   cors: { origin: allowedOrigin, methods: ["GET", "POST"] },
 });
-app.use(cors({ origin: "http://localhost:3000" }));
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 app.get("/", async (_, res) => {
