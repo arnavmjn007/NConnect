@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const FEED_SERVICE = process.env.FEED_SERVICE_URL || 'http://localhost:5000';
 
-async function handler(req: NextRequest, { params }: { params: { path: string[] } }) {
-    const path = (await params).path.join('/');
+async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+    const { path } = await params;
     const search = req.nextUrl.search;
-    const url = `${FEED_SERVICE}/${path}${search}`;
+    const url = `${FEED_SERVICE}/${path.join('/')}${search}`;
 
     const session = await auth0.getSession();
     const token = session?.tokenSet?.accessToken;
