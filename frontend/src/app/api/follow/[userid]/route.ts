@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
+const FEED_SERVICE = process.env.FEED_SERVICE_URL || "http://localhost:5000";
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ userid: string }> }
@@ -27,7 +29,7 @@ async function handler(
             return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
         }
         const res = await fetch(
-            `http://localhost:5000/follow/${encodeURIComponent(userid)}`,
+            `${FEED_SERVICE}/follow/${encodeURIComponent(userid)}`,
             {
                 method,
                 headers: { Authorization: `Bearer ${token}` },

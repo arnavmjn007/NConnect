@@ -5,6 +5,8 @@ import { useAuth } from './useAuth';
 
 let socketInstance: Socket | null = null;
 
+const FEED_SERVICE = process.env.NEXT_PUBLIC_FEED_SERVICE_URL || 'http://localhost:5000';
+
 export function useSocket() {
   const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
@@ -12,7 +14,7 @@ export function useSocket() {
   useEffect(() => {
     if (!user?.sub) return;
     if (!socketInstance || !socketInstance.connected) {
-      socketInstance = io('http://localhost:5000', {
+      socketInstance = io(FEED_SERVICE, {
         auth: { userId: user.sub },
         transports: ['websocket'],
         autoConnect: true,

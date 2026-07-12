@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
+const FEED_SERVICE = process.env.FEED_SERVICE_URL || "http://localhost:5000";
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ userid: string }> }
@@ -17,8 +19,8 @@ export async function GET(
         } catch { /* unauthenticated */ }
 
         const [followersRes, followingRes] = await Promise.all([
-            fetch(`http://localhost:5000/followers/${encodeURIComponent(userid)}`, { headers }),
-            fetch(`http://localhost:5000/following/${encodeURIComponent(userid)}`, { headers }),
+            fetch(`${FEED_SERVICE}/followers/${encodeURIComponent(userid)}`, { headers }),
+            fetch(`${FEED_SERVICE}/following/${encodeURIComponent(userid)}`, { headers }),
         ]);
 
         const followers: Array<{ follower_id: string }> = followersRes.ok ? await followersRes.json() : [];
