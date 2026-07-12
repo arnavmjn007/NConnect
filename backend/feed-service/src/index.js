@@ -16,10 +16,12 @@ import makeNotificationsRouter from "./routes/notifications.js";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {
-  cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] },
-});
+const allowedOrigin =
+  process.env.CORS_ALLOWED_ORIGIN || "http://localhost:3000";
 
+const io = new Server(server, {
+  cors: { origin: allowedOrigin, methods: ["GET", "POST"] },
+});
 app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
 
