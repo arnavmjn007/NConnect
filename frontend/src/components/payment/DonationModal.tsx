@@ -58,22 +58,22 @@ function StripeForm({ amount, onSuccess, onError }: {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <PaymentElement options={{ layout: "tabs" }} />
             <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Lock size={11} /><span>Secured by Stripe</span>
+                <Lock size={11} className="shrink-0" /><span>Secured by Stripe</span>
             </div>
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-2.5 text-xs text-blue-700">
                 Charged as <span className="font-bold">${usd} USD</span> ≈ NPR {amount.toLocaleString()}
             </div>
             <button type="submit" disabled={!stripe || loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 sm:py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.99] transition-transform">
                 <CreditCard size={14} />
                 {loading ? "Processing..." : `Donate $${usd} USD`}
             </button>
             <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-0.5">
                 <p className="font-semibold text-slate-700">Test Card:</p>
-                <p>4242 4242 4242 4242 · Any future date · Any CVC</p>
+                <p className="break-words">4242 4242 4242 4242 · Any future date · Any CVC</p>
             </div>
         </form>
     );
@@ -174,25 +174,25 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 bg-rose-100 rounded-xl flex items-center justify-center">
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-8 w-8 shrink-0 bg-rose-100 rounded-xl flex items-center justify-center">
                             <Heart size={16} className="text-rose-600" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900">Donate to Project</p>
-                            <p className="text-xs text-slate-500 truncate max-w-55">{project.title}</p>
+                            <p className="text-xs text-slate-500 truncate max-w-[180px] sm:max-w-55">{project.title}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
+                    <button onClick={onClose} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-4 sm:p-5 space-y-4">
                     {step === 1 && (
                         <>
                             <div>
@@ -200,7 +200,7 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
                                 <div className="grid grid-cols-3 gap-2 mb-3">
                                     {PRESET_AMOUNTS.map(a => (
                                         <button key={a} onClick={() => { setAmount(a); setCustomAmount(""); }}
-                                            className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${!customAmount && amount === a ? "border-indigo-600 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
+                                            className={`py-2 rounded-xl text-xs sm:text-sm font-bold border-2 transition-all ${!customAmount && amount === a ? "border-indigo-600 bg-indigo-50 text-indigo-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
                                             {a.toLocaleString()}
                                         </button>
                                     ))}
@@ -208,12 +208,12 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
                                         type="number" placeholder="Custom"
                                         value={customAmount}
                                         onChange={e => setCustomAmount(e.target.value)}
-                                        className="col-span-3 px-4 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-center font-bold"
+                                        className="col-span-3 w-full px-4 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-center font-bold"
                                     />
                                 </div>
-                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between">
+                                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-2">
                                     <span className="text-sm text-slate-600">Total donation</span>
-                                    <span className="text-lg font-bold text-indigo-700">NPR {finalAmount.toLocaleString()}</span>
+                                    <span className="text-base sm:text-lg font-bold text-indigo-700 text-right">NPR {finalAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -240,26 +240,28 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
                             </div>
 
                             {error && (
-                                <div className="flex items-center gap-2 text-red-500 text-xs">
-                                    <AlertTriangle size={13} />{error}
+                                <div className="flex items-start gap-2 text-red-500 text-xs">
+                                    <AlertTriangle size={13} className="shrink-0 mt-0.5" /><span>{error}</span>
                                 </div>
                             )}
 
                             {paymentMethod === "ESEWA" ? (
                                 <>
                                     <button onClick={handleEsewaSubmit} disabled={esewaLoading}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
-                                        <ExternalLink size={14} />
-                                        {esewaLoading ? "Redirecting to eSewa..." : `Pay NPR ${finalAmount.toLocaleString()} via eSewa`}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 sm:py-3 rounded-xl text-sm flex items-center justify-center gap-2 text-center active:scale-[0.99] transition-transform">
+                                        <ExternalLink size={14} className="shrink-0" />
+                                        <span className="truncate">
+                                            {esewaLoading ? "Redirecting to eSewa..." : `Pay NPR ${finalAmount.toLocaleString()} via eSewa`}
+                                        </span>
                                     </button>
                                     <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-0.5">
                                         <p className="font-semibold text-slate-700">Sandbox Credentials:</p>
-                                        <p>ID: <span className="font-mono">9711111111</span> · Pass: <span className="font-mono">Nepal@123</span></p>
+                                        <p className="break-words">ID: <span className="font-mono">9711111111</span> · Pass: <span className="font-mono">Nepal@123</span></p>
                                     </div>
                                 </>
                             ) : (
                                 <button onClick={() => { if (finalAmount < 100) { setError("Minimum donation is NPR 100"); return; } setStep(2); }}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm">
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 sm:py-3 rounded-xl text-sm active:scale-[0.99] transition-transform">
                                     Continue to Card Payment →
                                 </button>
                             )}
@@ -268,13 +270,13 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
 
                     {step === 2 && (
                         <>
-                            <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between mb-2">
+                            <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between mb-2 gap-2">
                                 <span className="text-sm text-slate-600">Donating</span>
-                                <span className="font-bold text-indigo-700">NPR {finalAmount.toLocaleString()}</span>
+                                <span className="font-bold text-indigo-700 text-right">NPR {finalAmount.toLocaleString()}</span>
                             </div>
                             {error && (
-                                <div className="flex items-center gap-2 text-red-500 text-xs mb-2">
-                                    <AlertTriangle size={13} />{error}
+                                <div className="flex items-start gap-2 text-red-500 text-xs mb-2">
+                                    <AlertTriangle size={13} className="shrink-0 mt-0.5" /><span>{error}</span>
                                 </div>
                             )}
                             {confirming ? (
@@ -300,22 +302,22 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
 
                     {step === 3 && (
                         <div className="text-center py-6 space-y-3">
-                            <div className="h-16 w-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
-                                <CheckCircle size={32} className="text-emerald-600" />
+                            <div className="h-14 w-14 sm:h-16 sm:w-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
+                                <CheckCircle size={28} className="text-emerald-600 sm:size-8" />
                             </div>
                             <div>
                                 <p className="text-lg font-bold text-slate-900">Thank you!</p>
-                                <p className="text-sm text-slate-500 mt-1">
+                                <p className="text-sm text-slate-500 mt-1 px-2">
                                     Your donation of NPR {finalAmount.toLocaleString()} has been received.
                                 </p>
                                 {paymentRef && (
-                                    <p className="text-xs text-slate-400 mt-1 font-mono">
+                                    <p className="text-xs text-slate-400 mt-1 font-mono break-all px-2">
                                         Ref: {paymentRef.slice(0, 20)}...
                                     </p>
                                 )}
                             </div>
                             <button onClick={onClose}
-                                className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-sm">
+                                className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 rounded-xl text-sm active:scale-[0.99] transition-transform">
                                 Close
                             </button>
                         </div>

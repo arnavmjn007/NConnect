@@ -51,16 +51,16 @@ export default function EsewaPaymentForm({ amount, userId, purpose = "verificati
 
     return (
         <div className="space-y-4">
-            <div className="bg-emerald-50 rounded-xl p-4 space-y-2">
-                <div className="flex items-center justify-between">
+            <div className="bg-emerald-50 rounded-xl p-3 sm:p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-slate-700">Amount</span>
                     <span className="text-sm font-bold text-emerald-700">NPR {amount.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center justify-between gap-2 text-xs text-slate-500 flex-wrap">
                     <span>Service charge</span>
                     <span>NPR 0</span>
                 </div>
-                <div className="border-t border-emerald-200 pt-2 flex items-center justify-between">
+                <div className="border-t border-emerald-200 pt-2 flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-sm font-bold text-slate-900">Total</span>
                     <span className="text-sm font-bold text-emerald-700">NPR {amount.toLocaleString()}</span>
                 </div>
@@ -71,25 +71,13 @@ export default function EsewaPaymentForm({ amount, userId, purpose = "verificati
             <button
                 onClick={handlePay}
                 disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 active:scale-[0.99]"
             >
-                <ExternalLink size={15} />
-                {loading ? "Redirecting to eSewa..." : `Pay NPR ${amount.toLocaleString()} via eSewa`}
+                <ExternalLink size={15} className="shrink-0" />
+                <span className="truncate">
+                    {loading ? "Redirecting to eSewa..." : `Pay NPR ${amount.toLocaleString()} via eSewa`}
+                </span>
             </button>
-
-            {process.env.NODE_ENV === "development" && (
-                <details className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
-                    <summary className="font-semibold text-slate-700 cursor-pointer">
-                        Sandbox Test Credentials
-                    </summary>
-                    <div className="mt-2 space-y-1">
-                        <p>eSewa ID: <span className="font-mono">9711111111</span></p>
-                        <p>Password: <span className="font-mono">Nepal@123</span></p>
-                        <p>MPIN: <span className="font-mono">1122</span></p>
-                        <p>Token: <span className="font-mono">123456</span></p>
-                    </div>
-                </details>
-            )}
         </div>
     );
 }

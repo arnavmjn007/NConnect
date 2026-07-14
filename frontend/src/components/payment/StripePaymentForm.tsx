@@ -47,11 +47,11 @@ function CheckoutForm({ onSuccess, onError, amountNpr }: CheckoutFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <PaymentElement options={{ layout: "tabs" }} />
 
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Lock size={11} />
+            <div className="flex items-start gap-2 text-xs text-slate-400">
+                <Lock size={11} className="shrink-0 mt-0.5" />
                 <span>Secured by Stripe — your card details are never stored</span>
             </div>
 
@@ -65,23 +65,13 @@ function CheckoutForm({ onSuccess, onError, amountNpr }: CheckoutFormProps) {
             <button
                 type="submit"
                 disabled={!stripe || loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 active:scale-[0.99]"
             >
-                <CreditCard size={15} />
-                {loading ? "Processing..." : `Pay $${usdAmount} USD via Stripe`}
+                <CreditCard size={15} className="shrink-0" />
+                <span className="truncate">
+                    {loading ? "Processing..." : `Pay $${usdAmount} USD via Stripe`}
+                </span>
             </button>
-
-            {process.env.NODE_ENV === "development" && (
-                <details className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500">
-                    <summary className="font-semibold text-slate-700 cursor-pointer">
-                        Sandbox Test Card
-                    </summary>
-                    <div className="mt-2 space-y-1">
-                        <p>Card: <span className="font-mono">4242 4242 4242 4242</span></p>
-                        <p>Expiry: Any future date · CVC: Any 3 digits</p>
-                    </div>
-                </details>
-            )}
         </form>
     );
 }
