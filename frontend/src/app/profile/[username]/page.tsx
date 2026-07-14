@@ -132,10 +132,10 @@ async function loadFollowStats(auth0Id: string): Promise<FollowStats> {
 
 async function loadUserPosts(auth0Id: string): Promise<Post[]> {
     try {
-        const res = await fetch('/api/feed/feed?page=1');
+        const res = await fetch(`/api/feed/posts/user/${encodeURIComponent(auth0Id)}?page=1`);
         if (!res.ok) return [];
         const data = await res.json();
-        return (data.posts ?? []).filter((p: Post) => p.author_id === auth0Id);
+        return data.posts ?? [];
     } catch {
         return [];
     }

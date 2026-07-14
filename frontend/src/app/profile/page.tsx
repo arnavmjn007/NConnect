@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import SiteFooter from '@/components/ui/SiteFooter';
+import PostItem, { Post } from '@/components/feed/PostItem';
 
-const tabs = ["following", "applications", "donations", "activity"] as const;
+const tabs = ["posts", "following", "applications", "donations", "activity"] as const;
 type Tab = typeof tabs[number];
 
 interface FollowingUser {
@@ -59,7 +60,10 @@ const statusColors: Record<string, string> = {
 
 export default function ProfilePage() {
     const { dbUser, user } = useAuth();
-    const [activeTab, setActiveTab] = useState<Tab>("following");
+    const [activeTab, setActiveTab] = useState<Tab>("posts");
+
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loadingPosts, setLoadingPosts] = useState(false);
 
     const [following, setFollowing] = useState<FollowingUser[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
@@ -78,6 +82,25 @@ export default function ProfilePage() {
     const displayLocation = dbUser?.location || null;
     const initial = displayName.charAt(0).toUpperCase();
     const isNGO = dbUser?.role === 'NGO';
+
+    useEffect(() => {
+        if (!user?.sub) return;
+        setLoadingPosts(true);
+        async function load() {
+            try {
+                const res = await fetch(`/api/feed/posts/user/${encodeURIComponent(user!.sub)}?page=1`);
+                if (!res.ok) { setPosts([]); return; }
+                const data = await res.json();
+                setPosts(data.posts ?? []);
+            } catch { setPosts([]); }
+            finally { setLoadingPosts(false); }
+        }
+        load();
+    }, [user, user?.sub]);
+
+    const handlePostDeleted = (id: string) => {
+        setPosts(prev => prev.filter(p => p.id !== id));
+    };
 
     useEffect(() => {
         if (!user?.sub) return;
@@ -305,15 +328,40 @@ export default function ProfilePage() {
                                     : "border-transparent text-slate-500 hover:text-slate-800"
                                     }`}
                             >
-                                {tab === "applications" ? `Applications (${applications.length})` :
-                                    tab === "donations" ? `Donations (${donations.length})` :
-                                        tab === "following" ? `Following (${followingCount})` :
-                                            "Activity"}
+                                {tab === "posts" ? `Posts (${posts.length})` :
+                                    tab === "applications" ? `Applications (${applications.length})` :
+                                        tab === "donations" ? `Donations (${donations.length})` :
+                                            tab === "following" ? `Following (${followingCount})` :
+                                                "Activity"}
                             </button>
                         ))}
                     </div>
 
                     <div className="p-5">
+                        {activeTab === "posts" && (
+                            loadingPosts ? (
+                                <div className="flex justify-center py-10">
+                                    <Loader2 className="animate-spin text-slate-300" size={24} />
+                                </div>
+                            ) : posts.length === 0 ? (
+                                <div className="text-center py-12 text-slate-400">
+                                    <p className="text-sm font-semibold">No posts yet</p>
+                                    <p className="text-xs mt-1">Your posts will appear here</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {posts.map(post => (
+                                        <PostItem
+                                            key={post.id}
+                                            post={post}
+                                            currentUserId={user?.sub}
+                                            onDelete={handlePostDeleted}
+                                        />
+                                    ))}
+                                </div>
+                            )
+                        )}
+
                         {activeTab === "following" && (
                             loadingFollowing ? (
                                 <div className="flex justify-center py-10">
