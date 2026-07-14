@@ -127,13 +127,13 @@ export default function Postbox({ onPostCreated }: Props) {
     ];
 
     return (
-        <div className={`bg-white rounded-2xl border shadow-sm transition-all duration-300 ${open
-                ? `${activeType.border} ring-4 ring-opacity-10 shadow-lg`
-                : 'border-slate-200'
+        <div className={`bg-white rounded-2xl border shadow-sm transition-all duration-300 w-full ${open
+            ? `${activeType.border} ring-4 ring-opacity-10 shadow-lg`
+            : 'border-slate-200'
             }`}>
-            <div className="p-4">
-                <div className="flex gap-3 items-center">
-                    <div className="h-11 w-11 rounded-xl shrink-0 overflow-hidden border border-slate-200">
+            <div className="p-3 sm:p-4">
+                <div className="flex gap-2.5 sm:gap-3 items-center">
+                    <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl shrink-0 overflow-hidden border border-slate-200">
                         {displayImage ? (
                             <Image
                                 src={displayImage}
@@ -153,7 +153,7 @@ export default function Postbox({ onPostCreated }: Props) {
                         readOnly
                         placeholder="Share an update, story, or opportunity..."
                         onClick={() => handleOpen('regular')}
-                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-400 font-medium hover:border-[#0A66C2] hover:bg-slate-50 transition-all text-sm focus:outline-none cursor-pointer"
+                        className="flex-1 min-w-0 px-3 sm:px-4 py-2.5 border border-slate-200 rounded-xl text-slate-400 font-medium hover:border-[#0A66C2] hover:bg-slate-50 transition-all text-sm focus:outline-none cursor-pointer"
                     />
                 </div>
 
@@ -172,7 +172,7 @@ export default function Postbox({ onPostCreated }: Props) {
                             </button>
 
                             {showTypeMenu && (
-                                <div className="absolute top-9 left-0 z-20 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden w-52">
+                                <div className="absolute top-9 left-0 z-20 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden w-52 max-w-[calc(100vw-2rem)]">
                                     {POST_TYPES.map(t => (
                                         <button
                                             key={t.type}
@@ -181,8 +181,8 @@ export default function Postbox({ onPostCreated }: Props) {
                                                 setShowTypeMenu(false);
                                             }}
                                             className={`w-full text-left px-4 py-2.5 text-xs font-semibold transition-all ${postType === t.type
-                                                    ? `${t.bg} ${t.color}`
-                                                    : 'text-slate-600 hover:bg-slate-50'
+                                                ? `${t.bg} ${t.color}`
+                                                : 'text-slate-600 hover:bg-slate-50'
                                                 }`}
                                         >
                                             {t.label}
@@ -225,7 +225,7 @@ export default function Postbox({ onPostCreated }: Props) {
                             onChange={(e) => setContent(e.target.value)}
                             placeholder={activeType.placeholder}
                             rows={4}
-                            className={`w-full border rounded-xl px-4 py-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-opacity-20 transition-all ${activeType.border} focus:ring-current`}
+                            className={`w-full border rounded-xl px-3 sm:px-4 py-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-opacity-20 transition-all ${activeType.border} focus:ring-current`}
                         />
 
                         {mediaUrls.length > 0 && (
@@ -251,7 +251,7 @@ export default function Postbox({ onPostCreated }: Props) {
                         )}
 
                         {error && <p className="text-xs text-red-500">{error}</p>}
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <CldUploadWidget
                                 uploadPreset="nconnect_posts"
                                 onSuccess={(result) => {
@@ -272,14 +272,14 @@ export default function Postbox({ onPostCreated }: Props) {
                                     <button
                                         type="button"
                                         onClick={() => openWidget()}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-blue-50 rounded-xl text-xs font-semibold text-blue-500 transition-all"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-blue-50 rounded-xl text-xs font-semibold text-blue-500 transition-all self-start"
                                     >
                                         <ImageIcon size={15} /> Add Photo / Video
                                     </button>
                                 )}
                             </CldUploadWidget>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 justify-end">
                                 <button
                                     onClick={handleClose}
                                     className="px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-all"
@@ -290,10 +290,10 @@ export default function Postbox({ onPostCreated }: Props) {
                                     onClick={handleSubmit}
                                     disabled={submitting || (!content.trim() && !mediaUrls.length)}
                                     className={`px-4 py-1.5 text-xs font-semibold text-white rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5 ${postType === 'resource_need'
-                                            ? 'bg-orange-500 hover:bg-orange-600'
-                                            : postType === 'project_update'
-                                                ? 'bg-emerald-600 hover:bg-emerald-700'
-                                                : 'bg-[#0A66C2] hover:bg-[#004182]'
+                                        ? 'bg-orange-500 hover:bg-orange-600'
+                                        : postType === 'project_update'
+                                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                                            : 'bg-[#0A66C2] hover:bg-[#004182]'
                                         }`}
                                 >
                                     {submitting && <Loader2 size={12} className="animate-spin" />}
@@ -309,8 +309,8 @@ export default function Postbox({ onPostCreated }: Props) {
 
             {!open && (
                 <>
-                    <div className="border-t border-slate-100 mx-4" />
-                    <div className="px-3 py-2 flex items-center justify-between">
+                    <div className="border-t border-slate-100 mx-3 sm:mx-4" />
+                    <div className="px-1 sm:px-3 py-2 flex items-center justify-between">
                         {quickActions.map(({ icon: Icon, label, color, bg, onClick, isUpload }) =>
                             isUpload ? (
                                 <CldUploadWidget
@@ -334,7 +334,7 @@ export default function Postbox({ onPostCreated }: Props) {
                                     {({ open: openWidget }) => (
                                         <button
                                             onClick={() => openWidget()}
-                                            className={`flex items-center gap-1.5 px-3 py-2 ${bg} rounded-xl transition-all group`}
+                                            className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 ${bg} rounded-xl transition-all group`}
                                         >
                                             <Icon size={18} className={`${color} transition-transform group-hover:scale-110`} />
                                             <span className="text-[12px] font-semibold text-slate-500 group-hover:text-slate-800 hidden sm:inline">
@@ -347,7 +347,7 @@ export default function Postbox({ onPostCreated }: Props) {
                                 <button
                                     key={label}
                                     onClick={onClick}
-                                    className={`flex items-center gap-1.5 px-3 py-2 ${bg} rounded-xl transition-all group`}
+                                    className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 ${bg} rounded-xl transition-all group`}
                                 >
                                     <Icon size={18} className={`${color} transition-transform group-hover:scale-110`} />
                                     <span className="text-[12px] font-semibold text-slate-500 group-hover:text-slate-800 hidden sm:inline">

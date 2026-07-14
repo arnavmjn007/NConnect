@@ -98,33 +98,33 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
     ] as const;
 
     return (
-        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
-            <div className="p-4 flex justify-between items-start">
-                <div className="flex gap-3">
+        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group w-full">
+            <div className="p-3 sm:p-4 flex justify-between items-start gap-2">
+                <div className="flex gap-2.5 sm:gap-3 min-w-0">
                     {post.author_avatar ? (
                         <Image
                             src={post.author_avatar}
                             alt={post.author_name}
                             width={44}
                             height={44}
-                            className="rounded-xl object-cover shrink-0"
+                            className="rounded-xl object-cover shrink-0 h-10 w-10 sm:h-11 sm:w-11"
                         />
                     ) : (
-                        <div className="h-11 w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
+                        <div className="h-10 w-10 sm:h-11 sm:w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
                             {post.author_name.charAt(0).toUpperCase()}
                         </div>
                     )}
-                    <div>
-                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors">
+                    <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors truncate">
                             {post.author_name}
                         </h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                             @{post.author_username} · {timeAgo}{post.is_edited && ' · Edited'} · 🌐
                         </p>
                     </div>
                 </div>
                 {isOwner && (
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                         <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
                             <MoreHorizontal size={16} />
                         </button>
@@ -139,11 +139,11 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
             </div>
 
             {post.post_type === 'repost' && post.original_content && (
-                <div className="mx-4 mb-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
+                <div className="mx-3 sm:mx-4 mb-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
                     {post.repost_comment && (
                         <p className="text-sm text-slate-800 mb-2">{post.repost_comment}</p>
                     )}
-                    <p className="text-xs text-slate-400 mb-1">
+                    <p className="text-xs text-slate-400 mb-1 truncate">
                         ↩ @{post.original_author_username ?? post.original_author_id}
                     </p>
                     <p className="text-sm text-slate-600 italic">{post.original_content}</p>
@@ -151,7 +151,7 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
             )}
 
             {post.content && (
-                <div className="px-4 pb-3 space-y-2">
+                <div className="px-3 sm:px-4 pb-3 space-y-2">
                     {showSummary && summary ? (
                         <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-1.5">
                             <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
@@ -166,7 +166,7 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                             </button>
                         </div>
                     ) : (
-                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap wrap-break-word">{post.content}</p>
                     )}
 
                     {canSummarize && !showSummary && (
@@ -193,7 +193,7 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
             )}
 
             {post.media_urls?.length > 0 && (
-                <div className="mx-4 mb-3 rounded-xl overflow-hidden relative w-auto h-80">
+                <div className="mx-3 sm:mx-4 mb-3 rounded-xl overflow-hidden relative w-auto h-56 sm:h-72 md:h-80">
                     <Image
                         src={post.media_urls[0]}
                         alt="Post media"
@@ -204,19 +204,19 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                 </div>
             )}
 
-            <div className="px-4 pb-2 flex items-center justify-between text-[11px] text-slate-400">
-                <div className="flex items-center gap-1">
+            <div className="px-3 sm:px-4 pb-2 flex items-center justify-between text-[11px] text-slate-400 gap-2">
+                <div className="flex items-center gap-1 shrink-0">
                     <span className="h-4 w-4 bg-[#0A66C2] rounded-full flex items-center justify-center">
                         <Heart size={9} className="text-white fill-white" />
                     </span>
                     <span>{likeCount} reactions</span>
                 </div>
-                <span className="cursor-pointer hover:underline hover:text-slate-700 transition-colors">
+                <span className="cursor-pointer hover:underline hover:text-slate-700 transition-colors shrink-0">
                     {post.comment_count} comments
                 </span>
             </div>
 
-            <div className="border-t border-slate-100 px-2 py-1 flex">
+            <div className="border-t border-slate-100 px-1 sm:px-2 py-1 flex">
                 {actions.map(({ icon: Icon, label, active, color, activeColor, onClick }) => (
                     <button
                         key={label}

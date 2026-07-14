@@ -97,11 +97,11 @@ export default function RightBar() {
     }, [user?.sub]);
 
     return (
-        <div className="space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-sm text-slate-900 tracking-tight">Suggested NGOs</h2>
-                    <Link href="/search?q=ngo" className="text-[10px] text-black font-semibold cursor-pointer hover:underline">
+        <div className="space-y-4 w-full">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-4 gap-2">
+                    <h2 className="font-bold text-sm text-slate-900 tracking-tight truncate">Suggested NGOs</h2>
+                    <Link href="/search?q=ngo" className="text-[10px] text-black font-semibold cursor-pointer hover:underline shrink-0">
                         See all
                     </Link>
                 </div>
@@ -110,14 +110,14 @@ export default function RightBar() {
                     <div className="space-y-3">
                         {[...Array(4)].map((_, i) => (
                             <div key={i} className="flex items-center justify-between gap-2 animate-pulse">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-9 w-9 bg-slate-200 rounded-xl shrink-0" />
+                                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                    <div className="h-8 w-8 sm:h-9 sm:w-9 bg-slate-200 rounded-xl shrink-0" />
                                     <div className="space-y-1.5">
-                                        <div className="h-3 w-24 bg-slate-200 rounded" />
-                                        <div className="h-2.5 w-16 bg-slate-100 rounded" />
+                                        <div className="h-3 w-20 sm:w-24 bg-slate-200 rounded" />
+                                        <div className="h-2.5 w-14 sm:w-16 bg-slate-100 rounded" />
                                     </div>
                                 </div>
-                                <div className="h-7 w-16 bg-slate-200 rounded-full" />
+                                <div className="h-7 w-14 sm:w-16 bg-slate-200 rounded-full shrink-0" />
                             </div>
                         ))}
                     </div>
@@ -129,8 +129,8 @@ export default function RightBar() {
                     <div className="space-y-3">
                         {ngos.map((ngo) => (
                             <div key={ngo.id} className="flex items-center justify-between gap-2">
-                                <Link href={`/profile/${ngo.username}`} className="flex items-center gap-3 min-w-0">
-                                    <div className="h-9 w-9 rounded-xl overflow-hidden shrink-0 bg-indigo-100 flex items-center justify-center">
+                                <Link href={`/profile/${ngo.username}`} className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                    <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl overflow-hidden shrink-0 bg-indigo-100 flex items-center justify-center">
                                         {ngo.profileImageUrl ? (
                                             <Image
                                                 src={ngo.profileImageUrl}
@@ -146,7 +146,7 @@ export default function RightBar() {
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="text-[13px] font-bold text-slate-800 leading-tight truncate flex items-center gap-1">
+                                        <h3 className="text-xs sm:text-[13px] font-bold text-slate-800 leading-tight truncate flex items-center gap-1">
                                             {ngo.organizationName}
                                             {ngo.verified && <BadgeCheck size={12} className="text-indigo-500 shrink-0" />}
                                         </h3>
@@ -171,9 +171,9 @@ export default function RightBar() {
             </div>
 
             {projects.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={14} className="text-indigo-600" />
+                        <TrendingUp size={14} className="text-indigo-600 shrink-0" />
                         <h2 className="font-bold text-sm text-slate-900">Trending Projects</h2>
                     </div>
                     <div className="space-y-5">
@@ -187,7 +187,7 @@ export default function RightBar() {
                             return (
                                 <Link key={p.id} href="/project" className="block group cursor-pointer">
                                     <div className="flex items-start justify-between gap-2">
-                                        <h3 className="text-[13px] font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">
+                                        <h3 className="text-xs sm:text-[13px] font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">
                                             {p.title}
                                         </h3>
                                         {goalReached ? (
@@ -200,7 +200,7 @@ export default function RightBar() {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex justify-between text-[11px] font-medium text-slate-400 mt-1">
+                                    <div className="flex flex-wrap justify-between gap-x-2 text-[11px] font-medium text-slate-400 mt-1">
                                         <span>NPR {p.raisedAmount.toLocaleString()} raised</span>
                                         <span>of NPR {p.goalAmount.toLocaleString()}</span>
                                     </div>
