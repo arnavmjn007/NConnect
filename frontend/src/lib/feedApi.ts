@@ -20,6 +20,10 @@ export function getFollowingFeed(page = 1) {
     return feedFetch(`feed/following?page=${page}`);
 }
 
+export function getUserPosts(userId: string, page = 1) {
+    return feedFetch(`posts/user/${encodeURIComponent(userId)}?page=${page}`);
+}
+
 export function createPost(data: {
     content?: string;
     media_urls?: string[];
