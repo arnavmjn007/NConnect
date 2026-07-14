@@ -12,12 +12,25 @@ import { useAuth } from '@/hooks/useAuth';
 
 const StatItem = ({ value, label, color, border = false }: {
     value: number | string; label: string; color: string; border?: boolean;
-}) => (
-    <div className={`flex-1 text-center py-1.5 sm:py-2 cursor-pointer group transition-colors hover:bg-slate-50 rounded-lg ${border ? "border-x border-slate-100" : ""}`}>
-        <p className={`${color} font-bold text-lg sm:text-xl leading-none tabular-nums`}>{value}</p>
-        <p className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1">{label}</p>
-    </div>
-);
+}) => {
+    const isLong = typeof value === "string" && value.length > 5;
+    return (
+        <div className={`flex-1 flex flex-col items-center justify-center text-center py-1.5 sm:py-2 min-h-13 cursor-pointer group transition-colors hover:bg-slate-50 rounded-lg ${border ? "border-x border-slate-100" : ""}`}>
+            <p className={`${color} font-bold leading-none tabular-nums whitespace-nowrap ${isLong ? "text-sm sm:text-base" : "text-lg sm:text-xl"}`}>
+                {value}
+            </p>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-1.5">
+                {label}
+            </p>
+        </div>
+    );
+};
+
+function formatCompactAmount(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+    return n.toString();
+}
 
 async function fetchCounts(
     sub: string,
@@ -159,7 +172,7 @@ export default function Sidebar() {
                     <div className="mt-4 pt-3 border-t border-slate-100 flex">
                         <StatItem value={followingCount} label="Following" color="text-[#0A66C2]" />
                         <StatItem value={followerCount} label="Followers" color="text-emerald-600" border />
-                        <StatItem value={`NPR ${totalDonated.toLocaleString()}`} label="Donated" color="text-violet-600" />
+                        <StatItem value={`NPR ${formatCompactAmount(totalDonated)}`} label="Donated" color="text-violet-600" />
                     </div>
                 </div>
             </div>

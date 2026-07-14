@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2 } from "lucide-react";
-import { likePost, unlikePost, deletePost } from '@/lib/feedApi';
+import {
+    MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2, Check
+} from "lucide-react";
+import { likePost, unlikePost, deletePost, getComments, addComment, repost as repostApi } from '@/lib/feedApi';
 import { summarizeText } from '@/lib/api';
 
 export interface Post {
@@ -25,6 +27,27 @@ export interface Post {
     repost_comment?: string;
 }
 
+interface CommentItem {
+    id: string;
+    post_id: string;
+    user_id: string;
+    parent_comment_id: string | null;
+    content: string;
+    created_at: string;
+    replies?: CommentItem[];
+    author_name?: string;
+    author_avatar?: string | null;
+}
+
+interface RawUser {
+    auth0Id: string;
+    organizationName?: string;
+    fullName?: string;
+    username?: string;
+    displayName?: string;
+    profileImageUrl?: string;
+}
+
 interface Props {
     post: Post;
     currentUserId?: string;
@@ -33,14 +56,92 @@ interface Props {
 
 const SUMMARIZE_THRESHOLD = 200;
 
+async function enrichComments(comments: CommentItem[]): Promise<CommentItem[]> {
+    const allIds = new Set<string>();
+    comments.forEach(c => {
+        allIds.add(c.user_id);
+        (c.replies ?? []).forEach(r => allIds.add(r.user_id));
+    });
+
+    const profileMap: Record<string, { name: string; image: string | null }> = {};
+    await Promise.all([...allIds].map(async (auth0Id) => {
+        try {
+            const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(auth0Id)}`);
+            if (!res.ok) return;
+            const users = await res.json();
+            const u: RawUser = Array.isArray(users) ? users[0] : users;
+            if (u) {
+                profileMap[auth0Id] = {
+                    name: u.displayName || u.organizationName || u.fullName || u.username || auth0Id,
+                    image: u.profileImageUrl || null,
+                };
+            }
+        } catch { /* silent */ }
+    }));
+
+    const attach = (c: CommentItem): CommentItem => ({
+        ...c,
+        author_name: profileMap[c.user_id]?.name ?? c.user_id,
+        author_avatar: profileMap[c.user_id]?.image ?? null,
+        replies: (c.replies ?? []).map(attach),
+    });
+
+    return comments.map(attach);
+}
+
+function timeAgo(iso: string) {
+    const diffMin = (Date.now() - new Date(iso).getTime()) / 60000;
+    if (diffMin < 1) return 'now';
+    if (diffMin < 60) return `${Math.round(diffMin)}m`;
+    if (diffMin < 1440) return `${Math.round(diffMin / 60)}h`;
+    return new Date(iso).toLocaleDateString();
+}
+
+function CommentRow({ comment, depth = 0 }: { comment: CommentItem; depth?: number }) {
+    const initial = (comment.author_name || comment.user_id).charAt(0).toUpperCase();
+    return (
+        <div className={depth > 0 ? "ml-8 mt-2" : "mt-2"}>
+            <div className="flex gap-2">
+                {comment.author_avatar ? (
+                    <Image src={comment.author_avatar} alt={comment.author_name || ''} width={28} height={28}
+                        className="rounded-lg object-cover shrink-0 h-7 w-7" />
+                ) : (
+                    <div className="h-7 w-7 bg-slate-400 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                        {initial}
+                    </div>
+                )}
+                <div className="bg-slate-50 rounded-xl px-3 py-1.5 flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-800">{comment.author_name || comment.user_id}</p>
+                    <p className="text-xs text-slate-600 mt-0.5 wrap-break-word">{comment.content}</p>
+                </div>
+            </div>
+            <p className="text-[10px] text-slate-400 ml-9 mt-0.5">{timeAgo(comment.created_at)}</p>
+            {comment.replies?.map(r => <CommentRow key={r.id} comment={r} depth={depth + 1} />)}
+        </div>
+    );
+}
+
 export default function PostItem({ post, currentUserId, onDelete }: Props) {
     const [liked, setLiked] = useState(post.liked_by_me);
     const [likeCount, setLikeCount] = useState(post.like_count);
     const [busy, setBusy] = useState(false);
+
     const [summary, setSummary] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
     const [showSummary, setShowSummary] = useState(false);
     const [summarizeError, setSummarizeError] = useState(false);
+
+    const [showComments, setShowComments] = useState(false);
+    const [comments, setComments] = useState<CommentItem[]>([]);
+    const [loadingComments, setLoadingComments] = useState(false);
+    const [commentCount, setCommentCount] = useState(post.comment_count);
+    const [newComment, setNewComment] = useState('');
+    const [postingComment, setPostingComment] = useState(false);
+
+    const [reposted, setReposted] = useState(false);
+    const [reposting, setReposting] = useState(false);
+
+    const [linkCopied, setLinkCopied] = useState(false);
 
     const handleLike = async () => {
         if (busy) return;
@@ -86,16 +187,73 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         }
     };
 
+    const handleToggleComments = async () => {
+        const opening = !showComments;
+        setShowComments(opening);
+        if (opening && comments.length === 0 && !loadingComments) {
+            setLoadingComments(true);
+            try {
+                const data: CommentItem[] = await getComments(post.id);
+                const enriched = await enrichComments(data);
+                setComments(enriched);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingComments(false);
+            }
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!newComment.trim() || postingComment) return;
+        setPostingComment(true);
+        try {
+            const created = await addComment(post.id, newComment.trim());
+            const [enrichedNew] = await enrichComments([{ ...created, replies: [] }]);
+            setComments(prev => [...prev, enrichedNew]);
+            setCommentCount(c => c + 1);
+            setNewComment('');
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setPostingComment(false);
+        }
+    };
+
+    const handleRepost = async () => {
+        if (reposting || reposted) return;
+        setReposting(true);
+        try {
+            await repostApi(post.id);
+            setReposted(true);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setReposting(false);
+        }
+    };
+
+    const handleSend = async () => {
+        try {
+            const url = `${window.location.origin}/profile/${post.author_username}`;
+            await navigator.clipboard.writeText(url);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const isOwner = currentUserId && post.author_id === currentUserId;
-    const timeAgo = new Date(post.created_at).toLocaleDateString();
+    const timeLabel = new Date(post.created_at).toLocaleDateString();
     const canSummarize = !!post.content && post.content.length > SUMMARIZE_THRESHOLD;
 
     const actions = [
-        { icon: ThumbsUp, label: 'Like', active: liked, color: 'hover:text-[#0A66C2]', activeColor: 'text-[#0A66C2]', onClick: handleLike },
-        { icon: MessageSquare, label: 'Comment', active: false, color: 'hover:text-emerald-600', activeColor: 'text-emerald-600', onClick: undefined },
-        { icon: Repeat2, label: 'Repost', active: false, color: 'hover:text-orange-500', activeColor: 'text-orange-500', onClick: undefined },
-        { icon: Send, label: 'Send', active: false, color: 'hover:text-blue-500', activeColor: 'text-blue-500', onClick: undefined },
-    ] as const;
+        { icon: ThumbsUp, label: 'Like', active: liked, color: 'hover:text-[#0A66C2]', activeColor: 'text-[#0A66C2]', onClick: handleLike, disabled: busy },
+        { icon: MessageSquare, label: 'Comment', active: showComments, color: 'hover:text-emerald-600', activeColor: 'text-emerald-600', onClick: handleToggleComments, disabled: false },
+        { icon: reposted ? Check : Repeat2, label: reposted ? 'Reposted' : 'Repost', active: reposted, color: 'hover:text-orange-500', activeColor: 'text-orange-500', onClick: handleRepost, disabled: reposting || reposted },
+        { icon: linkCopied ? Check : Send, label: linkCopied ? 'Copied!' : 'Send', active: linkCopied, color: 'hover:text-blue-500', activeColor: 'text-blue-500', onClick: handleSend, disabled: false },
+    ];
 
     return (
         <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group w-full">
@@ -119,7 +277,7 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                             {post.author_name}
                         </h4>
                         <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                            @{post.author_username} · {timeAgo}{post.is_edited && ' · Edited'} · 🌐
+                            @{post.author_username} · {timeLabel}{post.is_edited && ' · Edited'} · 🌐
                         </p>
                     </div>
                 </div>
@@ -211,17 +369,21 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                     </span>
                     <span>{likeCount} reactions</span>
                 </div>
-                <span className="cursor-pointer hover:underline hover:text-slate-700 transition-colors shrink-0">
-                    {post.comment_count} comments
-                </span>
+                <button
+                    onClick={handleToggleComments}
+                    className="cursor-pointer hover:underline hover:text-slate-700 transition-colors shrink-0"
+                >
+                    {commentCount} comments
+                </button>
             </div>
 
             <div className="border-t border-slate-100 px-1 sm:px-2 py-1 flex">
-                {actions.map(({ icon: Icon, label, active, color, activeColor, onClick }) => (
+                {actions.map(({ icon: Icon, label, active, color, activeColor, onClick, disabled }) => (
                     <button
                         key={label}
                         onClick={onClick}
-                        className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-xs font-semibold hover:bg-slate-50
+                        disabled={disabled}
+                        className={`flex flex-1 items-center justify-center gap-1.5 py-2 rounded-xl transition-all text-xs font-semibold hover:bg-slate-50 disabled:opacity-60
               ${active ? activeColor : `text-slate-500 ${color}`}`}
                     >
                         <Icon size={16} className={active ? 'fill-current' : ''} />
@@ -229,6 +391,39 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                     </button>
                 ))}
             </div>
+
+            {showComments && (
+                <div className="border-t border-slate-100 px-3 sm:px-4 py-3 bg-slate-50/50">
+                    {loadingComments ? (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="animate-spin text-slate-300" size={18} />
+                        </div>
+                    ) : comments.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-2">No comments yet. Be the first to comment.</p>
+                    ) : (
+                        <div className="space-y-1 mb-3 max-h-72 overflow-y-auto">
+                            {comments.map(c => <CommentRow key={c.id} comment={c} />)}
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                        <input
+                            type="text"
+                            value={newComment}
+                            onChange={e => setNewComment(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleAddComment()}
+                            placeholder="Write a comment..."
+                            className="flex-1 min-w-0 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-400 transition-all"
+                        />
+                        <button
+                            onClick={handleAddComment}
+                            disabled={!newComment.trim() || postingComment}
+                            className="px-3 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 disabled:opacity-40 transition-all flex items-center gap-1"
+                        >
+                            {postingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                        </button>
+                    </div>
+                </div>
+            )}
         </article>
     );
 }
