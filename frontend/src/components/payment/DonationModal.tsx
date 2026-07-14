@@ -73,7 +73,7 @@ function StripeForm({ amount, onSuccess, onError }: {
             </button>
             <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-0.5">
                 <p className="font-semibold text-slate-700">Test Card:</p>
-                <p className="break-words">4242 4242 4242 4242 · Any future date · Any CVC</p>
+                <p className="wrap-break-word">4242 4242 4242 4242 · Any future date · Any CVC</p>
             </div>
         </form>
     );
@@ -184,7 +184,7 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900">Donate to Project</p>
-                            <p className="text-xs text-slate-500 truncate max-w-[180px] sm:max-w-55">{project.title}</p>
+                            <p className="text-xs text-slate-500 truncate max-w-45 sm:max-w-55">{project.title}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-colors">
@@ -256,7 +256,7 @@ export default function DonationModal({ project, onClose, onDonated }: DonationM
                                     </button>
                                     <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 space-y-0.5">
                                         <p className="font-semibold text-slate-700">Sandbox Credentials:</p>
-                                        <p className="break-words">ID: <span className="font-mono">9711111111</span> · Pass: <span className="font-mono">Nepal@123</span></p>
+                                        <p className="wrap-break-word">ID: <span className="font-mono">9711111111</span> · Pass: <span className="font-mono">Nepal@123</span></p>
                                     </div>
                                 </>
                             ) : (
