@@ -108,41 +108,41 @@ export default function Home() {
     return (
       <div className="bg-white">
         <section className="bg-[#EEF3F8]">
-          <div className="max-w-6xl mx-auto px-6 py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-24 grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 items-center">
+            <div className="order-2 md:order-1">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
                 Connect for a Better World with{" "}
                 <span className="text-[#0A66C2]">NConnect</span>
               </h1>
-              <p className="mt-5 text-base md:text-lg text-slate-600 leading-relaxed max-w-lg">
+              <p className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed max-w-lg">
                 A professional platform bringing together NGOs, volunteers, and donors
                 across Nepal — to discover causes, give your time, and fund real impact.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/auth/login"
-                  className="bg-[#0A66C2] hover:bg-[#004182] text-white font-bold px-6 py-3 rounded-xl shadow-sm transition-all text-sm text-center"
+                  className="bg-[#0A66C2] hover:bg-[#004182] text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm text-center"
                 >
                   Get Started — It&apos;s Free
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="border border-slate-300 text-slate-700 hover:bg-white font-bold px-6 py-3 rounded-xl transition-all text-sm text-center"
+                  className="border border-slate-300 text-slate-700 hover:bg-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm text-center"
                 >
                   Sign In
                 </Link>
               </div>
-              <div className="mt-8 flex items-center gap-6 text-xs text-slate-500">
+              <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Free for NGOs & volunteers
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Free for NGOs & volunteers
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#0A66C2]" /> Secure eSewa & card payments
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0A66C2]" /> Secure eSewa & card payments
                 </span>
               </div>
             </div>
 
-            <div className="relative w-full h-64 md:h-96">
+            <div className="order-1 md:order-2 relative w-full h-48 sm:h-64 md:h-96">
               <Image
                 src="/landing-illustration.png"
                 alt="People collaborating on social impact projects"
@@ -154,17 +154,17 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-6 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+          <div className="text-center mb-10 sm:mb-12">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
               One platform, three ways to make an impact
             </h2>
-            <p className="text-slate-500 mt-2 text-sm md:text-base">
+            <p className="text-slate-500 mt-2 text-sm md:text-base max-w-xl mx-auto">
               Whether you&apos;re running a cause, giving your time, or funding change — NConnect brings it together.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
                 title: "For NGOs",
@@ -185,11 +185,11 @@ export default function Home() {
                 icon: "💚",
               },
             ].map((f) => (
-              <div key={f.title} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-2xl mb-4 ${f.color}`}>
+              <div key={f.title} className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 hover:border-slate-300 transition-colors">
+                <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center text-base sm:text-lg mb-3 sm:mb-4 ${f.color}`}>
                   {f.icon}
                 </div>
-                <h3 className="font-bold text-slate-900 mb-1.5">{f.title}</h3>
+                <h3 className="font-semibold text-slate-900 mb-1.5 text-sm sm:text-base">{f.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
@@ -197,23 +197,23 @@ export default function Home() {
         </section>
 
         <section className="bg-[#0A66C2]">
-          <div className="max-w-4xl mx-auto px-6 py-14 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-14 text-center">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight">
               Ready to make an impact?
             </h2>
-            <p className="text-blue-100 mt-2 text-sm md:text-base">
+            <p className="text-blue-100 mt-2 text-sm md:text-base max-w-xl mx-auto">
               Join NGOs, volunteers, and donors already using NConnect across Nepal.
             </p>
             <Link
               href="/auth/login"
-              className="inline-block mt-6 bg-white text-[#0A66C2] font-bold px-7 py-3 rounded-xl hover:bg-blue-50 transition-all text-sm"
+              className="inline-block mt-6 bg-white text-[#0A66C2] font-semibold px-7 py-3 rounded-lg hover:bg-blue-50 transition-colors text-sm"
             >
               Sign In to Continue
             </Link>
           </div>
         </section>
 
-        <div className="py-8 flex justify-center">
+        <div className="py-8 flex justify-center px-4">
           <SiteFooter />
         </div>
       </div>
@@ -230,24 +230,24 @@ export default function Home() {
 
   return (
     <div className="bg-[#EEF3F8] min-h-screen">
-      <div className="max-w-7xl mx-auto px-2 md:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 pt-4 sm:pt-6">
 
           <aside className="hidden md:block md:col-span-3 sticky top-20 self-start">
             <Sidebar />
           </aside>
 
-          <main className="col-span-1 md:col-span-6 space-y-4 pb-10">
+          <main className="col-span-1 md:col-span-6 space-y-3 sm:space-y-4 pb-10">
             <Postbox onPostCreated={handlePostCreated} />
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 flex overflow-hidden">
               {tabs.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setTab(key)}
-                  className={`flex-1 py-2.5 text-xs font-bold transition-all ${tab === key
-                      ? 'text-[#0A66C2] border-b-2 border-[#0A66C2] bg-blue-50/50'
-                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${tab === key
+                    ? 'text-[#0A66C2] border-b-2 border-[#0A66C2] bg-blue-50/50'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 border-b-2 border-transparent'
                     }`}
                 >
                   {label}
@@ -255,7 +255,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {posts.map((post) => (
                 <PostItem
                   key={post.id}
@@ -273,7 +273,7 @@ export default function Home() {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-600 text-center">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 text-center">
                 {error}
                 <button
                   onClick={() => fetchPosts(tab, page)}
@@ -291,7 +291,7 @@ export default function Home() {
             )}
 
             {!fetching && posts.length === 0 && !error && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center">
                 <p className="text-slate-500 font-medium">No posts yet</p>
                 <p className="text-slate-400 text-sm mt-1">
                   {tab === 'following'

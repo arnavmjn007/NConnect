@@ -752,7 +752,7 @@ export default function ResourcesPage() {
             setMyResources(mine);
             setMyRequests(reqs);
             setIncomingRequests(Array.isArray(incoming) ? incoming : []);
-        } catch { /* silent */ }
+        } catch { }
     }, [dbUser]);
 
     useEffect(() => { fetchResources(); }, [fetchResources]);
@@ -772,7 +772,7 @@ export default function ResourcesPage() {
                 ));
                 fetchResources();
             }
-        } catch { /* silent */ }
+        } catch { }
         finally { setActionLoading(null); }
     }
 
@@ -850,18 +850,18 @@ export default function ResourcesPage() {
                     </div>
                     {dbUser && (
                         <button onClick={() => setShowCreate(true)}
-                            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shrink-0">
+                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors w-full sm:w-auto shrink-0">
                             <Plus size={16} /> Add Resource
                         </button>
                     )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    <main className="lg:col-span-8 space-y-4">
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-hidden">
+                    <main className="lg:col-span-8 space-y-4 order-1">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-x-auto no-scrollbar scrollbar-none whitespace-nowrap">
                             {tabs.map(({ key, label }) => (
                                 <button key={key} onClick={() => setTab(key)}
-                                    className={`flex-1 py-2.5 text-xs font-bold transition-all ${tab === key
+                                    className={`flex-1 min-w-30 py-2.5 px-3 text-xs font-bold transition-all ${tab === key
                                         ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
                                         : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                                         }`}>
@@ -877,10 +877,10 @@ export default function ResourcesPage() {
                                     value={search} onChange={e => setSearch(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex overflow-x-auto gap-2 pb-1 no-scrollbar scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
                                 {CATEGORIES.map(({ label, value, Icon }) => (
                                     <button key={value} onClick={() => setCategoryFilter(value)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${categoryFilter === value
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${categoryFilter === value
                                             ? "bg-indigo-600 text-white border-indigo-600"
                                             : "border-slate-200 text-slate-600 hover:border-indigo-300"
                                             }`}>
@@ -917,7 +917,7 @@ export default function ResourcesPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 px-4">
                                 <Package size={32} className="mx-auto mb-3 opacity-40" />
                                 <p className="font-semibold">No resources found</p>
                                 <p className="text-sm mt-1">
@@ -925,7 +925,7 @@ export default function ResourcesPage() {
                                 </p>
                                 {tab === 'my' && dbUser && (
                                     <button onClick={() => setShowCreate(true)}
-                                        className="mt-4 bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors">
+                                        className="mt-4 bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition-colors w-full sm:w-auto">
                                         Add Your First Resource
                                     </button>
                                 )}
@@ -933,7 +933,7 @@ export default function ResourcesPage() {
                         )}
                     </main>
 
-                    <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-20 self-start">
+                    <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-20 self-start order-2 lg:order-2">
                         {dbUser && incomingRequests.length > 0 && (
                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
                                 <h2 className="font-bold text-sm text-slate-900 mb-1 flex items-center gap-2">
@@ -1014,7 +1014,7 @@ export default function ResourcesPage() {
                                                         <button
                                                             onClick={() => dismissIncomingRequest(req.id)}
                                                             title="Remove from list"
-                                                            className="opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+                                                            className="lg:opacity-0 group-hover:opacity-100 h-5 w-5 flex items-center justify-center rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
                                                         >
                                                             <X size={11} />
                                                         </button>
@@ -1028,7 +1028,7 @@ export default function ResourcesPage() {
                         )}
 
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                            <h2 className="font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+                            <h2 className="font-bold text-sm text-slate-990 mb-4 flex items-center gap-2">
                                 <Tag size={14} className="text-indigo-500" /> My Resources
                             </h2>
                             {myResources.filter(r => r.resourceType !== 'REQUEST').length > 0 ? (

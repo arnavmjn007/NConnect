@@ -114,7 +114,7 @@ export default function DiscoverNgosPage() {
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
             <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 space-y-5">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Discover NGOs</h1>
                         <p className="text-sm text-slate-500 mt-1">Find and follow NGOs making a difference in Nepal</p>
@@ -122,7 +122,7 @@ export default function DiscoverNgosPage() {
                     {dbUser?.role === "USER" && Object.keys(matchScores).length > 0 && (
                         <button
                             onClick={() => setShowRecommended(p => !p)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${showRecommended
+                            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all w-full sm:w-auto ${showRecommended
                                 ? 'bg-indigo-600 border-indigo-600 text-white'
                                 : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
                                 }`}
@@ -142,12 +142,12 @@ export default function DiscoverNgosPage() {
                             className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
                         />
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap gap-2 py-0.5">
                         {CATEGORIES.map(cat => (
                             <button
                                 key={cat}
                                 onClick={() => setCategory(cat)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${category === cat
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${category === cat
                                     ? 'bg-indigo-600 text-white border-indigo-600'
                                     : 'border-slate-200 text-slate-600 hover:border-indigo-300'
                                     }`}
@@ -193,62 +193,66 @@ export default function DiscoverNgosPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {filtered.map(ngo => (
-                            <div key={ngo.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow relative">
-                                {showRecommended && matchScores[ngo.id] !== undefined && (
-                                    <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100">
-                                        <Sparkles size={10} /> {matchScores[ngo.id]}% match
-                                    </span>
-                                )}
-                                <div className="flex items-start gap-3">
-                                    <Link href={`/profile/${ngo.username}`} className="shrink-0">
-                                        <div className="h-12 w-12 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center">
-                                            {ngo.profileImageUrl ? (
-                                                <Image
-                                                    src={ngo.profileImageUrl}
-                                                    alt={ngo.organizationName}
-                                                    width={48}
-                                                    height={48}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <span className="text-indigo-700 font-bold text-lg">
-                                                    {(ngo.organizationName || ngo.username || '?').charAt(0)}
-                                                </span>
-                                            )}
+                            <div key={ngo.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between gap-4 hover:shadow-md transition-shadow relative">
+                                <div>
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <div className="flex items-start gap-3 min-w-0">
+                                            <Link href={`/profile/${ngo.username}`} className="shrink-0">
+                                                <div className="h-12 w-12 rounded-xl overflow-hidden bg-indigo-100 flex items-center justify-center">
+                                                    {ngo.profileImageUrl ? (
+                                                        <Image
+                                                            src={ngo.profileImageUrl}
+                                                            alt={ngo.organizationName}
+                                                            width={48}
+                                                            height={48}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-indigo-700 font-bold text-lg">
+                                                            {(ngo.organizationName || ngo.username || '?').charAt(0)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </Link>
+                                            <div className="flex-1 min-w-0">
+                                                <Link href={`/profile/${ngo.username}`}>
+                                                    <h3 className="text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors flex items-center gap-1 leading-tight wrap-break-word pr-16 sm:pr-0">
+                                                        {ngo.organizationName || ngo.username}
+                                                        {ngo.verified && <BadgeCheck size={14} className="text-indigo-500 shrink-0" />}
+                                                    </h3>
+                                                </Link>
+                                                <p className="text-[11px] text-slate-400 mt-0.5 truncate">@{ngo.username}</p>
+                                                {ngo.location && (
+                                                    <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                                        <MapPin size={10} className="shrink-0" />{ngo.location}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </Link>
-                                    <div className="flex-1 min-w-0">
-                                        <Link href={`/profile/${ngo.username}`}>
-                                            <h3 className="text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors flex items-center gap-1 leading-tight">
-                                                {ngo.organizationName || ngo.username}
-                                                {ngo.verified && <BadgeCheck size={14} className="text-indigo-500 shrink-0" />}
-                                            </h3>
-                                        </Link>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">@{ngo.username}</p>
-                                        {ngo.location && (
-                                            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                                <MapPin size={10} />{ngo.location}
-                                            </p>
+                                        {showRecommended && matchScores[ngo.id] !== undefined && (
+                                            <span className="absolute top-5 right-5 flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100 shrink-0">
+                                                <Sparkles size={10} /> {matchScores[ngo.id]}% match
+                                            </span>
                                         )}
                                     </div>
-                                </div>
 
-                                {ngo.ngoCategories && (
-                                    <div className="flex flex-wrap gap-1">
-                                        {ngo.ngoCategories.split(',').slice(0, 3).map(c => (
-                                            <span key={c} className="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded-full border border-indigo-100">
-                                                {c.trim()}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
+                                    {ngo.ngoCategories && (
+                                        <div className="flex flex-wrap gap-1 mb-1">
+                                            {ngo.ngoCategories.split(',').slice(0, 3).map(c => (
+                                                <span key={c} className="text-[10px] bg-indigo-50 text-indigo-600 font-semibold px-2 py-0.5 rounded-full border border-indigo-100 truncate max-w-30">
+                                                    {c.trim()}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 <FollowButton
                                     targetAuth0Id={ngo.auth0Id}
                                     initialFollowing={followStates[ngo.auth0Id] ?? false}
                                     onFollowChange={(f) => setFollowStates(prev => ({ ...prev, [ngo.auth0Id]: f }))}
                                     size="sm"
-                                    className="w-full justify-center"
+                                    className="w-full justify-center mt-auto"
                                 />
                             </div>
                         ))}

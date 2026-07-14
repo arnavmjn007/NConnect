@@ -135,7 +135,6 @@ export default function ProfilePage() {
         load();
     }, [user, user?.sub]);
 
-    // Load applications
     useEffect(() => {
         setLoadingApplications(true);
         async function load() {
@@ -184,11 +183,11 @@ export default function ProfilePage() {
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
-            <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-5">
+            <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-5">
 
                 {/* Profile Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <div className="flex items-start gap-5">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-5 text-center sm:text-left">
                         <div className="h-20 w-20 rounded-2xl overflow-hidden border border-slate-200 shrink-0">
                             {displayImage ? (
                                 <Image src={displayImage} alt={displayName} width={80} height={80} className="h-full w-full object-cover" />
@@ -198,35 +197,35 @@ export default function ProfilePage() {
                                 </div>
                             )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <div className="flex-1 min-w-0 w-full">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3 sm:gap-4">
+                                <div className="w-full">
+                                    <h1 className="text-xl font-bold text-slate-900 flex flex-wrap items-center justify-center sm:justify-start gap-2">
                                         {displayName}
-                                        {dbUser?.verified && <BadgeCheck size={18} className="text-indigo-500" />}
+                                        {dbUser?.verified && <BadgeCheck size={18} className="text-indigo-500 inline-block" />}
                                         {isNGO && (
-                                            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">NGO</span>
+                                            <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full inline-block">NGO</span>
                                         )}
                                     </h1>
                                     {dbUser?.username && (
                                         <p className="text-sm text-slate-400">@{dbUser.username}</p>
                                     )}
                                     {dbUser?.bio && (
-                                        <p className="text-sm text-slate-500 mt-1 leading-relaxed">{dbUser.bio}</p>
+                                        <p className="text-sm text-slate-500 mt-1 leading-relaxed wrap-break-word">{dbUser.bio}</p>
                                     )}
                                     {isNGO && dbUser?.missionStatement && (
-                                        <p className="text-sm text-slate-500 mt-1 leading-relaxed">{dbUser.missionStatement}</p>
+                                        <p className="text-sm text-slate-500 mt-1 leading-relaxed wrap-break-word">{dbUser.missionStatement}</p>
                                     )}
                                 </div>
                                 <Link
                                     href="/settings"
-                                    className="flex items-center gap-2 border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2 rounded-xl transition-all shrink-0"
+                                    className="w-full sm:w-auto flex items-center justify-center gap-2 border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-600 text-xs font-bold px-4 py-2.5 sm:py-2 rounded-xl transition-all shrink-0 mt-2 sm:mt-0"
                                 >
                                     <Edit3 size={13} /> Edit Profile
                                 </Link>
                             </div>
 
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 mt-4 sm:mt-3">
                                 {displayLocation && (
                                     <div className="flex items-center gap-1.5 text-xs text-slate-400">
                                         <MapPin size={12} className="shrink-0" /> {displayLocation}
@@ -256,7 +255,7 @@ export default function ProfilePage() {
                             </div>
 
                             {!isNGO && dbUser && dbUser.skills.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-3">
+                                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3.5 sm:mt-3">
                                     {dbUser.skills.map(skill => (
                                         <span key={skill} className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full border border-indigo-100">
                                             <Check size={10} /> {skill}
@@ -266,7 +265,7 @@ export default function ProfilePage() {
                             )}
 
                             {isNGO && dbUser?.ngoCategories && (
-                                <div className="flex flex-wrap gap-2 mt-3">
+                                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3.5 sm:mt-3">
                                     {dbUser.ngoCategories.split(',').map(c => (
                                         <span key={c} className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full border border-indigo-100">
                                             {c.trim()}
@@ -276,7 +275,7 @@ export default function ProfilePage() {
                             )}
 
                             {dbUser && dbUser.causes.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
+                                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
                                     {dbUser.causes.map(c => (
                                         <span key={c} className="text-xs bg-violet-50 text-violet-700 font-semibold px-3 py-1 rounded-full border border-violet-100">
                                             {c}
@@ -286,7 +285,7 @@ export default function ProfilePage() {
                             )}
 
                             {!isNGO && dbUser && dbUser.interests.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
+                                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
                                     {dbUser.interests.map(i => (
                                         <span key={i} className="text-xs bg-emerald-50 text-emerald-700 font-semibold px-3 py-1 rounded-full border border-emerald-100">
                                             {i}
@@ -296,7 +295,7 @@ export default function ProfilePage() {
                             )}
 
                             {dbUser && dbUser.languages.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-2">
+                                <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
                                     {dbUser.languages.map(l => (
                                         <span key={l} className="text-xs bg-slate-50 text-slate-700 font-semibold px-3 py-1 rounded-full border border-slate-200">
                                             {l}
@@ -308,17 +307,19 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                     {stats.map(s => (
-                        <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 text-center">
-                            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
-                            <p className="text-xs text-slate-500 mt-1 leading-tight">{s.label}</p>
+                        <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 text-center flex sm:flex-col items-center sm:justify-center justify-between gap-2 sm:gap-0">
+                            <p className="text-xs text-slate-500 order-2 sm:order-0 mt-0 sm:mt-1 leading-tight text-left sm:text-center">{s.label}</p>
+                            <p className={`text-2xl sm:text-3xl font-bold order-1 sm:order-0 ${s.color}`}>{s.value}</p>
                         </div>
                     ))}
                 </div>
 
+                {/* Tabs & Content */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="flex border-b border-slate-100 px-2 pt-2 overflow-x-auto scrollbar-hide">
+                    <div className="flex border-b border-slate-100 px-2 pt-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
                         {tabs.map(tab => (
                             <button
                                 key={tab}
@@ -337,7 +338,7 @@ export default function ProfilePage() {
                         ))}
                     </div>
 
-                    <div className="p-5">
+                    <div className="p-4 md:p-5">
                         {activeTab === "posts" && (
                             loadingPosts ? (
                                 <div className="flex justify-center py-10">
@@ -376,17 +377,19 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="space-y-3">
                                     {following.map(f => (
-                                        <div key={f.following_id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                                            {f.image ? (
-                                                <Image src={f.image} alt={f.name || ''} width={40} height={40} className="h-10 w-10 rounded-xl object-cover shrink-0" />
-                                            ) : (
-                                                <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0">
-                                                    {(f.name || f.following_id).charAt(0).toUpperCase()}
+                                        <div key={f.following_id} className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                {f.image ? (
+                                                    <Image src={f.image} alt={f.name || ''} width={40} height={40} className="h-10 w-10 rounded-xl object-cover shrink-0" />
+                                                ) : (
+                                                    <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                                        {(f.name || f.following_id).charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-semibold text-slate-800 truncate">{f.name || f.following_id}</p>
+                                                    {f.username && <p className="text-xs text-slate-400 truncate">@{f.username}</p>}
                                                 </div>
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-800 truncate">{f.name || f.following_id}</p>
-                                                {f.username && <p className="text-xs text-slate-400">@{f.username}</p>}
                                             </div>
                                             {f.username && (
                                                 <Link href={`/profile/${f.username}`}
@@ -415,15 +418,15 @@ export default function ProfilePage() {
                                 <div className="space-y-3">
                                     {applications.map(app => (
                                         <div key={app.id} className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
-                                            <div className="flex items-start justify-between gap-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-bold text-slate-800 truncate">{app.projectTitle}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{app.ngoName} · {app.projectCategory}</p>
+                                                    <p className="text-sm font-bold text-slate-800 wrap-break-word">{app.projectTitle}</p>
+                                                    <p className="text-xs text-slate-500 mt-0.5 wrap-break-word">{app.ngoName} · {app.projectCategory}</p>
                                                     <p className="text-[11px] text-slate-400 mt-1">
                                                         Applied {new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </p>
                                                 </div>
-                                                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${statusColors[app.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                <span className={`self-start sm:self-auto text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${statusColors[app.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                     {app.status}
                                                 </span>
                                             </div>
@@ -448,7 +451,7 @@ export default function ProfilePage() {
                                 <div className="space-y-3">
                                     {donations.map(d => (
                                         <div key={d.id} className="p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
-                                            <div className="flex items-start justify-between gap-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <DollarSign size={14} className="text-violet-500 shrink-0" />
@@ -457,13 +460,13 @@ export default function ProfilePage() {
                                                         </p>
                                                     </div>
                                                     {d.projectTitle && (
-                                                        <p className="text-xs text-slate-500 mt-0.5">{d.projectTitle}</p>
+                                                        <p className="text-xs text-slate-500 mt-0.5 wrap-break-word">{d.projectTitle}</p>
                                                     )}
                                                     <p className="text-[11px] text-slate-400 mt-1">
                                                         {new Date(d.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </p>
                                                 </div>
-                                                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${statusColors[d.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                <span className={`self-start sm:self-auto text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${statusColors[d.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                     {d.status}
                                                 </span>
                                             </div>
@@ -491,8 +494,8 @@ export default function ProfilePage() {
                                             <div className="flex items-start gap-3">
                                                 <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${a.isRead ? 'bg-slate-300' : 'bg-indigo-500'}`} />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-800">{a.title}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{a.message}</p>
+                                                    <p className="text-sm font-semibold text-slate-800 wrap-break-word">{a.title}</p>
+                                                    <p className="text-xs text-slate-500 mt-0.5 wrap-break-word">{a.message}</p>
                                                     <p className="text-[11px] text-slate-400 mt-1">
                                                         {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </p>

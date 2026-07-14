@@ -30,35 +30,35 @@ export default function AccessibilityPage() {
             title="Accessibility"
             subtitle="Our commitment to making NConnect inclusive for everyone."
         >
-            <div className="space-y-10">
+            <div className="space-y-8 sm:space-y-10">
                 <section>
-                    <h2 className="text-2xl font-semibold text-slate-800 mb-4">Our Commitment</h2>
-                    <p className="text-slate-600 leading-relaxed">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-slate-800 mb-3 sm:mb-4">Our Commitment</h2>
+                    <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
                         At NConnect, we believe that social impact shouldn&apos;t have barriers. We are committed to ensuring
                         that our platform is accessible to everyone, regardless of ability or technology. We aim to
                         meet the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards.
                     </p>
                 </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {features.map((feature, idx) => (
-                        <div key={idx} className="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-md transition-all duration-300">
-                            <div className="mb-4 p-2 bg-white w-fit rounded-lg shadow-sm">
+                        <div key={idx} className="p-5 sm:p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-md transition-all duration-300">
+                            <div className="mb-3 sm:mb-4 p-2 bg-white w-fit rounded-lg shadow-sm">
                                 {feature.icon}
                             </div>
-                            <h3 className="font-bold text-slate-800 mb-2">{feature.title}</h3>
+                            <h3 className="font-bold text-slate-800 mb-2 text-sm sm:text-base">{feature.title}</h3>
                             <p className="text-sm text-slate-500 leading-relaxed">{feature.desc}</p>
                         </div>
                     ))}
                 </div>
 
-                <section className="bg-indigo-50 p-8 rounded-3xl border border-indigo-100">
-                    <h2 className="text-xl font-bold text-indigo-900 mb-2">Need Assistance?</h2>
-                    <p className="text-indigo-800/80 mb-4">
+                <section className="bg-indigo-50 p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-indigo-100">
+                    <h2 className="text-lg sm:text-xl font-bold text-indigo-900 mb-2">Need Assistance?</h2>
+                    <p className="text-indigo-800/80 mb-4 text-sm sm:text-base">
                         If you encounter any accessibility barriers while using NConnect, please let us know.
                         We welcome your feedback to help us improve.
                     </p>
-                    <button className="px-6 py-2 bg-indigo-600 text-white rounded-full font-medium hover:bg-indigo-700 transition-colors">
+                    <button className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-indigo-600 text-white rounded-full font-medium hover:bg-indigo-700 transition-colors text-sm">
                         Contact Support
                     </button>
                 </section>

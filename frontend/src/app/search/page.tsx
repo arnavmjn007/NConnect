@@ -54,7 +54,6 @@ function SearchContent() {
                 if (res.ok && !cancelled) {
                     const data: NgoItem[] = await res.json();
                     setAllNgos(data);
-                    // Check follow states
                     const states: Record<string, boolean> = {};
                     await Promise.all(data.map(async ngo => {
                         try {
@@ -63,11 +62,11 @@ function SearchContent() {
                                 const d = await r.json();
                                 states[ngo.auth0Id] = d.isFollowing ?? false;
                             }
-                        } catch { /* silent */ }
+                        } catch { }
                     }));
                     if (!cancelled) setFollowStates(states);
                 }
-            } catch { /* silent */ }
+            } catch { }
             finally { if (!cancelled) setNgosLoading(false); }
         }
         load();
@@ -81,7 +80,7 @@ function SearchContent() {
             try {
                 const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
                 if (!cancelled && res.ok) setResults(await res.json());
-            } catch { /* silent */ }
+            } catch { }
             finally { if (!cancelled) setLoading(false); }
         }
         doSearch();
@@ -107,7 +106,7 @@ function SearchContent() {
 
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
-            <div className="bg-white border-b border-slate-200 px-4 py-4">
+            <div className="bg-white border-b border-slate-200 px-4 py-3 sm:py-4">
                 <div className="max-w-3xl mx-auto">
                     <form onSubmit={handleSearch} className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -116,7 +115,7 @@ function SearchContent() {
                             value={query}
                             onChange={e => setQuery(e.target.value)}
                             placeholder="Search NConnect..."
-                            className="w-full pl-11 pr-10 py-3 bg-slate-100 border border-transparent rounded-2xl text-slate-800 text-sm focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                            className="w-full pl-11 pr-10 py-2.5 sm:py-3 bg-slate-100 border border-transparent rounded-2xl text-slate-800 text-sm focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all"
                         />
                         {query && (
                             <button type="button" onClick={() => { setQuery(''); router.push('/search'); }}
@@ -126,17 +125,17 @@ function SearchContent() {
                         )}
                     </form>
                     {q && !loading && (
-                        <p className="text-xs text-slate-500 mt-2 px-1">
+                        <p className="text-[11px] sm:text-xs text-slate-500 mt-2 px-1">
                             {total} result{total !== 1 ? 's' : ''} for <span className="font-semibold text-slate-700">&ldquo;{q}&rdquo;</span>
                         </p>
                     )}
                 </div>
             </div>
 
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
                 {!q.trim() && (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex items-center gap-2 px-1">
                             <Building2 size={16} className="text-indigo-500" />
                             <h2 className="font-bold text-slate-900 text-sm">All NGOs on NConnect</h2>
                         </div>
@@ -144,8 +143,8 @@ function SearchContent() {
                         {ngosLoading ? (
                             <div className="space-y-3">
                                 {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4 animate-pulse flex items-center gap-3">
-                                        <div className="h-12 w-12 bg-slate-200 rounded-xl shrink-0" />
+                                    <div key={i} className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 animate-pulse flex items-center gap-3">
+                                        <div className="h-10 w-10 sm:h-12 sm:w-12 bg-slate-200 rounded-xl shrink-0" />
                                         <div className="flex-1 space-y-2">
                                             <div className="h-3.5 bg-slate-200 rounded w-1/2" />
                                             <div className="h-3 bg-slate-100 rounded w-1/3" />
@@ -155,40 +154,41 @@ function SearchContent() {
                                 ))}
                             </div>
                         ) : allNgos.length === 0 ? (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center">
                                 <Building2 size={32} className="mx-auto mb-3 text-slate-300" />
-                                <p className="text-slate-500 font-semibold">No NGOs yet</p>
+                                <p className="text-slate-500 font-semibold text-sm">No NGOs yet</p>
                             </div>
                         ) : (
                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-50">
                                 {allNgos.map(ngo => (
-                                    <div key={ngo.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                                        <Link href={`/profile/${ngo.username}`} className="flex items-center gap-4 flex-1 min-w-0">
-                                            <div className="h-12 w-12 rounded-xl overflow-hidden shrink-0 bg-indigo-100 flex items-center justify-center">
+                                    <div key={ngo.id} className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-50 transition-colors">
+                                        <Link href={`/profile/${ngo.username}`} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl overflow-hidden shrink-0 bg-indigo-100 flex items-center justify-center">
                                                 {ngo.profileImageUrl ? (
                                                     <Image src={ngo.profileImageUrl} alt={ngo.organizationName}
                                                         width={48} height={48} className="h-full w-full object-cover" />
                                                 ) : (
-                                                    <span className="text-indigo-700 font-bold text-lg">
+                                                    <span className="text-indigo-700 font-bold text-base sm:text-lg">
                                                         {(ngo.organizationName || ngo.username || '?').charAt(0)}
                                                     </span>
                                                 )}
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                                                    {ngo.organizationName || ngo.username}
+                                                <p className="font-bold text-slate-900 flex items-center gap-1.5 text-xs sm:text-sm truncate">
+                                                    <span className="truncate">{ngo.organizationName || ngo.username}</span>
                                                     {ngo.verified && <BadgeCheck size={14} className="text-indigo-500 shrink-0" />}
                                                 </p>
-                                                <p className="text-[11px] text-slate-400 mt-0.5">@{ngo.username}</p>
+                                                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">@{ngo.username}</p>
                                                 {ngo.location && (
-                                                    <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                                        <MapPin size={10} />{ngo.location}
+                                                    <p className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                                        <MapPin size={10} className="shrink-0" />
+                                                        <span className="truncate">{ngo.location}</span>
                                                     </p>
                                                 )}
                                                 {ngo.ngoCategories && (
                                                     <div className="flex flex-wrap gap-1 mt-1.5">
-                                                        {ngo.ngoCategories.split(',').slice(0, 3).map(c => (
-                                                            <span key={c} className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
+                                                        {ngo.ngoCategories.split(',').slice(0, 2).map(c => (
+                                                            <span key={c} className="text-[9px] sm:text-[10px] bg-indigo-50 text-indigo-600 px-1.5 sm:px-2 py-0.5 rounded-full font-medium truncate max-w-25">
                                                                 {c.trim()}
                                                             </span>
                                                         ))}
@@ -201,7 +201,7 @@ function SearchContent() {
                                             initialFollowing={followStates[ngo.auth0Id] ?? false}
                                             onFollowChange={(f) => setFollowStates(prev => ({ ...prev, [ngo.auth0Id]: f }))}
                                             size="sm"
-                                            className="shrink-0"
+                                            className="shrink-0 scale-90 sm:scale-100 orig-right"
                                         />
                                     </div>
                                 ))}
@@ -213,15 +213,15 @@ function SearchContent() {
                 {q.trim() && (
                     <>
                         {results && (
-                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-x-auto scrollbar-hide">
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-x-auto scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
                                 {tabs.map(({ key, label, count }) => (
                                     <button key={key} onClick={() => setActiveTab(key)}
-                                        className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold whitespace-nowrap transition-all border-b-2 ${activeTab === key
+                                        className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all border-b-2 ${activeTab === key
                                             ? 'border-indigo-600 text-indigo-600'
                                             : 'border-transparent text-slate-500 hover:text-slate-800'
                                             }`}>
                                         {label}
-                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === key ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                                        <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === key ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
                                             {count}
                                         </span>
                                     </button>
@@ -230,47 +230,48 @@ function SearchContent() {
                         )}
 
                         {loading && (
-                            <div className="flex justify-center py-16">
+                            <div className="flex justify-center py-12 sm:py-16">
                                 <div className="h-8 w-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                             </div>
                         )}
 
                         {!loading && results && total === 0 && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
-                                <Search size={36} className="mx-auto mb-3 text-slate-300" />
-                                <p className="text-slate-600 font-semibold">No results found</p>
-                                <p className="text-slate-400 text-sm mt-1">Try different keywords or check spelling</p>
+                            <div className="bg-white rounded-2xl border border-slate-200 p-10 sm:p-16 text-center">
+                                <Search size={32} className="mx-auto mb-3 text-slate-300" />
+                                <p className="text-slate-600 font-semibold text-sm">No results found</p>
+                                <p className="text-slate-400 text-xs mt-1">Try different keywords or check spelling</p>
                             </div>
                         )}
 
                         {!loading && results && (activeTab === 'all' || activeTab === 'ngos') && results.ngos.length > 0 && (
                             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-slate-100">
                                     <Building2 size={14} className="text-indigo-500" />
-                                    <h2 className="text-sm font-bold text-slate-900">NGOs</h2>
+                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900">NGOs</h2>
                                 </div>
                                 <div className="divide-y divide-slate-50">
                                     {results.ngos.map(ngo => (
-                                        <div key={ngo.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                                            <Link href={`/profile/${ngo.username}`} className="flex items-center gap-4 flex-1 min-w-0">
-                                                <div className="h-12 w-12 bg-indigo-100 rounded-2xl flex items-center justify-center shrink-0">
-                                                    <Building2 size={20} className="text-indigo-600" />
+                                        <div key={ngo.id} className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-50 transition-colors">
+                                            <Link href={`/profile/${ngo.username}`} className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                                                    <Building2 size={18} className="text-indigo-600" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                                                        {ngo.organizationName}
-                                                        {ngo.verified && <BadgeCheck size={15} className="text-indigo-500" />}
+                                                    <p className="font-bold text-slate-900 flex items-center gap-1.5 text-xs sm:text-sm truncate">
+                                                        <span className="truncate">{ngo.organizationName}</span>
+                                                        {ngo.verified && <BadgeCheck size={14} className="text-indigo-500 shrink-0" />}
                                                     </p>
-                                                    <p className="text-xs text-slate-400 mt-0.5">@{ngo.username}</p>
+                                                    <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">@{ngo.username}</p>
                                                     {ngo.location && (
-                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                                            <MapPin size={10} />{ngo.location}
+                                                        <p className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                                            <MapPin size={10} className="shrink-0" />
+                                                            <span className="truncate">{ngo.location}</span>
                                                         </p>
                                                     )}
                                                     {ngo.ngoCategories && (
                                                         <div className="flex flex-wrap gap-1 mt-1.5">
-                                                            {ngo.ngoCategories.split(',').slice(0, 3).map(c => (
-                                                                <span key={c} className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
+                                                            {ngo.ngoCategories.split(',').slice(0, 2).map(c => (
+                                                                <span key={c} className="text-[9px] sm:text-[10px] bg-indigo-50 text-indigo-600 px-1.5 sm:px-2 py-0.5 rounded-full font-medium truncate max-w-25">
                                                                     {c.trim()}
                                                                 </span>
                                                             ))}
@@ -283,7 +284,7 @@ function SearchContent() {
                                                 initialFollowing={followStates[ngo.auth0Id] ?? false}
                                                 onFollowChange={(f) => setFollowStates(prev => ({ ...prev, [ngo.auth0Id]: f }))}
                                                 size="sm"
-                                                className="shrink-0"
+                                                className="shrink-0 scale-90 sm:scale-100 orig-right"
                                             />
                                         </div>
                                     ))}
@@ -293,30 +294,31 @@ function SearchContent() {
 
                         {!loading && results && (activeTab === 'all' || activeTab === 'people') && results.users.length > 0 && (
                             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-slate-100">
                                     <Users size={14} className="text-emerald-500" />
-                                    <h2 className="text-sm font-bold text-slate-900">People</h2>
+                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900">People</h2>
                                 </div>
                                 <div className="divide-y divide-slate-50">
                                     {results.users.map(u => (
                                         <Link key={u.id} href={`/profile/${u.username}`}
-                                            className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                                            <div className="h-12 w-12 rounded-2xl overflow-hidden shrink-0">
+                                            className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-50 transition-colors">
+                                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl overflow-hidden shrink-0">
                                                 {u.profileImageUrl ? (
                                                     <Image src={u.profileImageUrl} alt={u.username || ''} width={48} height={48} className="h-full w-full object-cover" />
                                                 ) : (
-                                                    <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg">
+                                                    <div className="h-full w-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-base sm:text-lg">
                                                         {(u.fullName || u.username || '?').charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-slate-900 text-sm">{u.fullName || u.username}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">@{u.username}</p>
-                                                {u.occupation && <p className="text-xs text-slate-500 mt-0.5">{u.occupation}</p>}
+                                                <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">{u.fullName || u.username}</p>
+                                                <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">@{u.username}</p>
+                                                {u.occupation && <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 truncate">{u.occupation}</p>}
                                                 {u.location && (
-                                                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                                        <MapPin size={10} />{u.location}
+                                                    <p className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                                        <MapPin size={10} className="shrink-0" />
+                                                        <span className="truncate">{u.location}</span>
                                                     </p>
                                                 )}
                                             </div>
@@ -328,9 +330,9 @@ function SearchContent() {
 
                         {!loading && results && (activeTab === 'all' || activeTab === 'projects') && results.projects.length > 0 && (
                             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-slate-100">
                                     <FolderOpen size={14} className="text-violet-500" />
-                                    <h2 className="text-sm font-bold text-slate-900">Projects</h2>
+                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900">Projects</h2>
                                 </div>
                                 <div className="divide-y divide-slate-50">
                                     {results.projects.map(p => {
@@ -339,32 +341,33 @@ function SearchContent() {
                                             : 0;
                                         return (
                                             <Link key={p.id} href="/project"
-                                                className="flex items-start gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                                                <div className="h-12 w-12 bg-violet-100 rounded-2xl flex items-center justify-center shrink-0">
-                                                    <FolderOpen size={20} className="text-violet-600" />
+                                                className="flex items-start gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-50 transition-colors">
+                                                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
+                                                    <FolderOpen size={18} className="text-violet-600" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-slate-900 text-sm">{p.title}</p>
-                                                    <p className="text-xs text-slate-400 mt-0.5">
+                                                    <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">{p.title}</p>
+                                                    <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">
                                                         {p.category}{p.ngoName ? ` · ${p.ngoName}` : ''}
                                                     </p>
                                                     {p.location && (
-                                                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                                            <MapPin size={10} />{p.location}
+                                                        <p className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                                                            <MapPin size={10} className="shrink-0" />
+                                                            <span className="truncate">{p.location}</span>
                                                         </p>
                                                     )}
                                                     {p.goalAmount && (
                                                         <div className="mt-2">
-                                                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-48">
+                                                            <div className="h-1 bg-slate-100 rounded-full overflow-hidden w-36 sm:w-48">
                                                                 <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${progress}%` }} />
                                                             </div>
-                                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                                            <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">
                                                                 NPR {(p.raisedAmount ?? 0).toLocaleString()} of {p.goalAmount.toLocaleString()}
                                                             </p>
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${p.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                <span className={`shrink-0 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${p.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                                     {p.status}
                                                 </span>
                                             </Link>
@@ -376,31 +379,31 @@ function SearchContent() {
 
                         {!loading && results && (activeTab === 'all' || activeTab === 'resources') && results.resources.length > 0 && (
                             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2 px-5 py-3.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2 px-4 sm:px-5 py-3 border-b border-slate-100">
                                     <Package size={14} className="text-orange-500" />
-                                    <h2 className="text-sm font-bold text-slate-900">Resources</h2>
+                                    <h2 className="text-xs sm:text-sm font-bold text-slate-900">Resources</h2>
                                 </div>
                                 <div className="divide-y divide-slate-50">
                                     {results.resources.map(r => (
                                         <Link key={r.id} href="/resources"
-                                            className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
-                                            <div className="h-12 w-12 bg-orange-100 rounded-2xl flex items-center justify-center shrink-0">
-                                                <Package size={20} className="text-orange-600" />
+                                            className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 hover:bg-slate-50 transition-colors">
+                                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                                                <Package size={18} className="text-orange-600" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-slate-900 text-sm">{r.name}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">{r.category}</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${r.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">{r.name}</p>
+                                                <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">{r.category}</p>
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                                    <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${r.status === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                                                         {r.status}
                                                     </span>
                                                     {r.sharingType && (
-                                                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                                                        <span className="text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 sm:px-2 py-0.5 rounded-full">
                                                             {r.sharingType}
                                                         </span>
                                                     )}
                                                     {r.condition && (
-                                                        <span className="text-[10px] text-slate-400">{r.condition}</span>
+                                                        <span className="text-[9px] sm:text-[10px] text-slate-400 truncate max-w-20">{r.condition}</span>
                                                     )}
                                                 </div>
                                             </div>

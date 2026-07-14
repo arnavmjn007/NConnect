@@ -86,7 +86,7 @@ function VerificationContent() {
     if (dbUser.verificationStatus === "VERIFIED") {
         return (
             <div className="min-h-screen bg-[#EEF3F8] flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center max-w-sm w-full">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 text-center max-w-sm w-full">
                     <CheckCircle size={48} className="text-emerald-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-slate-900">Already Verified!</h2>
                     <p className="text-sm text-slate-500 mt-2 mb-4">Your organization is verified on NConnect.</p>
@@ -102,7 +102,7 @@ function VerificationContent() {
     if (dbUser.verificationStatus === "UNDER_REVIEW") {
         return (
             <div className="min-h-screen bg-[#EEF3F8] flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center max-w-sm w-full">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 text-center max-w-sm w-full">
                     <Shield size={48} className="text-amber-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-slate-900">Under Review</h2>
                     <p className="text-sm text-slate-500 mt-2 mb-4">Your verification is being reviewed. This usually takes 2-3 business days.</p>
@@ -149,7 +149,7 @@ function VerificationContent() {
                 foundedYear: form.foundedYear ? parseInt(form.foundedYear) : null,
                 documentUrl: form.documentUrl,
                 paymentMethod,
-                paymentIntentId: paymentRef,   // matches NgoVerificationRequest.paymentIntentId
+                paymentIntentId: paymentRef,
             });
             await refreshUser();
             router.push("/profile");
@@ -164,10 +164,10 @@ function VerificationContent() {
 
     return (
         <div className="min-h-screen bg-[#EEF3F8] flex flex-col">
-            <div className="bg-white border-b border-slate-200 px-6 h-16 flex items-center justify-between">
+            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Shield size={20} className="text-indigo-600" />
-                    <span className="font-bold text-slate-900">NGO Verification</span>
+                    <span className="font-bold text-slate-900 text-sm sm:text-base">NGO Verification</span>
                 </div>
                 <span className="text-xs text-slate-400 font-medium">Step {step} of 3</span>
             </div>
@@ -176,20 +176,20 @@ function VerificationContent() {
                 <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${(step / 3) * 100}%` }} />
             </div>
 
-            <div className="flex-1 flex items-start justify-center px-4 py-8">
+            <div className="flex-1 flex items-start justify-center px-4 py-6 sm:py-8">
                 <div className="w-full max-w-lg space-y-4">
                     <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex gap-3">
                         <Shield size={18} className="text-indigo-600 shrink-0 mt-0.5" />
                         <div>
                             <p className="text-sm font-bold text-indigo-900">Get Verified on NConnect</p>
-                            <p className="text-xs text-indigo-700 mt-0.5">
+                            <p className="text-xs text-indigo-700 mt-0.5 leading-relaxed">
                                 One-time fee of NPR 5,000. Verified NGOs receive a blue tick badge and higher visibility.
                                 Local NGOs can pay via eSewa, international supporters via Stripe.
                             </p>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8">
                         {step === 1 && (
                             <div className="space-y-5">
                                 <div>
@@ -233,7 +233,7 @@ function VerificationContent() {
                                         <FileText size={11} className="inline mr-1" />
                                         Registration Document (PDF) <span className="text-red-500">*</span>
                                     </label>
-                                    <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all ${form.documentUrl ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30"}`}>
+                                    <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all p-4 ${form.documentUrl ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30"}`}>
                                         <input type="file" accept=".pdf" className="hidden"
                                             onChange={handleFileUpload} disabled={uploading} />
                                         {uploading ? (
@@ -242,9 +242,9 @@ function VerificationContent() {
                                                 <span className="text-sm font-medium">Uploading to Cloudinary...</span>
                                             </div>
                                         ) : form.documentUrl ? (
-                                            <div className="text-center">
+                                            <div className="text-center max-w-full">
                                                 <CheckCircle size={24} className="text-emerald-500 mx-auto mb-1" />
-                                                <p className="text-xs font-semibold text-emerald-700">{form.documentName}</p>
+                                                <p className="text-xs font-semibold text-emerald-700 truncate px-2">{form.documentName}</p>
                                                 <p className="text-[11px] text-emerald-600 mt-0.5">Click to replace</p>
                                             </div>
                                         ) : (
@@ -259,7 +259,7 @@ function VerificationContent() {
 
                                 {error && (
                                     <div className="flex items-center gap-2 text-red-500 text-xs font-medium">
-                                        <AlertTriangle size={13} />{error}
+                                        <AlertTriangle size={13} className="shrink-0" />{error}
                                     </div>
                                 )}
 
@@ -278,7 +278,7 @@ function VerificationContent() {
                                     <p className="text-sm text-slate-500 mt-1">Choose your preferred payment method.</p>
                                 </div>
 
-                                <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+                                <div className="bg-slate-50 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                     <div>
                                         <p className="text-sm font-bold text-slate-900">NGO Verification</p>
                                         <p className="text-xs text-slate-500 mt-0.5">One-time · Includes blue tick badge</p>
@@ -288,7 +288,7 @@ function VerificationContent() {
 
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-2">Payment Method</label>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <button onClick={() => setPaymentMethod("ESEWA")}
                                             className={`p-4 rounded-xl border-2 text-left transition-all ${paymentMethod === "ESEWA" ? "border-emerald-500 bg-emerald-50/50" : "border-slate-200 hover:border-slate-300"}`}>
                                             <div className="flex items-center gap-2 mb-1">
@@ -329,7 +329,7 @@ function VerificationContent() {
 
                                 {error && (
                                     <div className="flex items-center gap-2 text-red-500 text-xs font-medium">
-                                        <AlertTriangle size={13} />{error}
+                                        <AlertTriangle size={13} className="shrink-0" />{error}
                                     </div>
                                 )}
 
@@ -343,7 +343,7 @@ function VerificationContent() {
                         {step === 3 && (
                             <div className="space-y-5">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                                    <div className="h-10 w-10 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
                                         <CheckCircle size={20} className="text-emerald-600" />
                                     </div>
                                     <div>
@@ -362,15 +362,15 @@ function VerificationContent() {
                                         { label: "Payment", value: `NPR ${AMOUNT.toLocaleString()} via ${paymentMethod === "STRIPE" ? "Stripe" : "eSewa"}` },
                                         { label: "Payment Ref", value: paymentRef.length > 24 ? paymentRef.slice(0, 24) + "..." : paymentRef },
                                     ].map(({ label, value }) => (
-                                        <div key={label} className="flex items-center justify-between px-4 py-3">
+                                        <div key={label} className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 gap-1">
                                             <span className="text-xs font-semibold text-slate-500">{label}</span>
-                                            <span className="text-xs font-bold text-slate-900 max-w-50 truncate text-right">{value}</span>
+                                            <span className="text-xs font-bold text-slate-900 sm:max-w-50 truncate sm:text-right">{value}</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                                    <p className="text-xs text-amber-800 font-medium">
+                                    <p className="text-xs text-amber-800 font-medium leading-relaxed">
                                         Our team will review your submission within 2-3 business days.
                                         You will receive a notification once verified.
                                     </p>
@@ -378,7 +378,7 @@ function VerificationContent() {
 
                                 {error && (
                                     <div className="flex items-center gap-2 text-red-500 text-xs font-medium">
-                                        <AlertTriangle size={13} />{error}
+                                        <AlertTriangle size={13} className="shrink-0" />{error}
                                     </div>
                                 )}
 

@@ -66,33 +66,42 @@ export default function ContributionsPage() {
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
-                <h1 className="text-xl font-bold text-slate-900">My Contributions</h1>
-                <div className="grid grid-cols-3 gap-3">
+                <h1 className="text-xl font-bold text-slate-900 px-1 sm:px-0">My Contributions</h1>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                         { label: "Donated", value: `NPR ${totalDonated.toLocaleString()}`, Icon: DollarSign, color: "text-rose-600" },
                         { label: "Applications", value: volunteerApps.length, Icon: Users, color: "text-indigo-600" },
                         { label: "Accepted", value: volunteerApps.filter(a => a.status === 'ACCEPTED').length, Icon: CheckCircle, color: "text-emerald-600" },
                     ].map(s => (
-                        <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
-                            <s.Icon size={18} className={`${s.color} mx-auto mb-1.5`} />
-                            <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-                            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">{s.label}</p>
+                        <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex sm:flex-col items-center justify-between sm:justify-center text-center gap-3">
+                            <div className="flex items-center gap-3 sm:block">
+                                <s.Icon size={18} className={`${s.color} sm:mx-auto sm:mb-1.5 shrink-0`} />
+                                <div className="text-left sm:text-center">
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block sm:hidden">{s.label}</p>
+                                    <p className={`text-base sm:text-lg font-bold ${s.color}`}>{s.value}</p>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider hidden sm:block mt-0.5">{s.label}</p>
                         </div>
                     ))}
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth mb-2">
                     {[
                         { key: 'donations' as const, label: 'Money Donations', Icon: DollarSign },
                         { key: 'volunteer' as const, label: 'Volunteer Activities', Icon: Users },
                         { key: 'resources' as const, label: 'Resource Donations', Icon: Package },
                     ].map(({ key, label, Icon }) => (
-                        <button key={key} onClick={() => setActiveTab(key)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-bold transition-all border-b-2 ${activeTab === key
-                                ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
-                                }`}>
-                            <Icon size={13} />{label}
+                        <button
+                            key={key}
+                            onClick={() => setActiveTab(key)}
+                            className={`flex-1 min-w-30 sm:min-w-0 flex items-center justify-center gap-1.5 py-3 px-4 text-xs font-bold transition-all border-b-2 ${activeTab === key
+                                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            <Icon size={13} className="shrink-0" />
+                            <span>{label}</span>
                         </button>
                     ))}
                 </div>
@@ -106,7 +115,7 @@ export default function ContributionsPage() {
                 {!loading && activeTab === 'donations' && (
                     <div className="space-y-3">
                         {donations.filter(d => d.purpose?.startsWith('project_donation')).length === 0 ? (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
                                 <Heart size={32} className="mx-auto mb-3 text-slate-300" />
                                 <p className="text-slate-500 font-semibold">No donations yet</p>
                                 <p className="text-slate-400 text-sm mt-1">Your project donations will appear here</p>
@@ -114,7 +123,7 @@ export default function ContributionsPage() {
                         ) : donations
                             .filter(d => d.purpose?.startsWith('project_donation'))
                             .map(d => (
-                                <div key={d.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center justify-between">
+                                <div key={d.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="h-10 w-10 bg-rose-100 rounded-xl flex items-center justify-center shrink-0">
                                             <Heart size={16} className="text-rose-600" />
@@ -128,9 +137,11 @@ export default function ContributionsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_COLOR[d.status] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
-                                        {d.status}
-                                    </span>
+                                    <div className="flex sm:justify-end">
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_COLOR[d.status] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
+                                            {d.status}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                     </div>
@@ -139,20 +150,20 @@ export default function ContributionsPage() {
                 {!loading && activeTab === 'volunteer' && (
                     <div className="space-y-3">
                         {volunteerApps.length === 0 ? (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
                                 <Users size={32} className="mx-auto mb-3 text-slate-300" />
                                 <p className="text-slate-500 font-semibold">No applications yet</p>
                                 <p className="text-slate-400 text-sm mt-1">Apply for volunteer positions on the Projects page</p>
                             </div>
                         ) : volunteerApps.map(app => (
                             <div key={app.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                     <div className="flex items-start gap-3">
                                         <div className="h-10 w-10 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
                                             <Users size={16} className="text-indigo-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-slate-900">{app.projectTitle}</p>
+                                            <p className="text-sm font-bold text-slate-900 wrap-break-word">{app.projectTitle}</p>
                                             <p className="text-[11px] text-slate-400 mt-0.5">
                                                 {app.ngoName} · {app.projectCategory}
                                             </p>
@@ -161,10 +172,12 @@ export default function ContributionsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLOR[app.status] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
-                                        {STATUS_ICON[app.status]}
-                                        {app.status}
-                                    </span>
+                                    <div className="flex sm:justify-end">
+                                        <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLOR[app.status] || 'text-slate-500 bg-slate-50 border-slate-200'}`}>
+                                            {STATUS_ICON[app.status]}
+                                            {app.status}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -172,7 +185,7 @@ export default function ContributionsPage() {
                 )}
 
                 {!loading && activeTab === 'resources' && (
-                    <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
                         <Package size={32} className="mx-auto mb-3 text-slate-300" />
                         <p className="text-slate-500 font-semibold">Resource tracking coming soon</p>
                         <p className="text-slate-400 text-sm mt-1">Resources you donate will appear here</p>

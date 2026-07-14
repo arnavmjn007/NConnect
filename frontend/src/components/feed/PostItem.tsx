@@ -2,10 +2,14 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import {
-    MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2, Check
+    MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2, Check, Link2, Users
 } from "lucide-react";
-import { likePost, unlikePost, deletePost, getComments, addComment, repost as repostApi } from '@/lib/feedApi';
+import {
+    likePost, unlikePost, deletePost, getComments, addComment,
+    repost as repostApi, getFollowers, getFollowing, startConversation, getPost
+} from '@/lib/feedApi';
 import { summarizeText } from '@/lib/api';
+import { useSocket } from '@/hooks/useSocket';
 
 export interface Post {
     id: string;
@@ -48,10 +52,17 @@ interface RawUser {
     profileImageUrl?: string;
 }
 
+interface ShareTarget {
+    auth0Id: string;
+    name: string;
+    image: string | null;
+}
+
 interface Props {
     post: Post;
     currentUserId?: string;
     onDelete?: (id: string) => void;
+    onRepost?: (newPost: Post) => void;
 }
 
 const SUMMARIZE_THRESHOLD = 200;
@@ -121,7 +132,9 @@ function CommentRow({ comment, depth = 0 }: { comment: CommentItem; depth?: numb
     );
 }
 
-export default function PostItem({ post, currentUserId, onDelete }: Props) {
+export default function PostItem({ post, currentUserId, onDelete, onRepost }: Props) {
+    const { sendMessage } = useSocket();
+
     const [liked, setLiked] = useState(post.liked_by_me);
     const [likeCount, setLikeCount] = useState(post.like_count);
     const [busy, setBusy] = useState(false);
@@ -141,6 +154,11 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
     const [reposted, setReposted] = useState(false);
     const [reposting, setReposting] = useState(false);
 
+    const [showSendMenu, setShowSendMenu] = useState(false);
+    const [shareTargets, setShareTargets] = useState<ShareTarget[]>([]);
+    const [loadingShareTargets, setLoadingShareTargets] = useState(false);
+    const [sendingToId, setSendingToId] = useState<string | null>(null);
+    const [sentToIds, setSentToIds] = useState<Set<string>>(new Set());
     const [linkCopied, setLinkCopied] = useState(false);
 
     const handleLike = async () => {
@@ -224,8 +242,14 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         if (reposting || reposted) return;
         setReposting(true);
         try {
-            await repostApi(post.id);
+            const created = await repostApi(post.id);
             setReposted(true);
+            try {
+                const enriched = await getPost(created.id);
+                onRepost?.(enriched);
+            } catch {
+                onRepost?.(created);
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -233,7 +257,70 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         }
     };
 
-    const handleSend = async () => {
+    const loadShareTargets = async () => {
+        if (!currentUserId) return;
+        setLoadingShareTargets(true);
+        try {
+            const [followers, following] = await Promise.all([
+                getFollowers(currentUserId).catch(() => []),
+                getFollowing(currentUserId).catch(() => []),
+            ]);
+            const ids = new Set<string>();
+            (followers as { follower_id: string }[]).forEach(f => {
+                if (f.follower_id !== currentUserId) ids.add(f.follower_id);
+            });
+            (following as { following_id: string }[]).forEach(f => {
+                if (f.following_id !== currentUserId) ids.add(f.following_id);
+            });
+
+            const profiles = await Promise.all([...ids].map(async (auth0Id) => {
+                try {
+                    const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(auth0Id)}`);
+                    if (!res.ok) return null;
+                    const users = await res.json();
+                    const u: RawUser = Array.isArray(users) ? users[0] : null;
+                    if (!u) return null;
+                    return {
+                        auth0Id,
+                        name: u.displayName || u.organizationName || u.fullName || u.username || auth0Id,
+                        image: u.profileImageUrl || null,
+                    } as ShareTarget;
+                } catch { return null; }
+            }));
+
+            setShareTargets(profiles.filter((p): p is ShareTarget => p !== null));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingShareTargets(false);
+        }
+    };
+
+    const handleToggleSend = () => {
+        const opening = !showSendMenu;
+        setShowSendMenu(opening);
+        if (opening && shareTargets.length === 0 && !loadingShareTargets) {
+            loadShareTargets();
+        }
+    };
+
+    const handleSendToUser = async (targetId: string) => {
+        if (sendingToId) return;
+        setSendingToId(targetId);
+        try {
+            const conv = await startConversation(targetId);
+            const link = `${window.location.origin}/profile/${post.author_username}`;
+            const text = `Check out this post from @${post.author_username}: ${link}`;
+            sendMessage(conv.id, text);
+            setSentToIds(prev => new Set(prev).add(targetId));
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSendingToId(null);
+        }
+    };
+
+    const handleCopyLink = async () => {
         try {
             const url = `${window.location.origin}/profile/${post.author_username}`;
             await navigator.clipboard.writeText(url);
@@ -252,7 +339,7 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
         { icon: ThumbsUp, label: 'Like', active: liked, color: 'hover:text-[#0A66C2]', activeColor: 'text-[#0A66C2]', onClick: handleLike, disabled: busy },
         { icon: MessageSquare, label: 'Comment', active: showComments, color: 'hover:text-emerald-600', activeColor: 'text-emerald-600', onClick: handleToggleComments, disabled: false },
         { icon: reposted ? Check : Repeat2, label: reposted ? 'Reposted' : 'Repost', active: reposted, color: 'hover:text-orange-500', activeColor: 'text-orange-500', onClick: handleRepost, disabled: reposting || reposted },
-        { icon: linkCopied ? Check : Send, label: linkCopied ? 'Copied!' : 'Send', active: linkCopied, color: 'hover:text-blue-500', activeColor: 'text-blue-500', onClick: handleSend, disabled: false },
+        { icon: Send, label: 'Send', active: showSendMenu, color: 'hover:text-blue-500', activeColor: 'text-blue-500', onClick: handleToggleSend, disabled: false },
     ];
 
     return (
@@ -422,6 +509,73 @@ export default function PostItem({ post, currentUserId, onDelete }: Props) {
                             {postingComment ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                         </button>
                     </div>
+                </div>
+            )}
+
+            {showSendMenu && (
+                <div className="border-t border-slate-100 px-3 sm:px-4 py-3 bg-slate-50/50">
+                    <button
+                        onClick={handleCopyLink}
+                        className="w-full flex items-center gap-2 px-3 py-2 mb-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-all"
+                    >
+                        {linkCopied ? <Check size={14} className="text-emerald-500" /> : <Link2 size={14} />}
+                        {linkCopied ? 'Link copied!' : 'Copy link to profile'}
+                    </button>
+
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                        Send to a follower or following
+                    </p>
+
+                    {!currentUserId ? (
+                        <p className="text-xs text-slate-400 text-center py-3">Log in to send posts to people.</p>
+                    ) : loadingShareTargets ? (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="animate-spin text-slate-300" size={18} />
+                        </div>
+                    ) : shareTargets.length === 0 ? (
+                        <div className="text-center py-4">
+                            <Users size={22} className="mx-auto mb-1.5 text-slate-300" />
+                            <p className="text-xs text-slate-400">No followers or following to send to yet.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1 max-h-56 overflow-y-auto">
+                            {shareTargets.map(t => {
+                                const isSending = sendingToId === t.auth0Id;
+                                const isSent = sentToIds.has(t.auth0Id);
+                                return (
+                                    <div key={t.auth0Id} className="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white transition-colors">
+                                        {t.image ? (
+                                            <Image src={t.image} alt={t.name} width={30} height={30}
+                                                className="h-7.5 w-7.5 rounded-lg object-cover shrink-0" />
+                                        ) : (
+                                            <div className="h-7.5 w-7.5 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                                                {t.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <span className="text-xs font-semibold text-slate-700 flex-1 min-w-0 truncate">{t.name}</span>
+                                        <button
+                                            onClick={() => handleSendToUser(t.auth0Id)}
+                                            disabled={isSending || isSent}
+                                            className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all shrink-0 flex items-center gap-1 ${isSent
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                    : 'text-indigo-600 border-indigo-200 hover:bg-indigo-50 disabled:opacity-60'
+                                                }`}
+                                        >
+                                            {isSending ? (
+                                                <Loader2 size={11} className="animate-spin" />
+                                            ) : isSent ? (
+                                                <>
+                                                    <Check size={11} /> Sent
+                                                </>
+                                            ) : (
+                                                'Send'
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
         </article>

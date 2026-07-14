@@ -185,7 +185,7 @@ export default function RightBar() {
                                     ? Math.round((p.raisedAmount / p.goalAmount) * 100)
                                     : 0;
                             return (
-                                <Link key={p.id} href="/project" className="block group cursor-pointer">
+                                <Link key={p.id} href={`/project/${p.id}`} className="block group cursor-pointer">
                                     <div className="flex items-start justify-between gap-2">
                                         <h3 className="text-xs sm:text-[13px] font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">
                                             {p.title}

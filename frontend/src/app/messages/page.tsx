@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import {
     Search, Send, Info,
     Smile, Paperclip, ImageIcon, MoreHorizontal,
-    Star, Edit2, Loader2, MessageSquare, X, Trash2, Users,
+    Star, Edit2, Loader2, MessageSquare, X, Trash2, Users, Menu
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
 import { useSocket } from '@/hooks/useSocket';
@@ -155,6 +155,8 @@ function MessagesContent() {
     const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const [showSidebarMobile, setShowSidebarMobile] = useState(true);
+
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
             if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
@@ -181,6 +183,7 @@ function MessagesContent() {
                         const existing = deduped.find((c: Conversation) => c.other_user_id === withUserId);
                         if (existing) {
                             setActiveConv(existing);
+                            setShowSidebarMobile(false);
                         } else {
                             setStartingChat(true);
                             try {
@@ -196,6 +199,7 @@ function MessagesContent() {
                                 if (!cancelled) {
                                     setConversations(prev => deduplicateConvs([enrichedNew[0], ...prev]));
                                     setActiveConv(enrichedNew[0]);
+                                    setShowSidebarMobile(false);
                                     joinConversations([newConv.id]);
                                 }
                             } catch { /* silent */ }
@@ -392,7 +396,11 @@ function MessagesContent() {
         setNewChatSearch('');
         setSearchResults([]);
         const existing = conversations.find(c => c.other_user_id === auth0Id);
-        if (existing) { setActiveConv(existing); return; }
+        if (existing) {
+            setActiveConv(existing);
+            setShowSidebarMobile(false);
+            return;
+        }
         setStartingChat(true);
         try {
             const newConv = await startConversation(auth0Id);
@@ -403,6 +411,7 @@ function MessagesContent() {
             const enrichedNew = await enrichConversations([newConvFull]);
             setConversations(prev => deduplicateConvs([enrichedNew[0], ...prev]));
             setActiveConv(enrichedNew[0]);
+            setShowSidebarMobile(false);
             joinConversations([newConv.id]);
         } catch (e) { console.error(e); }
         finally { setStartingChat(false); }
@@ -421,6 +430,11 @@ function MessagesContent() {
         } catch (err) { console.error(err); }
         finally { setDeletingConvId(null); }
     }, [activeConv]);
+
+    const handleSelectConversationMobile = (conv: Conversation) => {
+        setActiveConv(conv);
+        setShowSidebarMobile(false);
+    };
 
     const filteredConvs = conversations.filter(c => {
         const nameMatch = getDisplayName(c).toLowerCase().includes(convSearch.toLowerCase());
@@ -444,10 +458,11 @@ function MessagesContent() {
 
     return (
         <div className="bg-[#F4F2EE] h-[calc(100vh-64px)] w-full overflow-hidden flex flex-col">
-            <div className="max-w-7xl w-full mx-auto px-4 flex flex-col h-full pt-4">
+            <div className="max-w-7xl w-full mx-auto px-0 sm:px-4 flex flex-col h-full sm:pt-4">
                 <div className="flex gap-4 min-h-0 flex-1 items-stretch">
-                    <div className="flex-1 bg-white rounded-t-xl border-t border-x border-stone-200 shadow-sm flex min-h-0 overflow-hidden">
-                        <div className="w-72 xl:w-80 border-r border-stone-200 flex flex-col shrink-0 bg-white relative">
+                    <div className="flex-1 bg-white sm:rounded-t-xl border-t border-x border-stone-200 shadow-sm flex min-h-0 overflow-hidden relative">
+
+                        <div className={`absolute inset-y-0 left-0 z-30 w-full sm:w-72 xl:w-80 border-r border-stone-200 flex flex-col shrink-0 bg-white transition-transform duration-200 ease-in-out sm:relative sm:translate-x-0 ${showSidebarMobile ? 'translate-x-0' : '-translate-x-full'}`}>
                             <div className="px-4 pt-3 pb-3 border-b border-stone-200 shrink-0">
                                 <div className="flex items-center justify-between mb-3">
                                     <h2 className="font-bold text-slate-900 text-base">Messaging</h2>
@@ -505,7 +520,7 @@ function MessagesContent() {
                                         return (
                                             <div
                                                 key={conv.id}
-                                                onClick={() => setActiveConv(conv)}
+                                                onClick={() => handleSelectConversationMobile(conv)}
                                                 className={`group w-full flex items-center gap-3 px-4 py-3.5 transition-colors text-left border-b border-slate-100 cursor-pointer ${activeConv?.id === conv.id
                                                     ? 'bg-slate-100/80 border-l-[3px] border-l-stone-700'
                                                     : 'hover:bg-slate-50 border-l-[3px] border-l-transparent'
@@ -552,7 +567,7 @@ function MessagesContent() {
                                                     <button
                                                         onClick={(e) => deleteConversation(conv.id, e)}
                                                         title="Delete conversation"
-                                                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-slate-300 transition-all"
+                                                        className="sm:opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 hover:text-red-500 text-slate-300 transition-all"
                                                     >
                                                         {deletingConvId === conv.id
                                                             ? <Loader2 size={13} className="animate-spin" />
@@ -567,7 +582,7 @@ function MessagesContent() {
                             </div>
 
                             {showNewChat && (
-                                <div className="absolute inset-0 z-50 bg-white flex flex-col rounded-tl-xl border-r border-stone-200">
+                                <div className="absolute inset-0 z-50 bg-white flex flex-col sm:rounded-tl-xl border-r border-stone-200">
                                     <div className="px-4 pt-3 pb-2 border-b border-stone-200 flex items-center gap-2 shrink-0">
                                         <button
                                             onClick={() => { setShowNewChat(false); setNewChatSearch(''); setSearchResults([]); }}
@@ -628,12 +643,18 @@ function MessagesContent() {
                             )}
                         </div>
 
-                        <div className="flex-1 flex flex-col min-w-0 bg-white">
+                        <div className="flex-1 flex flex-col min-w-0 bg-white z-10">
                             {activeConv ? (
                                 <>
                                     <div className="px-4 py-3 border-b border-stone-200 flex items-center justify-between shrink-0">
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative">
+                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                            <button
+                                                onClick={() => setShowSidebarMobile(true)}
+                                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 sm:hidden shrink-0"
+                                            >
+                                                <Menu size={18} />
+                                            </button>
+                                            <div className="relative shrink-0">
                                                 {activeConv.other_user_image ? (
                                                     <Image
                                                         src={activeConv.other_user_image}
@@ -651,11 +672,11 @@ function MessagesContent() {
                                                     <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-emerald-500 border-2 border-white rounded-full" />
                                                 )}
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-slate-900 text-sm leading-tight">
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-slate-900 text-sm leading-tight truncate">
                                                     {getDisplayName(activeConv)}
                                                 </p>
-                                                <p className={`text-[11px] font-semibold ${isOtherOnline ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                                <p className={`text-[11px] font-semibold truncate ${isOtherOnline ? 'text-emerald-500' : 'text-slate-400'}`}>
                                                     {isOtherTyping
                                                         ? <span className="text-indigo-500">typing...</span>
                                                         : isOtherOnline ? 'Active now' : 'Offline'
@@ -663,7 +684,7 @@ function MessagesContent() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 shrink-0">
                                             {headerActions.map((Icon, i) => (
                                                 <button key={i} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all">
                                                     <Icon size={17} />
@@ -688,8 +709,8 @@ function MessagesContent() {
                                                 const isMe = msg.sender_id === user?.sub;
                                                 return (
                                                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                                        <div className={`max-w-xs lg:max-w-md flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
-                                                            <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isMe
+                                                        <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
+                                                            <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed wrap-break-word max-w-full ${isMe
                                                                 ? 'bg-indigo-600 text-white rounded-br-sm shadow-sm'
                                                                 : 'bg-white text-slate-800 rounded-bl-sm border border-slate-200 shadow-sm'
                                                                 }`}>
@@ -718,15 +739,15 @@ function MessagesContent() {
                                         <div ref={bottomRef} />
                                     </div>
 
-                                    <div className="px-4 py-3 border-t border-stone-200 bg-white shrink-0 relative">
+                                    <div className="px-3 py-3 border-t border-stone-200 bg-white shrink-0 relative">
                                         {showEmoji && (
-                                            <div ref={emojiRef} className="absolute bottom-16 left-4 bg-white border border-stone-200 rounded-xl shadow-lg p-3 z-50 w-72">
-                                                <div className="grid grid-cols-10 gap-1">
+                                            <div ref={emojiRef} className="absolute bottom-16 left-3 bg-white border border-stone-200 rounded-xl shadow-lg p-3 z-50 w-[calc(100%-24px)] sm:w-72">
+                                                <div className="grid grid-cols-8 sm:grid-cols-10 gap-1 max-h-40 overflow-y-auto no-scrollbar">
                                                     {emojis.map(emoji => (
                                                         <button
                                                             key={emoji}
                                                             onClick={() => { setInput(prev => prev + emoji); setShowEmoji(false); }}
-                                                            className="text-lg hover:bg-slate-100 rounded p-0.5 transition-colors"
+                                                            className="text-lg hover:bg-slate-100 rounded p-0.5 transition-colors text-center flex items-center justify-center"
                                                         >
                                                             {emoji}
                                                         </button>
@@ -749,7 +770,7 @@ function MessagesContent() {
                                             onChange={handleFileSelect}
                                         />
 
-                                        <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 focus-within:border-stone-400 transition-all">
+                                        <div className="flex items-center gap-1 sm:gap-2 bg-stone-50 border border-stone-200 rounded-xl px-2 sm:px-3 py-2 focus-within:border-stone-400 transition-all">
                                             <button
                                                 onClick={() => imageInputRef.current?.click()}
                                                 className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
@@ -777,7 +798,7 @@ function MessagesContent() {
                                                 value={input}
                                                 onChange={e => { handleInputChange(e.target.value); setShowEmoji(false); }}
                                                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                                                className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none mx-1"
+                                                className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none mx-1 min-w-0"
                                             />
                                             <button
                                                 onClick={handleSend}
@@ -790,10 +811,16 @@ function MessagesContent() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                                <div className="flex-1 flex flex-col items-center justify-center gap-3 p-4">
+                                    <button
+                                        onClick={() => setShowSidebarMobile(true)}
+                                        className="p-2 rounded-xl bg-slate-100 text-slate-600 font-semibold text-xs flex items-center gap-1.5 sm:hidden"
+                                    >
+                                        <Menu size={14} /> View Conversations
+                                    </button>
                                     <MessageSquare size={40} className="text-slate-200" />
-                                    <p className="text-slate-400 text-sm font-medium">Select a conversation</p>
-                                    <p className="text-slate-300 text-xs">or click the pencil icon to start one</p>
+                                    <p className="text-slate-400 text-sm font-medium text-center">Select a conversation</p>
+                                    <p className="text-slate-300 text-xs text-center">or click the pencil icon to start one</p>
                                 </div>
                             )}
                         </div>

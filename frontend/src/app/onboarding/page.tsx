@@ -82,7 +82,7 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-[#EEF3F8] flex flex-col">
-            <nav className="bg-white border-b border-slate-200 px-6 h-16 flex items-center justify-between">
+            <nav className="bg-white border-b border-slate-200 px-4 sm:px-6 h-16 flex items-center justify-between">
                 <Image src="/Logo.png" alt="NConnect" width={80} height={80} className="object-contain" />
                 <span className="text-xs text-slate-400 font-medium">Step {step} of 3</span>
             </nav>
@@ -91,9 +91,9 @@ export default function OnboardingPage() {
                 <div className="h-full bg-indigo-600 transition-all duration-500" style={{ width: `${(step / 3) * 100}%` }} />
             </div>
 
-            <div className="flex-1 flex items-start justify-center px-4 py-10">
+            <div className="flex-1 flex items-start justify-center px-4 py-6 md:py-10">
                 <div className="w-full max-w-lg">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-8">
                         {step === 1 && (
                             <div className="space-y-5">
                                 <div>
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
 
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-2">Account Type</label>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {[
                                             { value: "USER" as const, Icon: User, title: "Individual", desc: "Volunteer, professional, or enthusiast." },
                                             { value: "NGO" as const, Icon: Building2, title: "NGO / Organization", desc: "Non-profit, community group, or social enterprise." },
@@ -123,7 +123,7 @@ export default function OnboardingPage() {
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">Username</label>
                                     <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10">
-                                        <span className="px-3 py-2.5 bg-slate-50 text-slate-400 text-sm border-r border-slate-200">nconnect.com/</span>
+                                        <span className="px-2.5 sm:px-3 py-2.5 bg-slate-50 text-slate-400 text-xs sm:text-sm border-r border-slate-200 whitespace-nowrap">nconnect.com/</span>
                                         <input type="text" placeholder="username"
                                             value={role === "USER" ? userForm.username : ngoForm.username}
                                             onChange={e => {
@@ -131,7 +131,7 @@ export default function OnboardingPage() {
                                                 if (role === "USER") setUserForm(p => ({ ...p, username: v }));
                                                 else setNgoForm(p => ({ ...p, username: v }));
                                             }}
-                                            className="flex-1 px-3 py-2.5 text-sm text-slate-700 focus:outline-none" />
+                                            className="flex-1 min-w-0 px-3 py-2.5 text-sm text-slate-700 focus:outline-none" />
                                     </div>
                                 </div>
 
@@ -145,7 +145,7 @@ export default function OnboardingPage() {
                                                 rows={3}
                                                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 resize-none" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
                                                 <input type="text" placeholder="Kathmandu, Nepal"
@@ -160,7 +160,7 @@ export default function OnboardingPage() {
                                                     onChange={e => setUserForm(p => ({ ...p, occupation: e.target.value }))}
                                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
                                             </div>
-                                            <div className="col-span-2">
+                                            <div className="col-span-1 sm:col-span-2">
                                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Education</label>
                                                 <input type="text" placeholder="BSc Computer Science, TU"
                                                     value={userForm.education}
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
                                                 rows={3}
                                                 className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 resize-none" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
                                                 <input type="text" placeholder="Kathmandu, Nepal"

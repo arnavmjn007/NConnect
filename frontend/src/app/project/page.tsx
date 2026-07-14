@@ -9,7 +9,7 @@ import {
     Search, TrendingUp, Droplets, GraduationCap,
     Heart, Leaf, Utensils, AlertTriangle, MapPin, Clock,
     Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle, Sparkles,
-    Pencil, FolderOpen, MessageSquare,
+    Pencil, FolderOpen, MessageSquare, Menu
 } from 'lucide-react';
 import DonationModal from '@/components/payment/DonationModal';
 import SiteFooter from '@/components/ui/SiteFooter';
@@ -172,22 +172,22 @@ function VolunteerApplicationsModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <div>
-                        <h2 className="font-bold text-slate-900">Volunteer List</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">{project.title}</p>
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto flex flex-col transition-all duration-300">
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div className="min-w-0 flex-1 pr-4">
+                        <h2 className="font-bold text-slate-900 text-base sm:text-lg truncate">Volunteer List</h2>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate">{project.title}</p>
                     </div>
-                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100 shrink-0">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
                     {!suggestedLoading && suggested.length > 0 && (
-                        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 space-y-2">
+                        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 sm:p-4 space-y-2">
                             <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
                                 <Sparkles size={11} /> AI Suggested Volunteers (Not Yet Applied)
                             </p>
@@ -196,7 +196,7 @@ function VolunteerApplicationsModal({
                                     const profile = suggestedProfiles[s.userId];
                                     const name = profile?.fullName || profile?.username || `User ${s.userId.slice(0, 8)}…`;
                                     return (
-                                        <div key={s.userId} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-indigo-100">
+                                        <div key={s.userId} className="flex items-center justify-between bg-white rounded-lg px-2.5 py-2 border border-indigo-100 gap-2">
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
                                                     {profile?.profileImageUrl ? (
@@ -214,7 +214,7 @@ function VolunteerApplicationsModal({
                                                     )}
                                                 </div>
                                             </div>
-                                            <span className="text-[11px] font-bold text-indigo-600 shrink-0">
+                                            <span className="text-[11px] font-bold text-indigo-600 shrink-0 whitespace-nowrap">
                                                 {s.score}% match
                                             </span>
                                         </div>
@@ -231,10 +231,10 @@ function VolunteerApplicationsModal({
                             ))}
                         </div>
                     ) : applications.length === 0 ? (
-                        <div className="text-center py-10">
+                        <div className="text-center py-8 sm:py-10">
                             <Users size={32} className="mx-auto mb-3 text-slate-300" />
-                            <p className="text-slate-500 font-semibold">No applications yet</p>
-                            <p className="text-slate-400 text-xs mt-1">Applications will appear here when volunteers apply</p>
+                            <p className="text-slate-500 font-semibold text-sm sm:text-base">No applications yet</p>
+                            <p className="text-slate-400 text-xs mt-1 px-4">Applications will appear here when volunteers apply</p>
                         </div>
                     ) : (
                         <>
@@ -244,7 +244,7 @@ function VolunteerApplicationsModal({
                                         Pending Review ({pending.length})
                                     </p>
                                     {pending.map(app => (
-                                        <div key={app.id} className="bg-slate-50 rounded-xl p-4 space-y-3">
+                                        <div key={app.id} className="bg-slate-50 rounded-xl p-3 sm:p-4 space-y-3">
                                             <div className="flex items-start gap-3">
                                                 <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
                                                     {app.applicantImage ? (
@@ -256,10 +256,10 @@ function VolunteerApplicationsModal({
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-slate-900">{app.applicantName}</p>
-                                                    <p className="text-[11px] text-slate-400">@{app.applicantUsername}</p>
+                                                    <p className="text-sm font-bold text-slate-900 truncate">{app.applicantName}</p>
+                                                    <p className="text-[11px] text-slate-400 truncate">@{app.applicantUsername}</p>
                                                     {app.message && (
-                                                        <p className="text-xs text-slate-600 mt-1.5 italic">&ldquo;{app.message}&rdquo;</p>
+                                                        <p className="text-xs text-slate-600 mt-1.5 italic wrap-break-word">&ldquo;{app.message}&rdquo;</p>
                                                     )}
                                                     <p className="text-[10px] text-slate-400 mt-1">
                                                         {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : ''}
@@ -296,7 +296,7 @@ function VolunteerApplicationsModal({
                                     </p>
                                     {decided.map(app => (
                                         <div key={app.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl">
-                                            <div className="flex items-center gap-3 min-w-0">
+                                            <div className="flex items-center gap-2.5 min-w-0">
                                                 <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
                                                     <span className="text-indigo-700 font-bold text-xs">
                                                         {(app.applicantName || '?').charAt(0)}
@@ -304,18 +304,18 @@ function VolunteerApplicationsModal({
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-semibold text-slate-900 truncate">{app.applicantName}</p>
-                                                    <p className="text-[11px] text-slate-400">@{app.applicantUsername}</p>
+                                                    <p className="text-[11px] text-slate-400 truncate">@{app.applicantUsername}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
+                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${statusStyle[app.status] || 'bg-slate-100 text-slate-500'}`}>
                                                     {app.status}
                                                 </span>
                                                 {app.status === 'ACCEPTED' && app.applicantAuth0Id && (
                                                     <button
                                                         onClick={() => handleChatWithVolunteer(app.applicantAuth0Id)}
                                                         title="Message this volunteer"
-                                                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 transition-colors"
+                                                        className="h-7 w-7 flex items-center justify-center rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 transition-colors shrink-0"
                                                     >
                                                         <MessageSquare size={13} />
                                                     </button>
@@ -403,11 +403,11 @@ function VolunteerButton({ projectId }: { projectId: string }) {
             </button>
 
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
+                    <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-5 space-y-4 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between">
-                            <h2 className="font-bold text-slate-900">Apply as Volunteer</h2>
+                            <h2 className="font-bold text-slate-900 text-base sm:text-lg">Apply as Volunteer</h2>
                             <button onClick={() => setShowModal(false)} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
                                 <X size={16} className="text-slate-400" />
                             </button>
@@ -421,16 +421,16 @@ function VolunteerButton({ projectId }: { projectId: string }) {
                                 onChange={e => setMessage(e.target.value)}
                                 rows={4}
                                 placeholder="Share your motivation and relevant skills..."
-                                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 resize-none"
+                                className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 resize-none"
                             />
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => setShowModal(false)}
-                                className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm">
+                                className="flex-1 border border-slate-200 text-slate-600 font-bold py-2 sm:py-2.5 rounded-xl text-sm transition-colors hover:bg-slate-50">
                                 Cancel
                             </button>
                             <button onClick={handleApply} disabled={loading}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm">
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2 sm:py-2.5 rounded-xl text-sm transition-colors">
                                 {loading ? "Submitting..." : "Submit Application"}
                             </button>
                         </div>
@@ -495,35 +495,35 @@ function EditProjectModal({
         } finally { setLoading(false); }
     };
 
-    const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10";
+    const inputCls = "w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 bg-white";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <div>
-                        <h2 className="font-bold text-slate-900">Edit Project</h2>
-                        <p className="text-xs text-slate-400 mt-0.5">{project.title}</p>
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <div className="min-w-0 flex-1 pr-4">
+                        <h2 className="font-bold text-slate-900 text-base sm:text-lg truncate">Edit Project</h2>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate">{project.title}</p>
                     </div>
-                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100 shrink-0">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
-                <div className="p-5 space-y-4">
+                <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
                     {error && (
-                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                            <AlertTriangle size={14} />{error}
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl">
+                            <AlertTriangle size={14} className="shrink-0" />{error}
                         </div>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Project Title *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Project Title *</label>
                             <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Clean Water Initiative" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
                             <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className={inputCls}>
                                 <option value="">Select category</option>
                                 {CATEGORIES.filter(c => c.value !== "all").map(c => (
@@ -532,7 +532,7 @@ function EditProjectModal({
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Priority Level</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Priority Level</label>
                             <select value={form.priorityLevel} onChange={e => setForm(p => ({ ...p, priorityLevel: e.target.value }))} className={inputCls}>
                                 <option value="LOW">Low</option>
                                 <option value="NORMAL">Normal</option>
@@ -541,62 +541,62 @@ function EditProjectModal({
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Location</label>
                             <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Kathmandu, Nepal" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Duration</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Duration</label>
                             <input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 3 months" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Volunteer Slots</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Volunteer Slots</label>
                             <input type="number" value={form.volunteerSlots} onChange={e => setForm(p => ({ ...p, volunteerSlots: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 20" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Goal Amount (NPR)</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Goal Amount (NPR)</label>
                             <input type="number" value={form.goalAmount} onChange={e => setForm(p => ({ ...p, goalAmount: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 500000" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Start Date</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
                             <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputCls} />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">End Date</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
                             <input type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} className={inputCls} />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Beneficiary Group</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Beneficiary Group</label>
                             <input value={form.beneficiaryGroup} onChange={e => setForm(p => ({ ...p, beneficiaryGroup: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Children, Women" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Required Skills</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Required Skills</label>
                             <input value={form.requiredSkills} onChange={e => setForm(p => ({ ...p, requiredSkills: e.target.value }))}
                                 className={inputCls} placeholder="Teaching, Medical (comma-separated)" />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tags</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Tags</label>
                             <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
                                 className={inputCls} placeholder="Education, Youth (comma-separated)" />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
                             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                                 rows={4} className={`${inputCls} resize-none`}
                                 placeholder="Describe your project's goals and impact..." />
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 pt-2 pb-4 sm:pb-0">
                         <button onClick={onClose}
-                            className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm hover:bg-slate-50 transition-colors">
+                            className="flex-1 border border-slate-200 text-slate-600 font-bold py-2 sm:py-2.5 rounded-xl text-sm hover:bg-slate-50 transition-colors">
                             Cancel
                         </button>
                         <button onClick={handleSubmit} disabled={loading}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2 sm:py-2.5 rounded-xl text-sm transition-colors">
                             {loading ? "Saving..." : "Save Changes"}
                         </button>
                     </div>
@@ -632,23 +632,23 @@ function ProjectCard({
         : null;
 
     return (
-        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group cursor-pointer">
-            <div className={`h-28 bg-linear-to-br ${gradient} relative overflow-hidden`}>
+        <article className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col h-full">
+            <div className={`h-24 sm:h-28 bg-linear-to-br ${gradient} relative overflow-hidden shrink-0`}>
                 {project.imageUrl && (
                     <Image src={project.imageUrl} alt={project.title} fill
                         className="object-cover opacity-40" sizes="(max-width: 768px) 100vw, 33vw" />
                 )}
-                <div className="absolute inset-0 p-3 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
+                <div className="absolute inset-0 p-3 flex flex-col justify-between z-10">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
                             {project.priorityLevel && project.priorityLevel !== "NORMAL" && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${PRIORITY_COLOR[project.priorityLevel]}`}>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${PRIORITY_COLOR[project.priorityLevel]}`}>
                                     {project.priorityLevel === "URGENT" && <Flame size={9} />}
                                     {project.priorityLevel}
                                 </span>
                             )}
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 shrink-0">
                             {isOwner && (
                                 <button
                                     onClick={e => { e.stopPropagation(); onEdit(project); }}
@@ -658,108 +658,110 @@ function ProjectCard({
                                     <Pencil size={11} className="text-white" />
                                 </button>
                             )}
-                            <span className="text-[10px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded-full max-w-25 truncate">
                                 {project.category}
                             </span>
                         </div>
                     </div>
                     {project.location && (
-                        <div className="flex items-center gap-1 text-[11px] text-white/90">
-                            <MapPin size={10} />{project.location}
+                        <div className="flex items-center gap-1 text-[11px] text-white/90 truncate">
+                            <MapPin size={10} className="shrink-0" />{project.location}
                         </div>
                     )}
                 </div>
                 {matchScore !== undefined && (
-                    <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-indigo-600/90 px-2 py-1 rounded-full">
+                    <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-indigo-600/90 px-2 py-1 rounded-full z-20">
                         <Sparkles size={10} /> {matchScore}% match
                     </span>
                 )}
             </div>
 
-            <div className="p-4 space-y-3">
-                <div className="flex items-center gap-1.5">
-                    <div className="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700">
-                        {project.ngoName?.charAt(0) || "N"}
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-500">{project.ngoName}</span>
-                    {project.ngoVerified && <BadgeCheck size={12} className="text-indigo-500" />}
-                </div>
-
-                <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors">
-                    {project.title}
-                </h3>
-
-                {project.requiredSkills?.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {project.requiredSkills.slice(0, 3).map(s => (
-                            <span key={s} className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
-                                {s}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                    {project.duration && (
-                        <span className="flex items-center gap-1"><Clock size={10} />{project.duration}</span>
-                    )}
-                    {spotsLeft !== null && (
-                        <span className="flex items-center gap-1">
-                            <Users size={10} />
-                            {spotsLeft > 0 ? `${spotsLeft} spots left` : "Full"}
-                        </span>
-                    )}
-                </div>
-
-                {goal > 0 && (
-                    <div>
-                        <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
-                            <div
-                                className={`h-full rounded-full transition-all duration-500 ${goalReached ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                                style={{ width: `${progress}%` }}
-                            />
+            <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between gap-3">
+                <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center text-[9px] font-bold text-indigo-700 shrink-0">
+                            {project.ngoName?.charAt(0) || "N"}
                         </div>
-                        <div className="flex justify-between text-[10px] mt-1">
-                            <span className="font-semibold text-slate-700">
-                                NPR {raised.toLocaleString()}
-                            </span>
-                            {goalReached ? (
-                                <span className="text-emerald-600 font-bold flex items-center gap-0.5">
-                                    <CheckCircle size={10} /> Goal Achieved
+                        <span className="text-[11px] font-semibold text-slate-500 truncate">{project.ngoName}</span>
+                        {project.ngoVerified && <BadgeCheck size={12} className="text-indigo-500 shrink-0" />}
+                    </div>
+
+                    <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors">
+                        {project.title}
+                    </h3>
+
+                    {project.requiredSkills?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                            {project.requiredSkills.slice(0, 3).map(s => (
+                                <span key={s} className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium truncate max-w-30">
+                                    {s}
                                 </span>
-                            ) : (
-                                <span className="text-slate-400">
-                                    of NPR {goal.toLocaleString()} · {project.donorCount || 0} donors
-                                </span>
-                            )}
+                            ))}
                         </div>
-                        {goalReached && (
-                            <p className="text-[10px] text-slate-400 mt-0.5">
-                                of NPR {goal.toLocaleString()} · {project.donorCount || 0} donors
-                            </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 pt-0.5">
+                        {project.duration && (
+                            <span className="flex items-center gap-1"><Clock size={10} className="shrink-0" />{project.duration}</span>
+                        )}
+                        {spotsLeft !== null && (
+                            <span className="flex items-center gap-1">
+                                <Users size={10} className="shrink-0" />
+                                {spotsLeft > 0 ? `${spotsLeft} spots left` : "Full"}
+                            </span>
                         )}
                     </div>
-                )}
+                </div>
 
-                <div className="flex gap-2 pt-1">
+                <div className="space-y-3 pt-1">
                     {goal > 0 && (
-                        <button
-                            onClick={() => onDonate(project)}
-                            className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
-                        >
-                            <Heart size={12} /> Donate
-                        </button>
+                        <div>
+                            <div className="h-1.5 rounded-full overflow-hidden bg-slate-100">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${goalReached ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] mt-1 gap-2">
+                                <span className="font-semibold text-slate-700 whitespace-nowrap">
+                                    NPR {raised.toLocaleString()}
+                                </span>
+                                {goalReached ? (
+                                    <span className="text-emerald-600 font-bold flex items-center gap-0.5 whitespace-nowrap">
+                                        <CheckCircle size={10} /> Goal Achieved
+                                    </span>
+                                ) : (
+                                    <span className="text-slate-400 truncate text-right">
+                                        of NPR {goal.toLocaleString()}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                {project.donorCount || 0} donors
+                            </p>
+                        </div>
                     )}
-                    {isOwner ? (
-                        <button
-                            onClick={() => onManageVolunteers(project)}
-                            className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 rounded-xl text-xs transition-colors border border-indigo-100"
-                        >
-                            <Users size={12} /> Volunteer List
-                        </button>
-                    ) : (
-                        <VolunteerButton projectId={project.id} />
-                    )}
+
+                    <div className="flex gap-2">
+                        {goal > 0 && (
+                            <button
+                                onClick={() => onDonate(project)}
+                                className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
+                            >
+                                <Heart size={12} /> Donate
+                            </button>
+                        )}
+                        {isOwner ? (
+                            <button
+                                onClick={() => onManageVolunteers(project)}
+                                className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 rounded-xl text-xs transition-colors border border-indigo-100"
+                            >
+                                <Users size={12} /> List
+                            </button>
+                        ) : (
+                            <VolunteerButton projectId={project.id} />
+                        )}
+                    </div>
                 </div>
             </div>
         </article>
@@ -799,32 +801,32 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
         } finally { setLoading(false); }
     };
 
-    const inputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10";
+    const inputCls = "w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 bg-white";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <h2 className="font-bold text-slate-900">Create New Project</h2>
-                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100">
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <h2 className="font-bold text-slate-900 text-base sm:text-lg">Create New Project</h2>
+                    <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-slate-100 shrink-0">
                         <X size={16} className="text-slate-400" />
                     </button>
                 </div>
-                <div className="p-5 space-y-4">
+                <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
                     {error && (
-                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                            <AlertTriangle size={14} />{error}
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl">
+                            <AlertTriangle size={14} className="shrink-0" />{error}
                         </div>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Project Title *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Project Title *</label>
                             <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Clean Water Initiative" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Category *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
                             <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} className={inputCls}>
                                 <option value="">Select category</option>
                                 {CATEGORIES.filter(c => c.value !== "all").map(c => (
@@ -833,7 +835,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Priority Level</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Priority Level</label>
                             <select value={form.priorityLevel} onChange={e => setForm(p => ({ ...p, priorityLevel: e.target.value }))} className={inputCls}>
                                 <option value="LOW">Low</option>
                                 <option value="NORMAL">Normal</option>
@@ -842,57 +844,57 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Location</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Location</label>
                             <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Kathmandu, Nepal" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Duration</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Duration</label>
                             <input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 3 months" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Volunteer Slots</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Volunteer Slots</label>
                             <input type="number" value={form.volunteerSlots} onChange={e => setForm(p => ({ ...p, volunteerSlots: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 20" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Goal Amount (NPR)</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Goal Amount (NPR)</label>
                             <input type="number" value={form.goalAmount} onChange={e => setForm(p => ({ ...p, goalAmount: e.target.value }))}
                                 className={inputCls} placeholder="e.g. 500000" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Start Date</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
                             <input type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} className={inputCls} />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">End Date</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
                             <input type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} className={inputCls} />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Beneficiary Group</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Beneficiary Group</label>
                             <input value={form.beneficiaryGroup} onChange={e => setForm(p => ({ ...p, beneficiaryGroup: e.target.value }))}
                                 className={inputCls} placeholder="e.g. Children, Women" />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Required Skills</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Required Skills</label>
                             <input value={form.requiredSkills} onChange={e => setForm(p => ({ ...p, requiredSkills: e.target.value }))}
                                 className={inputCls} placeholder="Teaching, Medical (comma-separated)" />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tags</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Tags</label>
                             <input value={form.tags} onChange={e => setForm(p => ({ ...p, tags: e.target.value }))}
                                 className={inputCls} placeholder="Education, Youth (comma-separated)" />
                         </div>
                         <div className="sm:col-span-2">
-                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Description</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Description</label>
                             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                                 rows={4} className={`${inputCls} resize-none`}
                                 placeholder="Describe your project's goals and impact..." />
                         </div>
                     </div>
                     <button onClick={handleSubmit} disabled={loading}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold py-2.5 rounded-xl text-sm transition-colors mt-2 mb-4 sm:mb-0">
                         {loading ? "Creating..." : "Create Project"}
                     </button>
                 </div>
@@ -916,6 +918,7 @@ function ProjectsContent() {
     const [matchScores, setMatchScores] = useState<Record<string, number>>({});
     const [showRecommended, setShowRecommended] = useState(false);
     const [showMyProjects, setShowMyProjects] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const isNgo = dbUser?.role === "NGO";
 
@@ -1028,16 +1031,72 @@ function ProjectsContent() {
     return (
         <div className="bg-[#EEF3F8] min-h-screen">
             {donationSuccess && (
-                <div className="bg-emerald-600 text-white text-sm font-semibold text-center py-2.5 flex items-center justify-center gap-2">
-                    <Heart size={14} /> Thank you for your donation!
-                    <button onClick={() => setDonationSuccess(false)} className="ml-2 opacity-70 hover:opacity-100">
+                <div className="bg-emerald-600 text-white text-xs sm:text-sm font-semibold text-center py-2.5 px-4 flex items-center justify-center gap-2 sticky top-0 z-40 shadow-sm">
+                    <Heart size={14} className="shrink-0" /> <span className="truncate">Thank you for your donation!</span>
+                    <button onClick={() => setDonationSuccess(false)} className="ml-2 opacity-70 hover:opacity-100 shrink-0">
                         <X size={14} />
                     </button>
                 </div>
             )}
 
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 sm:py-6">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+
+                    {mobileMenuOpen && (
+                        <div className="fixed inset-0 z-40 md:hidden flex">
+                            <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
+                            <aside className="relative w-72 max-w-[80vw] bg-[#EEF3F8] h-full p-4 overflow-y-auto flex flex-col justify-between shadow-2xl transition-transform duration-300">
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Filters & Stats</span>
+                                        <button onClick={() => setMobileMenuOpen(false)} className="h-7 w-7 flex items-center justify-center rounded-lg hover:bg-slate-200">
+                                            <X size={16} className="text-slate-500" />
+                                        </button>
+                                    </div>
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 space-y-1">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-2 pb-1.5">Categories</p>
+                                        {CATEGORIES.map(({ label, value, Icon }) => (
+                                            <button
+                                                key={value}
+                                                onClick={() => {
+                                                    setActiveCategory(value);
+                                                    if (showMyProjects) setShowMyProjects(false);
+                                                    setMobileMenuOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-sm font-medium text-left ${activeCategory === value && !showMyProjects ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-600 hover:bg-slate-50"}`}
+                                            >
+                                                {Icon
+                                                    ? <Icon size={15} className={activeCategory === value && !showMyProjects ? "text-indigo-600" : "text-slate-400"} />
+                                                    : <div className="w-3.5" />}
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <TrendingUp size={14} className="text-indigo-600" />
+                                            <h3 className="text-sm font-bold text-slate-800">Stats</h3>
+                                        </div>
+                                        {[
+                                            { label: "Active Projects", value: projects.length.toString() },
+                                            { label: "Total Raised", value: `NPR ${projects.reduce((s, p) => s + (p.raisedAmount || 0), 0).toLocaleString()}` },
+                                            { label: "Volunteer Slots", value: projects.reduce((s, p) => s + (p.volunteerSlots || 0), 0).toLocaleString() },
+                                        ].map(s => (
+                                            <div key={s.label} className="flex justify-between text-xs py-1.5 border-b border-slate-50 last:border-0">
+                                                <span className="text-slate-500">{s.label}</span>
+                                                <span className="font-bold text-slate-800">{s.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="pt-4">
+                                    <SiteFooter />
+                                </div>
+                            </aside>
+                        </div>
+                    )}
+
                     <aside className="hidden md:flex md:flex-col md:col-span-3 sticky top-20 self-start space-y-4 max-h-[calc(100vh-5rem)]">
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-1">
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest px-2 pb-2">Categories</p>
@@ -1079,51 +1138,62 @@ function ProjectsContent() {
                     </aside>
 
                     <main className="col-span-1 md:col-span-9 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <h1 className="text-xl font-bold text-slate-900">Projects</h1>
-                                <p className="text-sm text-slate-500">
-                                    {loading
-                                        ? "Loading..."
-                                        : showMyProjects
-                                            ? `${displayedProjects.length} of your project${displayedProjects.length !== 1 ? "s" : ""}`
-                                            : `${displayedProjects.length} project${displayedProjects.length !== 1 ? "s" : ""} found`}
-                                </p>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <div>
+                                    <h1 className="text-xl font-bold text-slate-900">Projects</h1>
+                                    <p className="text-sm text-slate-500">
+                                        {loading
+                                            ? "Loading..."
+                                            : showMyProjects
+                                                ? `${displayedProjects.length} of your project${displayedProjects.length !== 1 ? "s" : ""}`
+                                                : `${displayedProjects.length} project${displayedProjects.length !== 1 ? "s" : ""} found`}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setMobileMenuOpen(true)}
+                                    className="md:hidden flex items-center justify-center h-9 w-9 bg-white border border-slate-200 rounded-xl text-slate-600 hover:border-indigo-500 transition-colors shrink-0 shadow-xs"
+                                >
+                                    <Menu size={18} />
+                                </button>
                             </div>
-                            <div className="flex gap-2 flex-wrap">
-                                {isNgo && (
-                                    <button
-                                        onClick={() => setShowMyProjects(p => !p)}
-                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${showMyProjects
-                                            ? 'bg-indigo-600 border-indigo-600 text-white'
-                                            : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
-                                            }`}
-                                    >
-                                        <FolderOpen size={13} /> {showMyProjects ? 'Back' : 'My Projects'}
-                                    </button>
-                                )}
-                                {dbUser?.role === "USER" && Object.keys(matchScores).length > 0 && (
-                                    <button
-                                        onClick={() => setShowRecommended(p => !p)}
-                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${showRecommended
-                                            ? 'bg-indigo-600 border-indigo-600 text-white'
-                                            : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
-                                            }`}
-                                    >
-                                        <Sparkles size={13} /> Recommended for You
-                                    </button>
-                                )}
-                                {!showMyProjects && (
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                        <input type="text" placeholder="Search projects..."
-                                            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                            className="pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
-                                    </div>
-                                )}
+
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 w-full">
+                                <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                                    {isNgo && (
+                                        <button
+                                            onClick={() => setShowMyProjects(p => !p)}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all shrink-0 ${showMyProjects
+                                                ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                                                }`}
+                                        >
+                                            <FolderOpen size={13} /> {showMyProjects ? 'Back' : 'My Projects'}
+                                        </button>
+                                    )}
+                                    {dbUser?.role === "USER" && Object.keys(matchScores).length > 0 && (
+                                        <button
+                                            onClick={() => setShowRecommended(p => !p)}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all shrink-0 ${showRecommended
+                                                ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300'
+                                                }`}
+                                        >
+                                            <Sparkles size={13} /> Recommended
+                                        </button>
+                                    )}
+                                    {!showMyProjects && (
+                                        <div className="relative flex-1 min-w-35 max-w-xs sm:max-w-sm">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                            <input type="text" placeholder="Search projects..."
+                                                value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                                                className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10" />
+                                        </div>
+                                    )}
+                                </div>
                                 {isNgo && (
                                     <button onClick={() => setShowCreate(true)}
-                                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors">
+                                        className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors shrink-0 shadow-sm ml-auto sm:ml-0">
                                         <Plus size={14} /> New
                                     </button>
                                 )}
@@ -1134,7 +1204,7 @@ function ProjectsContent() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {[...Array(6)].map((_, i) => (
                                     <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-pulse">
-                                        <div className="h-28 bg-slate-200" />
+                                        <div className="h-24 sm:h-28 bg-slate-200" />
                                         <div className="p-4 space-y-3">
                                             <div className="h-3 bg-slate-200 rounded w-1/2" />
                                             <div className="h-4 bg-slate-200 rounded w-3/4" />
@@ -1144,7 +1214,7 @@ function ProjectsContent() {
                                 ))}
                             </div>
                         ) : displayedProjects.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                                 {displayedProjects.map(p => (
                                     <ProjectCard
                                         key={p.id}
@@ -1158,24 +1228,28 @@ function ProjectsContent() {
                                 ))}
                             </div>
                         ) : showMyProjects ? (
-                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                            <div className="text-center py-12 sm:py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 px-4">
                                 <FolderOpen size={32} className="mx-auto mb-3 opacity-40" />
-                                <p className="font-semibold">No projects yet</p>
-                                <p className="text-sm mt-1">Create your first project to get started</p>
+                                <p className="font-semibold text-sm sm:text-base">No projects yet</p>
+                                <p className="text-xs sm:text-sm mt-1">Create your first project to get started</p>
                             </div>
                         ) : showRecommended ? (
-                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                            <div className="text-center py-12 sm:py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 px-4">
                                 <Sparkles size={32} className="mx-auto mb-3 opacity-40" />
-                                <p className="font-semibold">No strong matches yet</p>
-                                <p className="text-sm mt-1">Add more skills and interests to your profile for better recommendations</p>
+                                <p className="font-semibold text-sm sm:text-base">No strong matches yet</p>
+                                <p className="text-xs sm:text-sm mt-1">Add more skills and interests to your profile for better recommendations</p>
                             </div>
                         ) : (
-                            <div className="text-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-200">
+                            <div className="text-center py-12 sm:py-16 text-slate-400 bg-white rounded-2xl border border-slate-200 px-4">
                                 <Target size={32} className="mx-auto mb-3 opacity-40" />
-                                <p className="font-semibold">No projects found</p>
-                                <p className="text-sm mt-1">Try a different category or search term</p>
+                                <p className="font-semibold text-sm sm:text-base">No projects found</p>
+                                <p className="text-xs sm:text-sm mt-1">Try a different category or search term</p>
                             </div>
                         )}
+
+                        <div className="block md:hidden pt-2">
+                            <SiteFooter />
+                        </div>
                     </main>
                 </div>
             </div>
