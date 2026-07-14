@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 
 const StatItem = ({ value, label, color, border = false }: {
-    value: number; label: string; color: string; border?: boolean;
+    value: number | string; label: string; color: string; border?: boolean;
 }) => (
     <div className={`flex-1 text-center py-1.5 sm:py-2 cursor-pointer group transition-colors hover:bg-slate-50 rounded-lg ${border ? "border-x border-slate-100" : ""}`}>
         <p className={`${color} font-bold text-lg sm:text-xl leading-none tabular-nums`}>{value}</p>
@@ -33,10 +33,29 @@ async function fetchCounts(
     } catch { /* silent */ }
 }
 
+interface DonationRecord {
+    amount: number;
+    purpose: string;
+    status: string;
+}
+
+async function fetchTotalDonated(setTotalDonated: (n: number) => void) {
+    try {
+        const res = await fetch('/api/user/my-donations');
+        if (!res.ok) return;
+        const records: DonationRecord[] = await res.json();
+        const total = records
+            .filter(r => r.status === "COMPLETED" && r.purpose?.startsWith("project_donation:"))
+            .reduce((sum, r) => sum + (r.amount || 0), 0);
+        setTotalDonated(total);
+    } catch { /* silent */ }
+}
+
 export default function Sidebar() {
     const { dbUser, user } = useAuth();
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
+    const [totalDonated, setTotalDonated] = useState(0);
     const [contributionsOpen, setContributionsOpen] = useState(false);
 
     const displayName = dbUser?.fullName || user?.name || "User";
@@ -57,10 +76,22 @@ export default function Sidebar() {
 
     useEffect(() => {
         if (!user?.sub) return;
+        fetchTotalDonated(setTotalDonated);
+    }, [user?.sub]);
+
+    useEffect(() => {
+        if (!user?.sub) return;
         const sub = user.sub;
         const handler = () => fetchCounts(sub, setFollowerCount, setFollowingCount);
         window.addEventListener('follow-changed', handler);
         return () => window.removeEventListener('follow-changed', handler);
+    }, [user?.sub]);
+
+    useEffect(() => {
+        if (!user?.sub) return;
+        const handler = () => fetchTotalDonated(setTotalDonated);
+        window.addEventListener('donation-completed', handler);
+        return () => window.removeEventListener('donation-completed', handler);
     }, [user?.sub]);
 
     return (
@@ -128,7 +159,7 @@ export default function Sidebar() {
                     <div className="mt-4 pt-3 border-t border-slate-100 flex">
                         <StatItem value={followingCount} label="Following" color="text-[#0A66C2]" />
                         <StatItem value={followerCount} label="Followers" color="text-emerald-600" border />
-                        <StatItem value={0} label="Donated" color="text-violet-600" />
+                        <StatItem value={`NPR ${totalDonated.toLocaleString()}`} label="Donated" color="text-violet-600" />
                     </div>
                 </div>
             </div>
