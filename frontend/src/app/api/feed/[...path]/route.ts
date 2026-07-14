@@ -1,7 +1,7 @@
 import { auth0 } from '@/lib/auth0';
 import { NextRequest, NextResponse } from 'next/server';
 
-const FEED_SERVICE = process.env.FEED_SERVICE_URL || 'http://localhost:5000';
+const FEED_SERVICE = process.env.FEED_SERVICE_URL;
 
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params;

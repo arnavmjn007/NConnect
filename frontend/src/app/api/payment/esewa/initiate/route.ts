@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         const totalAmount = String(amount);
         const signature = generateSignature(totalAmount, transactionUuid, PRODUCT_CODE);
 
-        const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
         const successPath = purpose === "verification"
             ? "/verification"
             : purpose.startsWith("pro_subscription")

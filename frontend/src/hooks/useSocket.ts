@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 
 let socketInstance: Socket | null = null;
 
-const FEED_SERVICE = process.env.NEXT_PUBLIC_FEED_SERVICE_URL || 'http://localhost:5000';
+const FEED_SERVICE = process.env.NEXT_PUBLIC_FEED_SERVICE_URL;
 
 export function useSocket() {
   const { user } = useAuth();

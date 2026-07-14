@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
 
-const FEED_SERVICE = process.env.FEED_SERVICE_URL || "http://localhost:5000";
+const FEED_SERVICE = process.env.FEED_SERVICE_URL;
 
 export async function POST(
     request: NextRequest,
