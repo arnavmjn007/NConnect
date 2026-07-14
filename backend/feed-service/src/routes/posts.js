@@ -67,6 +67,28 @@ export async function enrichPosts(posts, currentUserId) {
   });
 }
 
+router.get("/user/:userId", optionalAuth, async (req, res) => {
+  const PAGE_SIZE = 20;
+  const offset = (Math.max(1, +req.query.page || 1) - 1) * PAGE_SIZE;
+  try {
+    const { rows } = await pool.query(
+      `SELECT p.*,
+              op.content   AS original_content,
+              op.author_id AS original_author_id
+       FROM posts p
+       LEFT JOIN posts op ON p.original_post_id = op.id
+       WHERE p.author_id = $1
+       ORDER BY p.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.params.userId, PAGE_SIZE, offset]
+    );
+    const posts = await enrichPosts(rows, req.auth?.sub);
+    res.json({ posts, has_more: rows.length === PAGE_SIZE });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
