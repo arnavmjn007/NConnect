@@ -71,10 +71,12 @@ export default function Sidebar() {
     const [totalDonated, setTotalDonated] = useState(0);
     const [contributionsOpen, setContributionsOpen] = useState(false);
 
-    const displayName = dbUser?.fullName || user?.name || "User";
+    const isNGO = dbUser?.role === "NGO";
+    const displayName = isNGO
+        ? (dbUser?.organizationName || dbUser?.username || "Organization")
+        : (dbUser?.fullName || user?.name || "User");
     const displayLocation = dbUser?.location || "Location not set";
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
-    const isNGO = dbUser?.role === "NGO";
     const initial = displayName.charAt(0).toUpperCase();
     const isPremium = dbUser?.pro || false;
 

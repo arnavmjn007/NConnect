@@ -77,11 +77,13 @@ export default function ProfilePage() {
 
     const [followingCount, setFollowingCount] = useState(0);
 
-    const displayName = dbUser?.fullName || user?.name || "User";
+    const isNGO = dbUser?.role === 'NGO';
+    const displayName = isNGO
+        ? (dbUser?.organizationName || dbUser?.username || "Organization")
+        : (dbUser?.fullName || user?.name || "User");
     const displayImage = dbUser?.profileImageUrl || user?.picture || null;
     const displayLocation = dbUser?.location || null;
     const initial = displayName.charAt(0).toUpperCase();
-    const isNGO = dbUser?.role === 'NGO';
 
     useEffect(() => {
         if (!user?.sub) return;

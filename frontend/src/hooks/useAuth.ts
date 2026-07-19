@@ -58,6 +58,7 @@ export function useAuth() {
     const pathname = usePathname();
     const [dbUser, setDbUser] = useState<DbUser | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isAdminRedirecting, setIsAdminRedirecting] = useState(false);
     const syncingRef = useRef(false);
 
     const refreshUser = useCallback(async () => {
@@ -71,6 +72,7 @@ export function useAuth() {
         if (!user) {
             sessionStorage.removeItem(SYNC_KEY);
             setDbUser(null);
+            setIsAdminRedirecting(false);
             return;
         }
         if (syncingRef.current) return;
@@ -90,6 +92,7 @@ export function useAuth() {
 
                 if (profile.role === "ADMIN") {
                     if (!pathname.startsWith("/admin")) {
+                        setIsAdminRedirecting(true);
                         router.push("/admin");
                     }
                     return;
@@ -114,7 +117,7 @@ export function useAuth() {
         dbUser,
         error,
         isAuthenticated: !!user,
-        isLoading: isAuth0Loading || isSyncing,
+        isLoading: isAuth0Loading || isSyncing || isAdminRedirecting,
         refreshUser,
     };
 }

@@ -27,6 +27,8 @@ export default function EsewaPaymentForm({ amount, userId, purpose = "verificati
 
             sessionStorage.setItem("esewa_transaction_uuid", formFields.transaction_uuid);
             sessionStorage.setItem("esewa_amt", String(amount));
+            sessionStorage.setItem("esewa_purpose", purpose);
+            sessionStorage.setItem("esewa_ref_id", userId);
 
             onInitiated();
 

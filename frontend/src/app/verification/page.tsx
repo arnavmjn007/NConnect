@@ -35,10 +35,10 @@ function VerificationContent() {
     });
 
     useEffect(() => {
-        const payment = searchParams.get("payment");
         const encodedData = searchParams.get("data");
+        const payment = searchParams.get("payment");
 
-        if (payment === "success" && encodedData) {
+        if (encodedData) {
             const verify = async () => {
                 try {
                     const res = await fetch("/api/payment/esewa/verify", {
@@ -48,6 +48,11 @@ function VerificationContent() {
                     });
                     const data = await res.json();
                     if (data.verified) {
+                        const savedForm = sessionStorage.getItem("esewa_verification_form");
+                        if (savedForm) {
+                            setForm(JSON.parse(savedForm));
+                            sessionStorage.removeItem("esewa_verification_form");
+                        }
                         setPaymentRef(data.ref);
                         setPaymentDone(true);
                         setPaymentMethod("ESEWA");
@@ -316,7 +321,10 @@ function VerificationContent() {
                                         <EsewaPaymentForm
                                             amount={AMOUNT}
                                             userId={dbUser.id}
-                                            onInitiated={() => setLoading(true)}
+                                            onInitiated={() => {
+                                                sessionStorage.setItem("esewa_verification_form", JSON.stringify(form));
+                                                setLoading(true);
+                                            }}
                                         />
                                     ) : (
                                         <StripePaymentForm

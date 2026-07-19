@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     MapPin, Calendar, Briefcase, GraduationCap,
-    BadgeCheck, Building2, Globe, Users,
+    BadgeCheck, Globe, Users,
     Check, Loader2, MessageSquare, Edit3
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -168,10 +168,12 @@ export default function PublicProfilePage({
         );
     }
 
-    const displayName = profile.fullName || profile.organizationName || profile.username || 'User';
+    const isNGO = profile.role === 'NGO';
+    const displayName = isNGO
+        ? (profile.organizationName || profile.username || 'Organization')
+        : (profile.fullName || profile.username || 'User');
     const initial = displayName.charAt(0).toUpperCase();
     const isOwnProfile = currentUser?.sub === profile.auth0Id;
-    const isNGO = profile.role === 'NGO';
 
     const stats = [
         { value: followStats.followingCount, label: "Following", color: "text-indigo-600" },
@@ -204,12 +206,6 @@ export default function PublicProfilePage({
                                     </h1>
                                     {profile.username && (
                                         <p className="text-sm text-slate-400">@{profile.username}</p>
-                                    )}
-                                    {isNGO && profile.organizationName && displayName !== profile.organizationName && (
-                                        <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs text-slate-700 font-semibold mt-1">
-                                            <Building2 size={13} className="text-indigo-500 shrink-0" />
-                                            {profile.organizationName}
-                                        </div>
                                     )}
                                     {profile.bio && (
                                         <p className="text-sm text-slate-500 mt-1 leading-relaxed wrap-break-word">{profile.bio}</p>

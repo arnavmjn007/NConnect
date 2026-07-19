@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
             product_code: PRODUCT_CODE,
             product_service_charge: "0",
             product_delivery_charge: "0",
-            success_url: `${origin}${successPath}?payment=success&purpose=${purpose}&refId=${referenceId}`,
+            success_url: `${origin}${successPath}`,
             failure_url: `${origin}${successPath}?payment=failed`,
             signed_field_names: "total_amount,transaction_uuid,product_code",
             signature,

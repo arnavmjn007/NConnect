@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
-    MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2, Check, Link2, Users
+    MoreHorizontal, X, ThumbsUp, MessageSquare, Repeat2, Send, Heart, Sparkles, Loader2, Check, Link2, Users, BadgeCheck
 } from "lucide-react";
 import {
     likePost, unlikePost, deletePost, getComments, addComment,
@@ -50,6 +50,7 @@ interface RawUser {
     username?: string;
     displayName?: string;
     profileImageUrl?: string;
+    verified?: boolean;
 }
 
 interface ShareTarget {
@@ -139,6 +140,8 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
     const [likeCount, setLikeCount] = useState(post.like_count);
     const [busy, setBusy] = useState(false);
 
+    const [authorVerified, setAuthorVerified] = useState(false);
+
     const [summary, setSummary] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
     const [showSummary, setShowSummary] = useState(false);
@@ -160,6 +163,21 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
     const [sendingToId, setSendingToId] = useState<string | null>(null);
     const [sentToIds, setSentToIds] = useState<Set<string>>(new Set());
     const [linkCopied, setLinkCopied] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadVerified() {
+            try {
+                const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(post.author_id)}`);
+                if (!res.ok) return;
+                const users = await res.json();
+                const u: RawUser | null = Array.isArray(users) ? users[0] : users;
+                if (!cancelled && u?.verified) setAuthorVerified(true);
+            } catch { /* silent */ }
+        }
+        loadVerified();
+        return () => { cancelled = true; };
+    }, [post.author_id]);
 
     const handleLike = async () => {
         if (busy) return;
@@ -360,8 +378,11 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
                         </div>
                     )}
                     <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors truncate">
+                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors truncate flex items-center gap-1">
                             {post.author_name}
+                            {authorVerified && (
+                                <BadgeCheck size={14} className="text-indigo-500 shrink-0" />
+                            )}
                         </h4>
                         <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                             @{post.author_username} · {timeLabel}{post.is_edited && ' · Edited'} · 🌐
@@ -557,8 +578,8 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
                                             onClick={() => handleSendToUser(t.auth0Id)}
                                             disabled={isSending || isSent}
                                             className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all shrink-0 flex items-center gap-1 ${isSent
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                    : 'text-indigo-600 border-indigo-200 hover:bg-indigo-50 disabled:opacity-60'
+                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                : 'text-indigo-600 border-indigo-200 hover:bg-indigo-50 disabled:opacity-60'
                                                 }`}
                                         >
                                             {isSending ? (
