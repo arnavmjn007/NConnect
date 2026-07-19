@@ -20,4 +20,8 @@ public interface VolunteerApplicationRepository extends JpaRepository<VolunteerA
     Optional<VolunteerApplication> findByProjectIdAndApplicantId(UUID projectId, UUID applicantId);
 
     List<VolunteerApplication> findByProjectIdIn(List<UUID> projectIds);
+
+    void deleteByApplicantId(UUID applicantId);
+
+    void deleteByProjectId(UUID projectId);
 }

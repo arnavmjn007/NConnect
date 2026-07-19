@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface PaymentRecordRepository extends JpaRepository<PaymentRecord, UUID> {
     List<PaymentRecord> findByUserIdOrderByCreatedAtDesc(UUID userId);
     List<PaymentRecord> findByUserIdAndPurpose(UUID userId, String purpose);
+    void deleteByUserId(UUID userId);
 }

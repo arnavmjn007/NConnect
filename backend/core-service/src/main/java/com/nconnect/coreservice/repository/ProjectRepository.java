@@ -53,4 +53,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findAllWithNgo();
 
     List<Project> findByStatusOrderByCreatedAtDesc(ProjectStatus status);
+
+    List<Project> findByNgoId(UUID ngoId);
 }

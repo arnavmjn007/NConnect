@@ -17,4 +17,6 @@ public interface ResourceRequestRepository extends JpaRepository<ResourceRequest
     boolean existsByResourceIdAndRequesterId(UUID resourceId, UUID requesterId);
 
     void deleteByResourceId(UUID resourceId);
+
+    void deleteByRequesterId(UUID requesterId);
 }

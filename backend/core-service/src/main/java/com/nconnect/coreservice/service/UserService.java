@@ -4,14 +4,15 @@ import com.nconnect.coreservice.dto.*;
 import com.nconnect.coreservice.model.*;
 import com.nconnect.coreservice.model.enums.Role;
 import com.nconnect.coreservice.model.enums.VerificationStatus;
-import com.nconnect.coreservice.repository.PaymentRecordRepository;
-import com.nconnect.coreservice.repository.UserRepository;
+import com.nconnect.coreservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,11 @@ public class UserService {
     private final UserRepository userRepository;
     private final PaymentRecordRepository paymentRecordRepository;
     private final NotificationWebhookService notificationWebhookService;
+    private final ResourceRepository resourceRepository;
+    private final ResourceRequestRepository resourceRequestRepository;
+    private final VolunteerApplicationRepository volunteerApplicationRepository;
+    private final ProjectRepository projectRepository;
+    private final ReportRepository reportRepository;
 
     @Transactional
     public UserProfileResponse syncUser(Jwt jwt) {
@@ -250,6 +256,28 @@ public class UserService {
     public void deleteAccount(Jwt jwt) {
         AppUser user = userRepository.findByAuth0Id(jwt.getSubject())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        UUID userId = user.getId();
+
+        resourceRequestRepository.deleteByRequesterId(userId);
+
+        List<Resource> ownedResources = resourceRepository.findByOwnerIdOrderByCreatedAtDesc(userId);
+        for (Resource resource : ownedResources) {
+            resourceRequestRepository.deleteByResourceId(resource.getId());
+        }
+        resourceRepository.deleteAll(ownedResources);
+
+        volunteerApplicationRepository.deleteByApplicantId(userId);
+
+        List<Project> ownedProjects = projectRepository.findByNgoId(userId);
+        for (Project project : ownedProjects) {
+            volunteerApplicationRepository.deleteByProjectId(project.getId());
+        }
+        projectRepository.deleteAll(ownedProjects);
+
+        paymentRecordRepository.deleteByUserId(userId);
+
+        reportRepository.deleteByReporterId(userId);
+
         userRepository.delete(user);
     }
 

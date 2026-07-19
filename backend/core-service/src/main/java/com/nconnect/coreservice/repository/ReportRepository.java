@@ -11,4 +11,6 @@ public interface ReportRepository extends JpaRepository<Report, UUID> {
 
     @EntityGraph(attributePaths = "reporter")
     List<Report> findAllByOrderByCreatedAtDesc();
+
+    void deleteByReporterId(UUID reporterId);
 }
