@@ -3,12 +3,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getResources, getMyResources, getMyResourceRequests, requestResource } from '@/lib/api';
 import Image from 'next/image';
+import { CldUploadWidget } from 'next-cloudinary';
 import {
     Search, Plus, Package, MapPin, Calendar, CheckCircle,
     AlertTriangle, X, Layers, Car, Monitor,
     Sofa, HeartPulse, Building, Wrench, Tag,
     HandHelping, ArrowRight, Flame, MessageSquare,
-    Clock, XCircle, Pencil, Trash2
+    Clock, XCircle, Pencil, Trash2, ImagePlus
 } from 'lucide-react';
 import SiteFooter from '@/components/ui/SiteFooter';
 
@@ -253,6 +254,7 @@ function EditResourceModal({ resource, onClose, onUpdated }: {
         quantity: resource.quantity?.toString() || "",
         condition: resource.condition || "Good",
         sharingType: resource.sharingType || "BORROW",
+        imageUrl: resource.imageUrl || "",
         availableFrom: resource.availableFrom ? resource.availableFrom.slice(0, 10) : "",
         availableUntil: resource.availableUntil ? resource.availableUntil.slice(0, 10) : "",
         urgency: resource.urgency || "MEDIUM",
@@ -313,6 +315,45 @@ function EditResourceModal({ resource, onClose, onUpdated }: {
                             <AlertTriangle size={14} />{error}
                         </div>
                     )}
+
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Photo</label>
+                        <div className="flex items-center gap-3">
+                            <div className="h-20 w-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 relative">
+                                {form.imageUrl ? (
+                                    <Image src={form.imageUrl} alt="Resource" fill className="object-cover" sizes="80px" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <ImagePlus size={20} className="text-slate-300" />
+                                    </div>
+                                )}
+                            </div>
+                            <CldUploadWidget
+                                uploadPreset="nconnect_posts"
+                                onSuccess={(result) => {
+                                    if (
+                                        result.event === 'success' &&
+                                        typeof result.info === 'object' &&
+                                        result.info &&
+                                        'secure_url' in result.info
+                                    ) {
+                                        setForm(p => ({ ...p, imageUrl: (result.info as { secure_url: string }).secure_url }));
+                                    }
+                                }}
+                            >
+                                {({ open: openWidget }) => (
+                                    <button
+                                        type="button"
+                                        onClick={() => openWidget()}
+                                        className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-xl text-xs font-semibold text-slate-600 transition-all"
+                                    >
+                                        <ImagePlus size={13} /> {form.imageUrl ? "Change Photo" : "Add Photo"}
+                                    </button>
+                                )}
+                            </CldUploadWidget>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="sm:col-span-2">
                             <label className="block text-xs font-semibold text-slate-700 mb-1.5">Name *</label>
@@ -499,6 +540,47 @@ function AddResourceModal({ onClose, onCreated }: { onClose: () => void; onCreat
                                 <AlertTriangle size={14} />{error}
                             </div>
                         )}
+
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                Photo {resourceType === 'OFFER' && <span className="text-slate-400 font-normal">(recommended)</span>}
+                            </label>
+                            <div className="flex items-center gap-3">
+                                <div className="h-20 w-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 relative">
+                                    {form.imageUrl ? (
+                                        <Image src={form.imageUrl} alt="Resource" fill className="object-cover" sizes="80px" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <ImagePlus size={20} className="text-slate-300" />
+                                        </div>
+                                    )}
+                                </div>
+                                <CldUploadWidget
+                                    uploadPreset="nconnect_posts"
+                                    onSuccess={(result) => {
+                                        if (
+                                            result.event === 'success' &&
+                                            typeof result.info === 'object' &&
+                                            result.info &&
+                                            'secure_url' in result.info
+                                        ) {
+                                            setForm(p => ({ ...p, imageUrl: (result.info as { secure_url: string }).secure_url }));
+                                        }
+                                    }}
+                                >
+                                    {({ open: openWidget }) => (
+                                        <button
+                                            type="button"
+                                            onClick={() => openWidget()}
+                                            className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-xl text-xs font-semibold text-slate-600 transition-all"
+                                        >
+                                            <ImagePlus size={13} /> {form.imageUrl ? "Change Photo" : "Add Photo"}
+                                        </button>
+                                    )}
+                                </CldUploadWidget>
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="sm:col-span-2">
                                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">

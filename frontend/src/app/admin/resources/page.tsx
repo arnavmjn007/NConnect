@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Search, Package, Trash2, CheckCircle } from 'lucide-react';
 
 const STATUS_STYLE: Record<string, string> = {
@@ -19,6 +20,7 @@ interface Resource {
     sharingType: string;
     quantity: number;
     condition: string;
+    imageUrl: string;
     createdAt: string;
 }
 
@@ -127,8 +129,12 @@ export default function AdminResourcesPage() {
                             <tr key={r.id} className="border-b border-white/5 hover:bg-white/2">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="h-7 w-7 bg-cyan-600/20 rounded-lg flex items-center justify-center shrink-0">
-                                            <Package size={12} className="text-cyan-400" />
+                                        <div className="h-7 w-7 rounded-lg overflow-hidden shrink-0 relative bg-cyan-600/20 flex items-center justify-center">
+                                            {r.imageUrl ? (
+                                                <Image src={r.imageUrl} alt={r.name} fill className="object-cover" sizes="28px" />
+                                            ) : (
+                                                <Package size={12} className="text-cyan-400" />
+                                            )}
                                         </div>
                                         <p className="text-slate-200 text-xs font-semibold truncate max-w-35">{r.name}</p>
                                     </div>
