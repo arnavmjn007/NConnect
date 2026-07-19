@@ -468,9 +468,8 @@ function AnalyticsContent() {
     }, [dbUser?.id]);
 
     useEffect(() => {
-        const payment = searchParams.get("payment");
         const encodedData = searchParams.get("data");
-        if (payment === "success" && encodedData) {
+        if (encodedData) {
             const plan = (sessionStorage.getItem("esewa_pro_plan") as Plan) || "MONTHLY";
             (async () => {
                 try {
