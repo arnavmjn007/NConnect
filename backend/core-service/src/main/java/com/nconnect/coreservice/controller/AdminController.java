@@ -340,7 +340,9 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> getAnalytics(
             @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
-        long totalUsers = userRepository.count();
+        long totalUsers = userRepository.findAll().stream()
+                .filter(u -> u.getRole() != Role.ADMIN)
+                .count();
         long totalNgos = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.NGO).count();
         long verifiedNgos = userRepository.findAll().stream()
@@ -349,7 +351,8 @@ public class AdminController {
                         && u.getNgoProfile().getVerificationStatus() == VerificationStatus.VERIFIED)
                 .count();
         long onboardedUsers = userRepository.findAll().stream()
-                .filter(AppUser::isOnboardingComplete).count();
+                .filter(u -> u.getRole() != Role.ADMIN && u.isOnboardingComplete())
+                .count();
         long activeProjects = projectRepository.findAll().stream()
                 .filter(p -> p.getStatus() ==
                         com.nconnect.coreservice.model.enums.ProjectStatus.ACTIVE)
