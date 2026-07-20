@@ -88,7 +88,7 @@ async function enrichComments(comments: CommentItem[]): Promise<CommentItem[]> {
                     image: u.profileImageUrl || null,
                 };
             }
-        } catch { /* silent */ }
+        } catch { }
     }));
 
     const attach = (c: CommentItem): CommentItem => ({
@@ -141,6 +141,9 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
     const [busy, setBusy] = useState(false);
 
     const [authorVerified, setAuthorVerified] = useState(false);
+    const [resolvedName, setResolvedName] = useState(post.author_name);
+    const [resolvedUsername, setResolvedUsername] = useState(post.author_username);
+    const [resolvedAvatar, setResolvedAvatar] = useState(post.author_avatar);
 
     const [summary, setSummary] = useState<string | null>(null);
     const [summarizing, setSummarizing] = useState(false);
@@ -166,18 +169,26 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
 
     useEffect(() => {
         let cancelled = false;
-        async function loadVerified() {
+        async function loadProfile() {
             try {
                 const res = await fetch(`/api/users?auth0Id=${encodeURIComponent(post.author_id)}`);
                 if (!res.ok) return;
                 const users = await res.json();
                 const u: RawUser | null = Array.isArray(users) ? users[0] : users;
-                if (!cancelled && u?.verified) setAuthorVerified(true);
-            } catch { /* silent */ }
+
+                if (!cancelled && u) {
+                    if (u.verified) setAuthorVerified(true);
+                    if (u.profileImageUrl) setResolvedAvatar(u.profileImageUrl);
+                    if (u.username) setResolvedUsername(u.username);
+
+                    const finalName = u.organizationName || u.displayName || u.fullName || post.author_name;
+                    setResolvedName(finalName);
+                }
+            } catch { }
         }
-        loadVerified();
+        loadProfile();
         return () => { cancelled = true; };
-    }, [post.author_id]);
+    }, [post.author_id, post.author_name, post.author_username]);
 
     const handleLike = async () => {
         if (busy) return;
@@ -327,8 +338,8 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
         setSendingToId(targetId);
         try {
             const conv = await startConversation(targetId);
-            const link = `${window.location.origin}/profile/${post.author_username}`;
-            const text = `Check out this post from @${post.author_username}: ${link}`;
+            const link = `${window.location.origin}/profile/${resolvedUsername}`;
+            const text = `Check out this post from @${resolvedUsername}: ${link}`;
             sendMessage(conv.id, text);
             setSentToIds(prev => new Set(prev).add(targetId));
         } catch (err) {
@@ -340,7 +351,7 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
 
     const handleCopyLink = async () => {
         try {
-            const url = `${window.location.origin}/profile/${post.author_username}`;
+            const url = `${window.location.origin}/profile/${resolvedUsername}`;
             await navigator.clipboard.writeText(url);
             setLinkCopied(true);
             setTimeout(() => setLinkCopied(false), 2000);
@@ -363,29 +374,37 @@ export default function PostItem({ post, currentUserId, onDelete, onRepost }: Pr
     return (
         <article className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group w-full">
             <div className="p-3 sm:p-4 flex justify-between items-start gap-2">
-                <div className="flex gap-2.5 sm:gap-3 min-w-0">
-                    {post.author_avatar ? (
+                <div className="flex gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    {resolvedAvatar ? (
                         <Image
-                            src={post.author_avatar}
-                            alt={post.author_name}
+                            src={resolvedAvatar}
+                            alt={resolvedName}
                             width={44}
                             height={44}
                             className="rounded-xl object-cover shrink-0 h-10 w-10 sm:h-11 sm:w-11"
                         />
                     ) : (
                         <div className="h-10 w-10 sm:h-11 sm:w-11 bg-linear-to-br from-slate-600 to-slate-800 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm">
-                            {post.author_name.charAt(0).toUpperCase()}
+                            {resolvedName.charAt(0).toUpperCase()}
                         </div>
                     )}
-                    <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors truncate flex items-center gap-1">
-                            {post.author_name}
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 max-w-full">
+                            <h4 className="text-sm font-bold text-slate-900 hover:text-[#0A66C2] cursor-pointer transition-colors truncate">
+                                {resolvedName}
+                            </h4>
                             {authorVerified && (
-                                <BadgeCheck size={14} className="text-indigo-500 shrink-0" />
+                                <BadgeCheck size={15} className="text-white fill-blue-500 shrink-0" />
                             )}
-                        </h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                            @{post.author_username} · {timeLabel}{post.is_edited && ' · Edited'} · 🌐
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                            <span>@{resolvedUsername} · {timeLabel}{post.is_edited && ' · Edited'}</span>
+                            {!authorVerified && (
+                                <>
+                                    <span>·</span>
+                                    <span className="text-[10px]">🌐</span>
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>

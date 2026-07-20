@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { getProjects, getMyProjects, getProjectRecommendations, getVolunteerRecommendations, getUsersByIds, type BasicUser } from '@/lib/api';
 import { startConversation } from '@/lib/feedApi';
@@ -9,7 +10,7 @@ import {
     Search, TrendingUp, Droplets, GraduationCap,
     Heart, Leaf, Utensils, AlertTriangle, MapPin, Clock,
     Users, Target, BadgeCheck, Flame, Plus, X, CheckCircle, Sparkles,
-    Pencil, FolderOpen, MessageSquare, Menu
+    Pencil, FolderOpen, MessageSquare, Menu, Info, Calendar, DollarSign
 } from 'lucide-react';
 import DonationModal from '@/components/payment/DonationModal';
 import SiteFooter from '@/components/ui/SiteFooter';
@@ -35,7 +36,7 @@ const CATEGORY_GRADIENT: Record<string, string> = {
     "Water & Sanitation": "from-blue-600 to-cyan-500",
     "Education": "from-violet-600 to-purple-500",
     "Healthcare": "from-rose-600 to-pink-500",
-    "Environment": "from-emerald-600 to-green-500",
+    "Environment": "from-emerald-600 to-yellow-500",
     "Food Security": "from-orange-600 to-amber-500",
     "Emergency Relief": "from-red-700 to-rose-600",
     "default": "from-indigo-600 to-blue-500",
@@ -606,6 +607,212 @@ function EditProjectModal({
     );
 }
 
+function ProjectDetailsModal({
+    project,
+    isOwner,
+    onClose,
+    onDonate,
+    onManageVolunteers,
+}: {
+    project: Project;
+    isOwner: boolean;
+    onClose: () => void;
+    onDonate: () => void;
+    onManageVolunteers: () => void;
+}) {
+    const gradient = CATEGORY_GRADIENT[project.category] || CATEGORY_GRADIENT.default;
+    const raised = project.raisedAmount || 0;
+    const goal = project.goalAmount || 0;
+    const goalReached = goal > 0 && raised >= goal;
+    const progress = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
+    const spotsLeft = project.volunteerSlots
+        ? project.volunteerSlots - (project.volunteersJoined || 0)
+        : null;
+
+    const formatDate = (d: string) =>
+        d ? new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+                <div className={`h-28 sm:h-32 bg-linear-to-br ${gradient} relative overflow-hidden shrink-0`}>
+                    {project.imageUrl && (
+                        <Image src={project.imageUrl} alt={project.title} fill
+                            className="object-cover opacity-40" sizes="(max-width: 768px) 100vw, 700px" />
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-3 right-3 h-8 w-8 flex items-center justify-center rounded-xl bg-black/20 hover:bg-black/30 backdrop-blur-sm z-10"
+                    >
+                        <X size={16} className="text-white" />
+                    </button>
+                    <div className="absolute inset-0 p-4 flex flex-col justify-end z-5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            {project.priorityLevel && project.priorityLevel !== "NORMAL" && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${PRIORITY_COLOR[project.priorityLevel]}`}>
+                                    {project.priorityLevel === "URGENT" && <Flame size={9} />}
+                                    {project.priorityLevel}
+                                </span>
+                            )}
+                            <span className="text-[10px] font-bold text-white/90 bg-black/25 px-2 py-0.5 rounded-full">
+                                {project.category}
+                            </span>
+                        </div>
+                        <h2 className="font-bold text-white text-lg sm:text-xl leading-tight">{project.title}</h2>
+                    </div>
+                </div>
+
+                <div className="p-4 sm:p-5 space-y-5">
+                    <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
+                            {project.ngoName?.charAt(0) || "N"}
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700">{project.ngoName}</span>
+                        {project.ngoVerified && <BadgeCheck size={14} className="text-indigo-500" />}
+                    </div>
+
+                    {project.description && (
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Description</h3>
+                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{project.description}</p>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {project.location && (
+                            <div className="flex items-start gap-2">
+                                <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Location</p>
+                                    <p className="text-xs font-semibold text-slate-700">{project.location}</p>
+                                </div>
+                            </div>
+                        )}
+                        {project.duration && (
+                            <div className="flex items-start gap-2">
+                                <Clock size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Duration</p>
+                                    <p className="text-xs font-semibold text-slate-700">{project.duration}</p>
+                                </div>
+                            </div>
+                        )}
+                        {project.beneficiaryGroup && (
+                            <div className="flex items-start gap-2">
+                                <Users size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Beneficiaries</p>
+                                    <p className="text-xs font-semibold text-slate-700">{project.beneficiaryGroup}</p>
+                                </div>
+                            </div>
+                        )}
+                        {spotsLeft !== null && (
+                            <div className="flex items-start gap-2">
+                                <Users size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Volunteer Spots</p>
+                                    <p className="text-xs font-semibold text-slate-700">
+                                        {spotsLeft > 0 ? `${spotsLeft} of ${project.volunteerSlots} left` : "Full"}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        {formatDate(project.startDate) && (
+                            <div className="flex items-start gap-2">
+                                <Calendar size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">Start Date</p>
+                                    <p className="text-xs font-semibold text-slate-700">{formatDate(project.startDate)}</p>
+                                </div>
+                            </div>
+                        )}
+                        {formatDate(project.endDate) && (
+                            <div className="flex items-start gap-2">
+                                <Calendar size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] text-slate-400 font-semibold uppercase">End Date</p>
+                                    <p className="text-xs font-semibold text-slate-700">{formatDate(project.endDate)}</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {project.requiredSkills?.length > 0 && (
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Required Skills</h3>
+                            <div className="flex flex-wrap gap-1.5">
+                                {project.requiredSkills.map(s => (
+                                    <span key={s} className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium">
+                                        {s}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {project.tags?.length > 0 && (
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tags</h3>
+                            <div className="flex flex-wrap gap-1.5">
+                                {project.tags.map(t => (
+                                    <span key={t} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
+                                        {t}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {goal > 0 && (
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <DollarSign size={12} /> Funding
+                            </h3>
+                            <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${goalReached ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center text-xs mt-1.5">
+                                <span className="font-bold text-slate-800">NPR {raised.toLocaleString()} raised</span>
+                                <span className="text-slate-400">of NPR {goal.toLocaleString()}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">{project.donorCount || 0} donors</p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2 pb-2 sm:pb-0">
+                        {goal > 0 && !isOwner && (
+                            <button
+                                onClick={onDonate}
+                                className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2.5 rounded-xl text-sm transition-colors border border-rose-100"
+                            >
+                                <Heart size={14} /> Donate
+                            </button>
+                        )}
+                        {isOwner && (
+                            <button
+                                onClick={onManageVolunteers}
+                                className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 rounded-xl text-sm transition-colors border border-indigo-100"
+                            >
+                                <Users size={14} /> Manage Volunteers
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="flex-1 border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-sm hover:bg-slate-50 transition-colors"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ProjectCard({
     project,
     currentUserNgoId,
@@ -613,6 +820,7 @@ function ProjectCard({
     onDonate,
     onManageVolunteers,
     onEdit,
+    onViewDetails,
 }: {
     project: Project;
     currentUserNgoId?: string | null;
@@ -620,6 +828,7 @@ function ProjectCard({
     onDonate: (p: Project) => void;
     onManageVolunteers: (p: Project) => void;
     onEdit: (p: Project) => void;
+    onViewDetails: (p: Project) => void;
 }) {
     const isOwner = currentUserNgoId === project.ngoId;
     const raised = project.raisedAmount || 0;
@@ -658,6 +867,13 @@ function ProjectCard({
                                     <Pencil size={11} className="text-white" />
                                 </button>
                             )}
+                            <button
+                                onClick={e => { e.stopPropagation(); onViewDetails(project); }}
+                                title="View details"
+                                className="flex items-center justify-center h-6 w-6 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-lg transition-colors"
+                            >
+                                <Info size={11} className="text-white" />
+                            </button>
                             <span className="text-[10px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded-full max-w-25 truncate">
                                 {project.category}
                             </span>
@@ -743,7 +959,7 @@ function ProjectCard({
                     )}
 
                     <div className="flex gap-2">
-                        {goal > 0 && (
+                        {goal > 0 && !isOwner && (
                             <button
                                 onClick={() => onDonate(project)}
                                 className="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-xl text-xs transition-colors border border-rose-100"
@@ -915,6 +1131,7 @@ function ProjectsContent() {
     const [donationSuccess, setDonationSuccess] = useState(false);
     const [volunteersProject, setVolunteersProject] = useState<Project | null>(null);
     const [editProject, setEditProject] = useState<Project | null>(null);
+    const [detailsProject, setDetailsProject] = useState<Project | null>(null);
     const [matchScores, setMatchScores] = useState<Record<string, number>>({});
     const [showRecommended, setShowRecommended] = useState(false);
     const [showMyProjects, setShowMyProjects] = useState(false);
@@ -1192,10 +1409,20 @@ function ProjectsContent() {
                                     )}
                                 </div>
                                 {isNgo && (
-                                    <button onClick={() => setShowCreate(true)}
-                                        className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors shrink-0 shadow-sm ml-auto sm:ml-0">
-                                        <Plus size={14} /> New
-                                    </button>
+                                    dbUser?.verified ? (
+                                        <button onClick={() => setShowCreate(true)}
+                                            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors shrink-0 shadow-sm ml-auto sm:ml-0">
+                                            <Plus size={14} /> New
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href="/verification"
+                                            title="Your NGO must be verified before creating projects"
+                                            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-sm rounded-xl transition-colors shrink-0 shadow-sm ml-auto sm:ml-0 border border-slate-200"
+                                        >
+                                            <AlertTriangle size={14} /> Verify to Create
+                                        </Link>
+                                    )
                                 )}
                             </div>
                         </div>
@@ -1224,6 +1451,7 @@ function ProjectsContent() {
                                         onDonate={setDonateProject}
                                         onManageVolunteers={setVolunteersProject}
                                         onEdit={setEditProject}
+                                        onViewDetails={setDetailsProject}
                                     />
                                 ))}
                             </div>
@@ -1278,6 +1506,22 @@ function ProjectsContent() {
                     onUpdated={() => {
                         setEditProject(null);
                         fetchProjects();
+                    }}
+                />
+            )}
+
+            {detailsProject && (
+                <ProjectDetailsModal
+                    project={detailsProject}
+                    isOwner={dbUser?.id === detailsProject.ngoId}
+                    onClose={() => setDetailsProject(null)}
+                    onDonate={() => {
+                        setDonateProject(detailsProject);
+                        setDetailsProject(null);
+                    }}
+                    onManageVolunteers={() => {
+                        setVolunteersProject(detailsProject);
+                        setDetailsProject(null);
                     }}
                 />
             )}

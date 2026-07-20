@@ -908,7 +908,9 @@ export default function ResourcesPage() {
             (categoryFilter === 'all' || r.category === categoryFilter) &&
             (!search || r.name.toLowerCase().includes(search.toLowerCase()))
         )
-        : resources;
+        : tab === 'offers'
+            ? resources.filter(r => r.ownerId !== dbUser?.id)
+            : resources;
 
     const pendingIncoming = incomingRequests.filter(r => r.status === 'PENDING');
     const pastIncoming = incomingRequests.filter(r => r.status !== 'PENDING');
