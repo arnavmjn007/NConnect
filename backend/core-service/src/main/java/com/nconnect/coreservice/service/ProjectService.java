@@ -6,6 +6,7 @@ import com.nconnect.coreservice.model.AppUser;
 import com.nconnect.coreservice.model.Project;
 import com.nconnect.coreservice.model.enums.ProjectStatus;
 import com.nconnect.coreservice.model.enums.Role;
+import com.nconnect.coreservice.model.enums.VerificationStatus; // Imported the enum
 import com.nconnect.coreservice.repository.ProjectRepository;
 import com.nconnect.coreservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,10 @@ public class ProjectService {
         if (user.getRole() != Role.NGO) {
             throw new RuntimeException("Only NGO accounts can create projects");
         }
+        if (user.getNgoProfile() == null || user.getNgoProfile().getVerificationStatus() != VerificationStatus.VERIFIED) {
+            throw new RuntimeException("Your NGO account must be verified to create projects");
+        }
+
         Project project = Project.builder()
                 .ngo(user)
                 .title(req.getTitle())

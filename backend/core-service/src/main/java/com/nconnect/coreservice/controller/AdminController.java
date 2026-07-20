@@ -341,18 +341,22 @@ public class AdminController {
             @AuthenticationPrincipal Jwt jwt) {
         requireAdmin(jwt);
         long totalUsers = userRepository.findAll().stream()
-                .filter(u -> u.getRole() != Role.ADMIN)
+                .filter(u -> u.getRole() == Role.USER)
                 .count();
+
         long totalNgos = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.NGO).count();
+
         long verifiedNgos = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == Role.NGO
                         && u.getNgoProfile() != null
                         && u.getNgoProfile().getVerificationStatus() == VerificationStatus.VERIFIED)
                 .count();
+
         long onboardedUsers = userRepository.findAll().stream()
-                .filter(u -> u.getRole() != Role.ADMIN && u.isOnboardingComplete())
+                .filter(u -> u.getRole() == Role.USER && u.isOnboardingComplete())
                 .count();
+
         long activeProjects = projectRepository.findAll().stream()
                 .filter(p -> p.getStatus() ==
                         com.nconnect.coreservice.model.enums.ProjectStatus.ACTIVE)

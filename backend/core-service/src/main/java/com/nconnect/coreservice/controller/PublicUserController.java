@@ -38,18 +38,21 @@ public class PublicUserController {
 
         if (auth0Id != null && !auth0Id.isBlank()) {
             return userRepository.findByAuth0Id(auth0Id).map(u -> {
-                String name = u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
-                        ? u.getNgoProfile().getOrganizationName()
+                var ngo = u.getNgoProfile();
+                String name = ngo != null && ngo.getOrganizationName() != null
+                        ? ngo.getOrganizationName()
                         : u.getFullName() != null ? u.getFullName()
                         : u.getUsername();
                 return ResponseEntity.ok(List.of(Map.<String, Object>of(
                         "auth0Id", u.getAuth0Id(),
                         "username", u.getUsername() != null ? u.getUsername() : "",
                         "fullName", u.getFullName() != null ? u.getFullName() : "",
-                        "organizationName", u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
-                                ? u.getNgoProfile().getOrganizationName() : "",
+                        "organizationName", ngo != null && ngo.getOrganizationName() != null
+                                ? ngo.getOrganizationName() : "",
                         "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : "",
-                        "displayName", name != null ? name : ""
+                        "displayName", name != null ? name : "",
+                        "verified", ngo != null && ngo.getVerificationStatus() != null
+                                && ngo.getVerificationStatus().name().equals("VERIFIED")
                 )));
             }).orElse(ResponseEntity.ok(List.of()));
         }
@@ -67,17 +70,20 @@ public class PublicUserController {
                     ))
                     .limit(20)
                     .map(u -> {
-                        String name = u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
-                                ? u.getNgoProfile().getOrganizationName()
+                        var ngo = u.getNgoProfile();
+                        String name = ngo != null && ngo.getOrganizationName() != null
+                                ? ngo.getOrganizationName()
                                 : u.getFullName() != null ? u.getFullName() : u.getUsername();
                         return Map.<String, Object>of(
                                 "auth0Id", u.getAuth0Id(),
                                 "username", u.getUsername() != null ? u.getUsername() : "",
                                 "fullName", u.getFullName() != null ? u.getFullName() : "",
-                                "organizationName", u.getNgoProfile() != null && u.getNgoProfile().getOrganizationName() != null
-                                        ? u.getNgoProfile().getOrganizationName() : "",
+                                "organizationName", ngo != null && ngo.getOrganizationName() != null
+                                        ? ngo.getOrganizationName() : "",
                                 "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : "",
-                                "displayName", name != null ? name : ""
+                                "displayName", name != null ? name : "",
+                                "verified", ngo != null && ngo.getVerificationStatus() != null
+                                        && ngo.getVerificationStatus().name().equals("VERIFIED")
                         );
                     })
                     .toList();
@@ -117,12 +123,17 @@ public class PublicUserController {
                 .toList();
 
         List<Map<String, Object>> result = userRepository.findAllById(uuids).stream()
-                .map(u -> Map.<String, Object>of(
-                        "id", u.getId().toString(),
-                        "username", u.getUsername() != null ? u.getUsername() : "",
-                        "fullName", u.getFullName() != null ? u.getFullName() : "",
-                        "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : ""
-                ))
+                .map(u -> {
+                    var ngo = u.getNgoProfile();
+                    return Map.<String, Object>of(
+                            "id", u.getId().toString(),
+                            "username", u.getUsername() != null ? u.getUsername() : "",
+                            "fullName", u.getFullName() != null ? u.getFullName() : "",
+                            "profileImageUrl", u.getProfileImageUrl() != null ? u.getProfileImageUrl() : "",
+                            "verified", ngo != null && ngo.getVerificationStatus() != null
+                                    && ngo.getVerificationStatus().name().equals("VERIFIED")
+                    );
+                })
                 .toList();
 
         return ResponseEntity.ok(result);
